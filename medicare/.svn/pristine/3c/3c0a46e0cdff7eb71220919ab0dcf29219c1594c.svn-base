@@ -1,0 +1,10 @@
+// 查询事件
+function search() {
+	//var drugName=$("input[name='drugName'").val();
+
+	cusFlag = $("#container").attr("cusFlag");
+	document.getElementById("myForm").action="toDrugUsedCountChart?cusFlag="+cusFlag;
+	document.getElementById("myForm").submit();
+
+}
+

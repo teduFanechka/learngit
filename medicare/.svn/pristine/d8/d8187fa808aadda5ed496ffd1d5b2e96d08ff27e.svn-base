@@ -1,0 +1,135 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Employee;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+
+/**
+ * 医护人员表(从业人员信息表)
+ * @author Administrator
+ *
+ */
+@Controller
+public class EmployeeController {
+	
+	@Autowired
+	private IBaseService<Employee> baseService;
+
+	/**
+	 * 转到医护人员
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/toEmployee")
+	public String toEmployee(HttpServletRequest request) {
+		String cusId = request.getParameter("cusId");
+		request.setAttribute("cusId", cusId);
+		return "/employee/employee";
+	}
+
+	// 新增或修改表格数据
+	@RequestMapping("/addOrUpdateEmployee ")
+	public void addOrUpdateEmployee(HttpServletRequest request, HttpServletResponse response) {
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String emId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		Employee employee = new Employee();
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {
+			// 获取jsonArray第一个json对象 jo
+			JSONObject jo = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jo.size() > 0) {
+				// 解析jo 并获取实体字段值
+				String cusId = jo.getString("cusId");
+				String cusParentid = jo.getString("cusParentid");
+				String emCode = jo.getString("emCode");
+				String emName = jo.getString("emName");
+				String emIdnum = jo.getString("emIdnum");
+				String emTitlename = jo.getString("emTitlename");
+				String emQualification = jo.getString("emQualification");
+				String emPhone = jo.getString("emPhone");
+				String emAnnex = jo.getString("emAnnex");
+				String emRemark = jo.getString("emRemark");
+				String emSex = jo.getString("emSex");
+				employee.setEmSex(emSex);
+				employee.setCusId(cusId);
+				employee.setCusParentid(cusParentid);
+				employee.setEmAnnex(emAnnex);
+				employee.setEmCode(emCode);
+				employee.setEmIdnum(emIdnum);
+				employee.setEmName(emName);
+				employee.setEmPhone(emPhone);
+				employee.setEmQualification(emQualification);
+				employee.setEmRemark(emRemark);
+				employee.setEmTitlename(emTitlename);
+				// 如果等于6 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jo.size() == 12) {
+					// 获取id主键
+					emId = jo.getString("emId");
+					employee.setEmId(emId);
+					baseService.update(employee);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(employee);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	/**
+	 * 医护人员
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	@RequestMapping("/getAllEmployee")
+	public void getAllEmployee(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException {
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");
+		String countSql = "select count(EM_ID) from tbl_Employee where cus_Id=?0";
+		String hql = "from Employee where cusId=?0 order by emAddtime desc";
+		int count = baseService.findCountSql(countSql,cusId);
+		if(count > 0){
+			List<Employee> list = baseService.findByPage(hql, rows, page,cusId);
+			Utils.toBeJson(list, count, response);
+		}
+	}
+
+	// 批量删除信息 return null; 返回string 也可以
+	@RequestMapping("/delEmployee")
+	public void delEmployee(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 要批量删除的id字符串获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.updateOrDelete("delete Employee where emId=?0", arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+}

@@ -1,0 +1,53 @@
+package yibao.yiwei.service;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
+@SuppressWarnings("unchecked")
+public interface IWarehouseitemManager {
+
+	/**
+	 * 添加入库信息
+	 * @param path
+	 * @param cusId
+	 * @param cusName
+	 * @param upDate
+	 * @param upId
+	 * @param cusFlag
+	 * @param fileName
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public void addWarehouseitems(String path, String cusId, String cusName, Date upDate, int upId, String cusFlag,String fileName) throws IOException, ParseException;
+
+	/**
+	 * 
+	 * @param cusId
+	 *            药店编码
+	 * @param days
+	 *            1天/一周/一月
+	 * @return 药品入库数量统计集合
+	 */
+	public List getWIAmountTotals(String cusId, String days, List drugCodes) throws ParseException;
+
+	/**
+	 * 
+	 * @param cusId
+	 *            药店id
+	 * @param days
+	 *            一天/周/月
+	 * @return 对应时间段内药品编码集合去重
+	 * @throws ParseException
+	 */
+	public List getgetDrugCodes(String cusId, String days) throws ParseException;
+	/**
+	 * 
+	 * @param cusId 定点id
+	 * @param drugCodes 项目编码
+	 * @return 项目名称list
+	 */
+	public List getAlldrugNames(String cusId, List drugCodes);
+	
+}

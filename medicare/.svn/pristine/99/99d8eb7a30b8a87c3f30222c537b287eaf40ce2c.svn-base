@@ -1,0 +1,215 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Prescribe;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IPrescribeManager;
+
+/**
+ * 处方信息
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class PrescribeManager implements IPrescribeManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 添加处方信息
+	 */
+	@Override
+	public void addPrescribes(String path, String cusId,String cusName, Date upCollectdate, int upId,String cusFlag,String fileName) throws IOException, ParseException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Prescribe prescribe;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 35) {
+						throw new DataException("正确字段数:35,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						//判断定点是否连锁,数据解析至分店cusid下
+						// 判断定点类型是连锁药店并且上传有最后一位分店编码
+						prescribe = new Prescribe();
+						if (cusFlag.equals("102") && name.length > 35) {// length:36
+							// 分店标识为零,则保存在总店id下
+							if (name[35].trim().equals("0")) {
+								prescribe.setCusId(cusId);
+							} else {
+								// 查找分店id,父id是当前cusid,分店编码为name[]最后一位
+								String hql = "select c.cusId from Customer c where c.cusParentid =?0 and c.cusBranchcode=?1 ";
+								List list = baseDao.find(hql, cusId, name[35].trim());
+								if (list.size() > 0) {
+									// 分店已注册查找到分店id
+									prescribe.setCusId(list.get(0).toString());
+								} else {// 如果当前分店编码未注册,执行下次循环
+									continue;
+								}
+							}
+						} else {
+							prescribe.setCusId(cusId);
+						}
+						prescribe.setCusPid("0");// 客户上级id
+						prescribe.setCusDareway("");// 医院编码
+						prescribe.setRpNo(name[0].trim());// 处方单号
+						prescribe.setRpDeptno(name[1].trim());// 处方科别
+						prescribe.setRpDeptname(name[2].trim());// 处方科别名称
+						prescribe.setRpPtsname(name[3].trim());// 患者姓名
+						prescribe.setRpPtssex(name[4].trim());// 性别
+						prescribe.setRpPtsage(name[5].trim());// 年龄
+						prescribe.setRpPtshealthcard(name[6].trim());// 医保卡号
+						prescribe.setRpPtsidcard(name[7].trim());// 身份证号
+						prescribe.setRpPtsbirthday(name[8].trim());// 出生日期
+						prescribe.setRpItemcode(name[9].trim());// 项目编码
+						prescribe.setRpItemname(name[10].trim());// 项目名称
+						prescribe.setRpItemspecification(name[13].trim());// 规格
+						prescribe.setRpItemdosageform(name[14].trim());// 剂型
+						prescribe.setRpItemmfrs(name[15].trim());// 生产商
+						prescribe.setRpItemmakein(name[16].trim());// 生产地
+						prescribe.setRpItembatchno(name[17].trim());// 批号
+						prescribe.setRpWhcode(name[18].trim());// 仓库编码
+						prescribe.setRpWhname(name[19].trim());// 仓库名称
+						prescribe.setRpLocation(name[20].trim());// 货位/货架号
+						prescribe.setRpDrugfreq(name[21].trim());// 用药频次
+						prescribe.setRpDrugroute(name[22].trim());// 用药途径
+						prescribe.setRpDrugtime(name[23].trim());// 用药时间
+						prescribe.setRpDrugamount(name[24].trim());// 用药量
+						prescribe.setRpDrcode(name[25].trim());// 处方医师
+						prescribe.setRpDrname(name[26].trim());// 处方医师名称
+						prescribe.setRpAuditcode(name[28].trim());// 审核医师
+						prescribe.setRpAuditname(name[29].trim());// 审核医师名称
+						prescribe.setRpCheckcode(name[31].trim());// 核对医师
+						prescribe.setRpCheckname(name[32].trim());// 核对医师名称
+						prescribe.setRpAnnex(name[34].trim());// 附件
+						if (name[11].trim().equals("NULL") || name[11].trim().equals("")) {
+							prescribe.setRpItemprice(null);
+						} else {
+							prescribe.setRpItemprice(Double.parseDouble(name[11].trim()));// 销售价
+						}
+						if (name[11].trim().equals("NULL") || name[11].trim().equals("")) {
+							prescribe.setRpItemnum(null);
+						} else {
+							prescribe.setRpItemnum(Double.parseDouble(name[11].trim()));// 销售价
+						}
+						DateFormat df;
+						if (name[27].trim().equals("NULL") || name[27].trim().equals("")) {
+							prescribe.setRpDrtime(null);
+						} else {
+							// 判断drugMfgdate时间类型长度有没有分时秒
+							if (name[27].trim().length() == 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							prescribe.setRpDrtime(df.parse(name[27].trim()));// 开具日期
+						}
+						if (name[30].trim().equals("NULL") || name[30].trim().equals("")) {
+							prescribe.setRpDrtime(null);
+						} else {
+							// 判断drugMfgdate时间类型长度有没有分时秒
+							if (name[30].trim().length() == 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							prescribe.setRpDrtime(df.parse(name[30].trim()));// 审核日期
+						}
+						if (name[33].trim().equals("NULL") || name[33].trim().equals("")) {
+							prescribe.setRpDrtime(null);
+						} else {
+							// 判断drugMfgdate时间类型长度有没有分时秒
+							if (name[33].trim().length() == 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							prescribe.setRpDrtime(df.parse(name[33].trim()));// 核对日期
+						}
+						prescribe.setCusDareway("");// 医院编码
+						prescribe.setRpPicktime(upCollectdate);// 采集日期
+						prescribe.setRpAddtime(new Date());// 创建日期
+						baseDao.save(prescribe);
+						count++;
+					} catch (Exception e) {
+						error++;
+						String log = e.toString();
+						if (log.length() > 300){
+							log = log.substring(0, 300);
+						}
+						errorlog = new Errorlog();
+						errorlog.setCusId(cusId);
+						errorlog.setCusName(cusName);
+						errorlog.setErrAddtime(new Date());
+						errorlog.setErrFileflag("处方信息");
+						errorlog.setErrFilepath(fileName);
+						errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+						errorlog.setErrType("数据解析错误");
+						baseDao.save(errorlog);
+					}
+				}
+				baseDao.updateOrDelete(qsql, count,"解析成功"+count+"条，失败"+error+"条",upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"非文件", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("处方信息");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 35) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"数据上传字段不全错误,正确字段数:35,实际解析字段数:" + name.length, upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"数据解析错误", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+	}
+}

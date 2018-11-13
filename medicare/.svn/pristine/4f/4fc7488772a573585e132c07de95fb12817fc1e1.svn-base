@@ -1,0 +1,164 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Drugswarehouse;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.JsonDateValueProcessor;
+
+/**
+ * 药品入库记录表
+ * @author Administrator
+ *
+ */
+@Controller
+public class DrugswarehouseController {
+	
+	@Autowired
+	private IBaseService<Drugswarehouse> baseService;
+
+	// 请求视图
+	@RequestMapping("/toDrugswarehouse")
+	public String toDrugswarehouse() {
+		return "/drugswarehouse/drugswarehouse";
+	}
+
+	// 新增或修改表格数据
+	@RequestMapping("/addOrUpdateDrugswarehouse ")
+	public void addOrUpdateDrugswarehouse(HttpServletRequest request,HttpServletResponse response) throws ParseException {
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String dwId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		Drugswarehouse drugswarehouse = new Drugswarehouse();
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {
+			// 获取jsonArray第一个json对象 jsonObject
+			JSONObject jo = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jo.size() > 0) {
+				// 解析jo 并获取实体字段值
+				String cusId = jo.getString("cusId");
+				String cusParentid = jo.getString("cusParentid");
+				String dwNo = jo.getString("dwNo");
+				String dwExaminer = jo.getString("dwExaminer");
+				String dwAuditor = jo.getString("dwAuditor");
+				String dwAmount = jo.getString("dwAmount");
+				// 判断int或double 字段是否为空
+				if (dwAmount.equals("")) {
+					drugswarehouse.setDwAmount(0.0);
+				} else {
+					drugswarehouse.setDwAmount(Double.parseDouble(dwAmount));
+				}
+				String dwDatetime1 = jo.getString("dwDatetime");
+				DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				if (dwDatetime1.equals("")) {
+					drugswarehouse.setDwDatetime(null);
+				} else {
+					Date dwDatetime = df.parse(dwDatetime1);
+					drugswarehouse.setDwDatetime(dwDatetime);
+				}
+				// 判断时间类型字段是否为空
+				String dwExamdate1 = jo.getString("dwExamdate");
+				if (dwExamdate1.equals("")) {
+					drugswarehouse.setDwExamdate(null);
+				} else {
+					Date dwExamdate = df.parse(dwExamdate1);
+					drugswarehouse.setDwExamdate(dwExamdate);
+				}
+				String dwCreatetime1 = jo.getString("dwCreatetime");
+				if (dwCreatetime1.equals("")) {
+					drugswarehouse.setDwCreatetime(null);
+				} else {
+					Date dwCreatetime = df.parse(dwCreatetime1);
+					drugswarehouse.setDwCreatetime(dwCreatetime);
+				}
+				String dwAuditdate1 = jo.getString("dwAuditdate");
+				if (dwAuditdate1.equals("")) {
+					drugswarehouse.setDwAuditdate(null);
+				} else {
+					Date dwAuditdate = df.parse(dwAuditdate1);
+					drugswarehouse.setDwAuditdate(dwAuditdate);
+				}
+				drugswarehouse.setCusId(cusId);
+				drugswarehouse.setDwNo(dwNo);
+				drugswarehouse.setCusParentid(cusParentid);
+				drugswarehouse.setDwAuditor(dwAuditor);
+				drugswarehouse.setDwExaminer(dwExaminer);
+
+				// 如果等于6 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jo.size() == 11) {
+					// 获取id主键
+					dwId = jo.getString("dwId");
+					drugswarehouse.setDwId(dwId);
+					baseService.update(drugswarehouse);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(drugswarehouse);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	// 获取datagrid 所有Drugswarehouse对象
+	@RequestMapping("/getAllDrugswarehouse")
+	public String getAllDrugswarehouse(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		List<Drugswarehouse> list;// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String hql = "from Drugswarehouse d order by d.dwCreatetime desc";// 注意hql
+		// 查询的是实体类,并不是数据库名称
+		// datagrid 获取总记录数
+		list = baseService.findByPage(hql, rows, page);
+		toBeJson(list, baseService.findCount("select count(*) from Drugswarehouse"), response);
+		return null;
+	}
+
+	// 转化为Json格式 ,将有Date 格式的list 转为json 可识别格式"2014-01-12 12:20:10"
+	public void toBeJson(List<Drugswarehouse> list, int total, HttpServletResponse response) throws IOException {
+		// 调用工具类 list(含有java.util.Date)转换成json
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		response.setCharacterEncoding("utf-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+
+	// 批量删除信息 return null; 返回string 也可以
+	@RequestMapping("/delDrugswarehouse")
+	public void delDrugswarehouse(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 要批量删除的id字符串获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.updateOrDelete("delete Drugswarehouse where dwId=?0",arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+}

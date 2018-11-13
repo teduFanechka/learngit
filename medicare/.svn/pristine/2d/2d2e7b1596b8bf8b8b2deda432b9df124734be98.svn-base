@@ -1,0 +1,100 @@
+$(function() {
+    $(".tabb").tabs({
+        fit: true,
+        border: false,
+        selected: 0,
+    });
+    $('#uploadfile').datagrid({
+        pageSize:20,
+        pageList:[10,20,30,40,50],
+		url : 'getAllUploadfile'
+});
+})
+// 根据状态显示图片
+function isenStatus(value, row, index) {
+    if (row.isEncrypt == 1) { // 这里是判断哪些行
+        return '<a href="#"></a><img src="images/accept.png"  title="已加密" alt="" />';
+    } else {
+        return '<a href="#"></a><img src="images/delete.png"  title="未加密" alt="" />';
+    }
+}
+// 增加用户
+function adduploadfile() {
+    //$('#').val('');
+    $('#uploadfilebtn').dialog('open').dialog('center').dialog('setTitle', '新建日志');
+    $('#uploadfileform').form('clear'); // 清除表单数据
+    url = 'addOrUpdateUploadfile';
+}
+//编辑用户
+function edituploadfile() {
+	var array = $('#uploadfile').datagrid('getSelections'); // 获取删除选中项数组
+	var len = array.length;
+	if (len > 1) {
+	    $.messager.alert('警告','只能选择一行记录进行修改');  
+	} else if (array.length < 1) {
+	    $.messager.alert('警告','请选择需要修改的行');  
+	} else {
+      var row = $('#uploadfile').datagrid('getSelected'); //获取选中的行
+      $('#uploadfilebtn').dialog('open').dialog('center').dialog('setTitle', '编辑信息');
+      $('#uploadfileform').form('load', row);   
+	}
+}
+
+function fmtDownload(value, row, index){
+	return '<a href="#" onclick="javascript:downfile("'+row.upId+'");">下载</a>';
+}
+
+//删除用户
+function deluploadfile() {
+	var array = $('#uploadfile').datagrid('getSelections');// 获取删除选中项数组
+	var ids = "";// 要删除的id字符串
+	for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+		if (i != array.length - 1) {
+			ids += array[i].upId + ",";
+		} else {
+			ids += array[i].upId;
+		}
+	}
+	if (array != "" && array != null) {
+		$.messager.confirm('提示', '是否要删除选中信息?', function(r) {
+			if (r) {
+				$.post("delUploadfile", {
+					ids : ids
+				// 传向后台的参数,用,分隔
+						}, function() { // 前台没有返回json,里面就没有data
+							$('#uploadfile').datagrid( {
+								url : "getAllUploadfile"
+							});
+							 $.messager.show({
+			                        title: '系统提示',
+			                        msg: "删除成功"
+			                    });
+						});
+			}
+		});
+	} else {
+		$.messager.alert("提示", "请先选择要删除的信息！");
+	}
+}
+//保存
+function saveuploadfile() {
+    $.ajax({
+        cache: true,
+        type: "POST",
+        url: 'addOrUpdateUploadfile',
+        data: $('#uploadfileform').serialize(),
+        async: true,
+        success: function(data) {
+            $.messager.show({
+                title: '系统提示',
+                msg: data.status
+            });
+            $('#uploadfile').datagrid('reload'); // 刷新
+            $('#uploadfilebtn').dialog('close');
+        },
+        error: function(request) {
+            alert("操作错误");
+        }
+    });
+}
+

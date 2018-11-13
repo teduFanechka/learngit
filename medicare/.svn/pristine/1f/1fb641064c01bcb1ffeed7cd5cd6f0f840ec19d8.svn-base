@@ -1,0 +1,42 @@
+package yibao.yiwei.service;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
+@SuppressWarnings("unchecked")
+public interface IDrugcatalogManager {
+	
+
+	/**
+	 * 
+	 * @param drugCodes
+	 *            商品编码集合
+	 * @return 对应的商品名集合
+	 */
+	public List getAlldcCommercials(List drugCodes);
+
+	/** 保存药品目录表,更新上传记录表
+	 * @param path
+	 *            文件路径
+	 * @param cusId
+	 *            客户cusId
+	 * @param cusName 
+	 * @param upId 当前文件上传记录表主键
+	 * @return 解析文件是否完成true/false
+	 * @throws IOException
+	 */
+	public boolean addDrugcatalogs(String path, String cusId,String cusName, Date upCollectdate, int upId) throws IOException;
+
+	/**
+	 * 
+	 * @param hql
+	 * @param cusIds
+	 *            客户集合(*list类型*)
+	 * @return 药品编码集合
+	 * @throws ParseException
+	 */
+	public List getDrugCodes(String hql, List cusIds) throws ParseException;
+
+}

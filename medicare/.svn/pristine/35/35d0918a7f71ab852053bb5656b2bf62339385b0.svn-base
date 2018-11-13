@@ -1,0 +1,158 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Clinicrecords;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IClinicrecordsManager;
+
+/**
+ * 诊断记录
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class ClinicrecordsManager implements IClinicrecordsManager {
+
+	@Autowired
+	private IBaseDao baseDao;
+
+	/**
+	 * 添加诊断记录
+	 */
+	@Override
+	public void addClinicrecords(String path, String cusId, String cusName, Date upCollectdate, int upId,String fileName) throws IOException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Clinicrecords clinicrecords;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 18) {
+						throw new DataException("正确字段数:18,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						clinicrecords = new Clinicrecords();
+						clinicrecords.setCusId(cusId);// 获取上级编码
+						clinicrecords.setCusDareway(""); // 医院编码
+						clinicrecords.setCusPid("");// 客户上级id
+						clinicrecords.setDiagAddtime(new Date());// 创建日期
+						clinicrecords.setDiagPicktime(upCollectdate);// 采集日期从传来的文件采集时间获取
+						clinicrecords.setDiagNo(name[0].trim());// 门诊编号 1
+						DateFormat df;
+						if (name[1].trim().equals("NULL") || name[1].trim().equals("")) {
+							clinicrecords.setDiagDatetime(null);
+							clinicrecords.setDiagDoctortime(null);
+						} else {
+							if (name[1].trim().length() == 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							clinicrecords.setDiagDatetime(df.parse(name[1].trim()));// 挂号日期 2
+							clinicrecords.setDiagDoctortime(df.parse(name[1].trim()));// 诊断日期 7
+						}
+						clinicrecords.setDiagDeptcode(name[2].trim());// 科室代码 3
+						clinicrecords.setDiagDeptname(name[3].trim());// 科室名称 4
+						clinicrecords.setDiagDoctor(name[4].trim());// 医师代码 5
+						clinicrecords.setDiagDoctorname(name[5].trim());// 医师名称 6
+						clinicrecords.setSiPtsidcard(name[7].trim());// 个人编号 8
+						clinicrecords.setSiPtshealthcard(name[8].trim());// 医保卡号9
+						clinicrecords.setSiPtsname(name[9].trim());// 姓名 10
+						if (name[10].trim().equals("NULL") || name[10].trim().equals("")) {// 性别11
+							clinicrecords.setSiPtssex(0);
+						} else if (name[10].trim().contains("男")) {
+							clinicrecords.setSiPtssex(1);
+						} else if (name[10].trim().contains("女")) {
+							clinicrecords.setSiPtssex(2);
+						} else {
+							clinicrecords.setSiPtssex(Integer.parseInt(name[10].trim()));
+						}
+						clinicrecords.setSiPtsage(name[11].trim());// 年龄 12
+						clinicrecords.setDiagIcdcode(name[12].trim());// 诊断代码 13
+						clinicrecords.setDiagIcdname(name[13].trim());// 诊断名称14
+						clinicrecords.setRegType(name[14].trim());// 挂号类型 15
+						clinicrecords.setDiagType(name[15].trim());// 就诊方式 16
+						clinicrecords.setSecType(name[16].trim());// 险种类别 17
+						clinicrecords.setDiagPaytype(name[17].trim());// 医疗类别 18
+						baseDao.save(clinicrecords);
+						count++;
+					} catch (Exception e) {
+						error++;
+						if(error <= 5){//只记录文件的5行错误
+							String log = e.toString();
+							if (log.length() > 300){
+								log = log.substring(0, 300);
+							}
+							errorlog = new Errorlog();
+							errorlog.setCusId(cusId);
+							errorlog.setCusName(cusName);
+							errorlog.setErrAddtime(new Date());
+							errorlog.setErrFileflag("诊断记录");
+							errorlog.setErrFilepath(fileName);
+							errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+							errorlog.setErrType("数据解析错误");
+							baseDao.save(errorlog);
+						}
+					}
+				}
+				baseDao.updateOrDelete(qsql, count,"成功"+count+"条，失败"+error+"条",upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"非文件", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("诊断记录");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 18) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"数据上传字段不全错误,正确字段数:18,实际解析字段数:" + name.length, upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"数据解析错误", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+	}
+}

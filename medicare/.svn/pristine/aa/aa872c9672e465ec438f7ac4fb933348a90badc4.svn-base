@@ -1,0 +1,43 @@
+//加载列表
+function datagrid(id, title, idField, url, sortName){
+	$("#"+id).datagrid( {
+		title : title,
+		iconCls : 'icon-ok',
+		idField : idField,//主键
+		pageSize : 30,//默认选择的分页行数（必须是pageList里面有的）
+		pageList : [20, 30, 50, 100],//可以选择的分页集合
+		nowrap : false,//列内容多时，是否自动折至第二行
+		striped : true,//是否交替显示行背景
+		collapsible : false,//是否显示可折叠按钮
+		url : url,//服务器地址
+		loadMsg : '数据加载中......',
+		singleSelect : true,//是否只能选择单行（导致无法批量删除）
+		fit : true, //datagrid是否自适应宽度
+		fitColumns : true,//是否允许表格自动缩放，以适应父容器，防止水平滚动
+		sortName : sortName,//当数据表格初始化时以哪一列来排序
+		sortOrder : 'desc',//定义排序顺序，asc正序或者desc倒序
+		remoteSort : true,//是否从服务器对数据进行排序。
+		checkbox : false,
+		pagination : true,//是否显示分页
+		rownumbers : true, //是否显示行号
+		queryParams : {}, //查询条件
+		toolbar : []
+	});
+}
+
+//加载列表（简单参数）
+function datagrid2(id, url) {
+	$("#"+id).datagrid({
+        pageSize: 30,
+        pageList: [20, 30, 50, 100],
+        url: url
+    });
+}
+
+//加载列表（简单参数）
+function datagrid3(id) {
+	$("#"+id).datagrid({
+        pageSize: 30,
+        pageList: [20, 30, 50, 100],
+    });
+}

@@ -1,0 +1,387 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Salesitem;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.service.ISalesitemManager;
+/**
+ * 药品销售明细 
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class SalesitemManager implements ISalesitemManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	@Autowired
+	private ICustomerManager customerManager;
+	
+	// 根据上传文件路径批量保存数据
+	@Override
+	public boolean addSalesitems(String path, String cusId, String cusName, Date upCollectdate, int upId, String cusFlag) throws IOException, FileNotFoundException, ParseException {
+		FileReader fr;
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		boolean b = false;// 定义解析是否正常
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Errorlog errorlog = new Errorlog();
+		Salesitem salesitem;
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				fr = new FileReader(file);
+				bufr = new BufferedReader(fr);
+				while ((line = bufr.readLine()) != null) {
+					String yybm = "", parentid = "";// 定义医院编码与父id
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 24) {
+						throw new DataException("异常信息:正确字段总数:24,实际解析字段数:" + name.length + ",数据不全解析停止", null);
+					}
+					/**
+					 * 判断定点是否连锁,数据解析至分店cusid下开始
+					 */
+					salesitem = new Salesitem();
+					// 判断定点类型是连锁药店并且上传有最后一位分店编码
+					if (cusFlag.equals("102") && name.length > 24) {// length:25
+						String branchcode = name[24].trim();
+						// 分店标识为零,则保存在总店id下
+						if (branchcode.equals("0")) {
+							salesitem.setCusId(cusId);
+							yybm = customerManager.getCustomer(cusId).getCusDareway();
+						} else {
+							// 查找分店id,父id是当前cusid,分店编码为name[]最后一位
+							String hql = "select c.cusId from Customer c where c.cusParentid =?0 and c.cusBranchcode=?1 ";
+							// 注意双重事物提交
+							List list = baseDao.find(hql, cusId, branchcode);
+							if (list.size() > 0) {
+								// 分店已注册查找到分店id
+								String newcusid = list.get(0).toString();
+								salesitem.setCusId(newcusid);
+								// 根据分店cusid查找对应的医院编码
+								yybm = customerManager.getCustomer(newcusid).getCusDareway();
+								parentid = cusId;
+							} else {// 如果当前分店编码未注册,执行下次循环
+								// warehouseitem.setCusId(cusId);
+								continue;
+							}
+						}
+					} else {
+						salesitem.setCusId(cusId);
+						yybm = customerManager.getCustomer(cusId).getCusDareway();
+					}
+					/**
+					 * 判断定点是否连锁,数据解析至分店cusid下结束
+					 */
+					//System.out.println("  :"+yybm+"医院编码"+name.length);
+					salesitem.setCusDareway(yybm);// 医院编码
+					salesitem.setCusParentid(parentid);// 客户上级id
+					salesitem.setSoNo(name[0].trim());// 销售单号 1
+					salesitem.setDrugCode(name[6].trim());// 药品编码(项目编码)7
+					String drugNum = name[8].trim();// 销售数量 9
+					if (drugNum.equals("NULL")) {
+						salesitem.setDrugNum(0.0);
+					} else {
+						salesitem.setDrugNum(Double.parseDouble(drugNum));
+					}
+					String drugSalesprice = name[9].trim();// 销售价 10
+					if (drugSalesprice.equals("NULL")) {
+						salesitem.setDrugSalesprice(0.0);
+					} else {
+						salesitem.setDrugSalesprice(Double.parseDouble(drugSalesprice));
+					}
+					salesitem.setDrugBatchno(name[11].trim());// 药品批号 12
+					salesitem.setDrugMfrs(name[12].trim());// 生产商 13
+					salesitem.setDrugMadein(name[13].trim());// 药品产地 14
+					String drugMfgdate = name[14].trim();// 生产日期 15
+					DateFormat df;
+					if (drugMfgdate.equals("NULL") || drugMfgdate.length() < 10) {
+						salesitem.setDrugMfgdate(null);
+					} else {
+						// 判断drugMfgdate时间类型长度有没有分时秒
+						if (drugMfgdate.length() == 10) {
+							df = new SimpleDateFormat("yyyy-MM-dd");
+						} else {
+							df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						}
+						salesitem.setDrugMfgdate(df.parse(drugMfgdate));
+					}
+					String drugExpdate = name[15].trim();// 有效期 16
+
+					if (drugExpdate.equals("NULL") || drugExpdate.length() < 10) {
+						salesitem.setDrugExpdate(null);
+					} else {
+						// 判断drugExpdate时间类型长度有没有分时秒
+						if (drugExpdate.length() == 10) {
+							df = new SimpleDateFormat("yyyy-MM-dd");
+						} else {
+							df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						}
+						salesitem.setDrugExpdate(df.parse(drugExpdate));
+					}
+					salesitem.setDrugEid(name[16].trim());// 电子监管码 17
+					salesitem.setSoSalespsnname(name[1].trim());// 姓名..2
+					salesitem.setSoPaytype(name[17].trim());// 结算方式.. 18
+					// 销售日期
+					String soDatetime = name[22].trim();// 销售日期.. 23
+					// 判断soDatetime时间类型长度有没有分时秒
+					if (soDatetime.length() == 10) {
+						df = new SimpleDateFormat("yyyy-MM-dd");
+					} else {
+						df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					}
+					if (soDatetime.equals("NULL")) {
+						salesitem.setSoDatetime(null);
+					} else {
+						salesitem.setSoDatetime(df.parse(soDatetime));
+					}
+					salesitem.setSiPtssex(name[2].trim());// 性别 3
+					salesitem.setSiPtsage(name[3].trim());// 年龄 4
+					salesitem.setSiPtsidcard(name[4].trim());// 身份证号 5
+					salesitem.setSiPtshealthcard(name[5].trim());// 医保卡号 6
+					salesitem.setDrugName(name[7].trim());// 项目名称(药品名称) 8
+					salesitem.setDrugSpecification(name[10].trim());// 规格 11
+					salesitem.setSiSettlementname(name[18].trim());// 结算方式名称19
+					salesitem.setSiStatus(name[19].trim());// 结算状态 20
+					salesitem.setSiOpcode(name[20].trim());// 操作员编码 21
+					salesitem.setSiOpname(name[21].trim());// 操作员名称 22
+					salesitem.setSiUnit(name[23].trim());// 单位24
+					salesitem.setDrugPicktime(upCollectdate);// 采集时间
+					salesitem.setSoCreatedatetime(new Date());// 创建日期
+					baseDao.save(salesitem);
+					count++;
+				}
+				//update Uploadfile开始
+				//修改当前upId文件上传记录表(Uploadfile)字段:upCount解析文件总条数
+				String upHql = "update Uploadfile u set u.upCount=?0 where u.upId=?1 ";
+				baseDao.updateOrDelete(upHql, count, upId);
+				// System.out.println("解析当前*销售明细*文件完毕,更新上传记录表统计条数完毕,共: " + count + " 条");
+				b = true;
+			} else {
+				// System.out.println("文件不存在:" + path);
+				return b;
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 400){
+				log = log.substring(0, 300);
+			}
+			// 上传文件解析不正确,可能为数据不全
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("销售信息表");
+			errorlog.setErrFilepath(path);
+			errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+			if (null !=name && name.length < 24) {
+				errorlog.setErrType("数据上传字段不全错误");
+			} else {
+				errorlog.setErrType("数据解析错误");
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+		return b;
+	}
+
+	// 根据cusid字符串获取各定点销售总额统计list
+	@Override
+	public List getEachPointTotal(List cusIds, int count, String startDate) throws ParseException {
+		List list = new ArrayList();
+		if (cusIds.size() > 0) {
+			for (int i = 0; i < cusIds.size(); i++) {
+				Object cusId = cusIds.get(i);
+				// 定义存放当前cusId 15天每天的totals 集合
+				List l = new ArrayList();
+				//循环some天倒计
+				for (int y = 0; y <= count; y++) {
+					SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+					Date date;
+					if (startDate != null) {// 有查询条件
+						date = sf.parse(startDate);
+					} else {
+						date = new Date();
+					}
+					GregorianCalendar gc = new GregorianCalendar();
+					gc.setTime(date);
+					gc.add(5, -y);
+					gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc.get(Calendar.DATE));
+					String dateString = sf.format(gc.getTime());
+					date = sf.parse(dateString);
+					String hqlDates = "select s.drugPicktime from Salesitem s where s.cusId=?0 and s.drugPicktime = ?1";
+					// 定义获取循环一天 有没有数据
+					List dates = baseDao.find(hqlDates, cusId, date);
+					if (dates.size() > 0) {
+						// 统计相加 当前id所有销售单内的 药品价格 乘以 药品数据
+						String hql = "select sum(s.drugSalesprice * s.drugNum) from Salesitem s where s.cusId= ?0 and s.drugPicktime = ?1";
+						// 定义临时集合存储当前cusId当前日期计算到的总额统计
+						List temp = baseDao.find(hql, cusId, date);
+						l.add(y, temp.get(0));
+					} else {
+						l.add(y, 0);
+					}
+				}
+				list.add(i, l);
+			}
+		} else {
+			// System.out.println("未获取到药品入库种类统计ids!");
+		}
+		return list;
+	}
+
+	// 根据cusId[日期查询]获取对应的药品编码集合
+	@Override
+	public List getDrugCodes(String cusId, String firstDate, String secondDate) throws ParseException {
+		List list = new ArrayList();
+		//两个日期之间
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		Date bigDate, smaDate;
+		// 查询条件 不为空时
+		if (firstDate != null && secondDate != null) {
+			smaDate = sf.parse(firstDate);
+			bigDate = sf.parse(secondDate);
+		} else {
+			// 没有条件默认最近15天
+			bigDate = new Date();// 当前日期
+			GregorianCalendar gc = new GregorianCalendar();
+			gc.setTime(bigDate);
+			gc.add(5, -15);// 减去15天
+			gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc.get(Calendar.DATE));
+			String todayStr = sf.format(bigDate);
+			String dateStr = sf.format(gc.getTime());
+			bigDate = sf.parse(todayStr);
+			smaDate = sf.parse(dateStr);// 今天减去后的日期
+		}
+		// 查询15天内有没有数据
+		// String hqlDates =
+		// "select s.drugCode from Salesitem s where s.cusId=?0 and s.drugPicktime between ?1 and ?2";
+		// List dates = salesitemDao.find(hqlDates, cusId, smaDate, bigDate);
+		// 统计相加 当前id所有销售单内的 药品价格 乘以 药品数据
+		String hql = "select s.drugCode from Salesitem s where s.cusId= ?0 and s.drugPicktime between ?1 and ?2  group by s.drugCode";
+		// 定义临时集合存储当前cusId当前日期计算到的总额统计
+		list = baseDao.find(hql, cusId, smaDate, bigDate);
+		if (list.size() > 10){// 只取10种药品
+			list = list.subList(0, 10);
+		}
+		return list;
+	}
+
+	// 根据cusId,编码集合 计算时间条件查询各药品销售金额
+	@Override
+	public List getEachDrugTotal(String cusId, List drugCodes, int count, String startDate) throws ParseException {
+		List list = new ArrayList();
+		for (int i = 0; i < drugCodes.size(); i++) {
+			Object drugCode = drugCodes.get(i);
+			// 定义存放当前日期的totals 集合
+			List l = new ArrayList();
+			for (int y = 0; y <= count; y++) {
+				SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+				Date date;
+				if (startDate != null) {// 有查询条件
+					date = sf.parse(startDate);
+				} else {
+					date = new Date();
+				}
+				GregorianCalendar gc = new GregorianCalendar();
+				gc.setTime(date);
+				gc.add(5, -y);
+				gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc.get(Calendar.DATE));
+				String dateString = sf.format(gc.getTime());
+				date = sf.parse(dateString);
+				String hql = "select sum(s.drugSalesprice * s.drugNum) from Salesitem s where s.cusId=?0 and s.drugCode=?1 and s.drugPicktime=?2 ";
+				List tem = baseDao.find(hql, cusId, drugCode, date);
+				if (tem.get(0) != null) {
+					l.add(y, tem.get(0));
+				} else if (tem.get(0) == null) {
+					l.add(y, 0);
+				}
+			}
+			list.add(i, l);
+		}
+		return list;
+	}
+
+	// 根据cusId,编码集合 计算时间条件查询各药品销售量
+	@Override
+	public List getEachDrugNumTotal(String cusId, List drugCodes, int count, String startDate) throws ParseException {
+		List list = new ArrayList();
+		for (int i = 0; i < drugCodes.size(); i++) {
+			Object drugCode = drugCodes.get(i);
+			// 定义存放当前日期的totals 集合
+			List l = new ArrayList();
+			for (int y = 0; y <= count; y++) {
+				SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+				Date date;
+				if (startDate != null) {// 有查询条件
+					date = sf.parse(startDate);
+				} else {
+					date = new Date();
+				}
+				GregorianCalendar gc = new GregorianCalendar();
+				gc.setTime(date);
+				gc.add(5, -y);
+				gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc.get(Calendar.DATE));
+				String dateString = sf.format(gc.getTime());
+				date = sf.parse(dateString);
+				String hql = "select sum(s.drugNum) from Salesitem s where s.cusId=?0 and s.drugCode=?1 and s.drugPicktime=?2 ";
+				List tem = baseDao.find(hql, cusId, drugCode, date);
+				if (tem.get(0) != null) {
+					l.add(y, tem.get(0));
+				} else if (tem.get(0) == null) {
+					l.add(y, 0);
+				}
+			}
+			list.add(i, l);
+		}
+		return list;
+	}
+
+	// 获取当前cusid 项目名称集合
+	@Override
+	public List getAllDrugNames(String cusId, List drugCodes) {
+		int count = 0;
+		List list = new ArrayList();
+		if (drugCodes.size() > 0) {
+			for (int i = 0; i < drugCodes.size(); i++) {
+				Object drugCode = drugCodes.get(i);
+				String hql = "select s.drugName from Salesitem s where s.cusId=?0 and s.drugCode=?1 ";
+				List temp = baseDao.find(hql, cusId, drugCode);
+				if (temp.size() > 0) {
+					// 如果查找到编码对应的药品名称才会添加到list中
+					list.add(count, temp.get(0));
+					count++;
+				}
+			}
+		}
+		return list;
+	}
+
+}

@@ -1,0 +1,128 @@
+package yibao.yiwei.utils.timer;
+
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.springframework.stereotype.Component;
+
+import yibao.yiwei.entity.Tzddlog;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.service.ITzddlogManager;
+import yibao.yiwei.utils.SpringContextUtils;
+import yibao.yiwei.utils.Utils;
+import yibao.yiwei.webservice.DarewayWebServiceClient;
+
+@SuppressWarnings("all")
+@Component
+@DisallowConcurrentExecution
+public class TzddTimerTask implements Job {
+	
+	public IBaseService baseService = (IBaseService) SpringContextUtils.getBean("baseService");
+	
+	private static final Log log = LogFactory.getLog(TzddTimerTask.class);
+
+	@Override
+	public void execute(JobExecutionContext arg0) throws JobExecutionException {
+		String hql = "from Tzddlog order by tzDate desc NULLS LAST";
+		List tzddList = baseService.find(hql);
+		Tzddlog tzddlog;
+		for (int i = 0; i < tzddList.size(); i++) {
+			tzddlog = (Tzddlog) tzddList.get(i);
+			String manual = tzddlog.getTzManual() == null ? "1" : tzddlog.getTzManual();//0是手动关闭定点资格，1否
+			if(manual.equals("0")){
+				continue;
+			}
+			String scan = tzddlog.getTzScan() == null ? "0" : tzddlog.getTzScan();//0扫描，1 不扫描
+			String ybcx = tzddlog.getTzYbcx() == null ? "1" : tzddlog.getTzYbcx();//0医保标记是，1医保标记否
+			if (scan.equals("1") || ybcx.equals("0")) {//不扫描或者使用医保的跳过
+				continue;
+			}
+			String yybm = tzddlog.getTzYybm();
+			String cusId = tzddlog.getTzCusid();
+			String name = tzddlog.getTzCusname() == null ? "" : tzddlog.getTzCusname();
+			String status = tzddlog.getTzStatus() == null ? "" : tzddlog.getTzStatus();// 操作响应：0成功,1 失败,2注销(不扫描),9初始化
+			String operate = tzddlog.getTzOperate() == null ? "" : tzddlog.getTzOperate();// 定点资格：0停止,1启动,9初始化
+			Date date = null;// 起始日期(不可为空)
+			String result = "";
+			hql = "from Customer c where c.cusDareway=?0 and (c.cusStatus=1 or c.cusStatus=2)";//根据yybm查询是否有注册定点
+			List resultList = baseService.find(hql, yybm);
+			if (resultList.size() > 0) {//yybm有注册定点
+				//查询当前定点昨天上传的数据
+				hql = "select count(*) from Uploadfile u where u.cusId=?0 and u.upDate >= ?1"                                                                                                  ;
+				int num = baseService.findCount(hql, cusId, Utils.getDate(-1));
+				if (num > 0) {//昨日有上传数据，开启定点资格 
+					result = DarewayWebServiceClient.getDWResult(yybm, 1);
+					log.info(name+"--------昨天有上传，地维信息："+result);
+					System.out.println(name+"--------昨天有上传，地维信息："+result);
+					result = result == null ? "调用地维接口异常!" : result;
+					if (result.contains("errflag=\"0\"")) {
+						status = "0";//操作成功
+						date = new Date();//tzStartdate更新日期
+					} else {
+						status = "1";
+					}
+					updateTzddLog(tzddlog,"1", status, date, "启用:" + result);
+				} else {//昨日无上传数据，停止定点资格
+					result = DarewayWebServiceClient.getDWResult(yybm, 0);
+					log.info(name + " --昨天无无上传，地维信息："+result);
+					System.out.println(name + " --昨天无无上传，地维信息："+result);
+					result = result == null ? "调用地维接口异常!" : result;
+					if (result.contains("errflag=\"0\"")) {
+						status = "0";
+						date = new Date();
+					} else {
+						status = "1";
+					}
+					updateTzddLog(tzddlog,"0", status, date, "停止:" + result);
+				}
+			} else {//yybm没有注册定点
+				result = DarewayWebServiceClient.getDWResult(yybm, 0);
+				log.info(name + " --未注册定点，地维信息："+result);
+				System.out.println(name + " --未注册定点，地维信息："+result);
+				result = result == null ? "调用地维接口异常!" : result;
+				if (result.contains("errflag=\"0\"")) {
+					status = "0";
+					date = new Date();
+				} else {
+					status = "1";
+				}
+				updateTzddLog(tzddlog,"0", status, date, "未注册停止:" + result);
+			}
+		}
+	}
+	
+	/**
+	 * 修改定点记录
+	 * @param tzddlog
+	 * @param operate
+	 * @param status
+	 * @param date
+	 * @param note
+	 */
+	private void updateTzddLog(Tzddlog tzddlog, String operate, String status, Date date, String note) {
+		tzddlog.setTzOperate(operate);
+		if (null != status) {
+			tzddlog.setTzStatus(status);
+		}
+		if (null != date){
+			tzddlog.setTzStartdate(date);
+		}
+		tzddlog.setTzDate(new Date());
+		tzddlog.setTzNote(note);
+		try{
+			baseService.update(tzddlog);
+			log.info("success");
+			System.out.println("success");
+		}catch(Exception e){
+			log.error(e.toString());
+			System.out.println(e.toString());
+		}
+	}
+}

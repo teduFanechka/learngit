@@ -1,0 +1,37 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>未修改</title>
+
+	</head>
+
+	<body>
+		<h2>
+			编辑用户
+		</h2>
+		<form action="<%=request.getContextPath()%>/updateCustomer1"
+			method="post">
+			<input type="hidden" name="id" value="${c.cusId }" />
+			网点名称:
+			<input type="text" name="clientName" value="${client.clientName }" />
+			MAC地址:
+			<input type="text" name="MAC" value="${client.MAC }" />
+			ip地址:
+			<input type="text" name="ip" value="${client.ip }" />
+			状态:
+			<input type="text" name="state" value="${client.state }" />
+			</br>
+			药店地址:
+			<input type="text" name="pharmacyAddress" value="${client.pharmacyAddress }" />
+			联系人:
+			<input type="text" name="contactPerson" value="${client.contactPerson }" />
+			联系电话
+			<input type="text" name="contactNumber" value="${client.contactNumber }" />
+			备注
+			<input type="text" name="note" value="${client.note }" />
+			<input type="submit" value="提交" />
+		</form>
+	</body>
+</html>

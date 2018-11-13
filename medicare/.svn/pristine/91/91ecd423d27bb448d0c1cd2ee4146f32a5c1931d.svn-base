@@ -1,0 +1,203 @@
+$(function() {
+    $('#customer').datagrid({
+        pageSize: 20,
+        pageList: [5, 10, 20, 50, 100],
+        url: 'getConditionCustomer',
+    });
+    // 下拉菜单跳转
+    
+    $('#typese1').combobox({
+    	onSelect: function(param){
+    		$('#customer').datagrid('options').queryParams = {}; // 清空datagrid查询参数
+    		  var flag = param.value;
+    		  var aurl;
+    		  if (flag == '--全部--') {
+    		      aurl = 'getConditionCustomer'
+    		  } else {
+    		      aurl = 'getConditionCustomer?cusFlag=' + flag
+    		  }
+    		  $('#customer').datagrid({
+    		      url: aurl
+    		  });
+    	}
+    });
+    
+//    $('#typese1').change(function() {
+//        $('#customer').datagrid('options').queryParams = {}; // 清空datagrid查询参数
+//        var flag = $(this).val();
+//        var aurl;
+//        if (flag == '') {
+//            aurl = 'getConditionCustomer'
+//        } else {
+//            aurl = 'getConditionCustomer?cusFlag=' + flag
+//        }
+//        $('#customer').datagrid({
+//            url: aurl
+//        });
+//    });
+});
+
+// 数据检索
+function findUser() {
+    // 先取得 datagrid 的查询参数
+    var params = $('#customer').datagrid('options').queryParams;
+    var fields = $('#searchForm').serializeArray(); // 自动序列化表单元素为JSON对象
+    $.each(fields, function(i, field) {
+        params[field.name] = field.value; // 设置查询参数
+    });
+    $('#customer').datagrid('reload'); // 设置好查询参数 reload
+}
+
+
+//处理内容超长字段 add by fd 0516 现在加载方式不能通用有问题，待处理
+function fmtOverlen(value, row, index) {
+ return '<span title="'+value+'">'+value+'</span>';
+}
+
+// 根据值显示图片
+function fmtStatus(value, row, index) {
+    if (row.cusStatus == 1) { // 这里是判断哪些行
+        return '<a href="#"></a><img src="images/accept.png" title="正常"  alt="正常" />';
+    } else if (row.cusStatus == 2) {
+        return '<a href="#"></a><img src="images/accept.png" title="正常"  alt="正常" />';
+    } else if (row.cusStatus == -1) {
+        return '<a href="#"></a><img src="images/delete.png" title="已注销" alt="已注销" />';
+    } else {
+        return '<a href="#"></a><img src="images/warning.png" title="未处理" alt="未处理" />';
+    }
+}
+
+// 显示定点类型
+function fmtFlag(val , row, index){
+	if(row.cusFlag==101){
+		return '单体药店';
+	}else if(row.cusFlag==102){
+		return '连锁药店';
+	}else if(row.cusFlag==201){
+		return '门诊';
+	}else if(row.cusFlag==301){
+		return '医院';
+	}
+}
+
+// 注销信息
+function cancel() {
+    var array = $('#customer').datagrid('getSelections'); // 获取删除选中项数组
+    var ids = ""; // 要删除的id字符串
+    for (var i = 0; i < array.length; i++) { // 组成一个字符串，ID主键之间用逗号隔开
+        if (i != array.length - 1) {
+            ids += array[i].cusId + ",";
+        } else {
+            ids += array[i].cusId;
+        }
+    }
+    if (array != "") {
+        $.messager.confirm('提示', '是否要注销选中信息?',
+        function(r) {
+            if (r) {
+                $.post("delCustomer", {
+                    ids: ids
+                    // 传向后台的参数,用,分隔
+                },
+                function() { // 前台没有返回json,里面就没有data
+                    $("#customer").datagrid('reload');
+                    $.messager.show({
+                        title: '系统提示',
+                        msg: "注销成功"
+                    });
+                });
+            }
+        });
+    }
+}
+// 通过信息
+function Pass() {
+    var array = $('#customer').datagrid('getSelections'); // 获取删除选中项数组
+    var ids = ""; // 要删除的id字符串
+    for (var i = 0; i < array.length; i++) { // 组成一个字符串，ID主键之间用逗号隔开
+        if (i != array.length - 1) {
+            ids += array[i].cusId + ",";
+        } else {
+            ids += array[i].cusId;
+        }
+    }
+    if (array != "") {
+        $.messager.confirm('提示', '是否要通过选中信息?',
+        function(r) {
+            if (r) {
+                $.post("updateStatusBatch", {
+                    ids: ids
+                    // 传向后台的参数,用,分隔
+                },
+                function() { // 前台没有返回json,里面就没有data
+                    $("#customer").datagrid('reload');
+                    $.messager.show({
+                        title: '系统提示',
+                        msg: "通过成功"
+                    });
+                });
+            }
+        });
+    }
+
+}
+// 点击清空按钮出发事件
+function clearForm() {
+    $('#searchForm').form('clear');
+}
+
+// 点击生成定点简码事件
+function getPcode(){
+	$.get("getPcode",function(data){
+		 $("#customer").datagrid('reload');
+         $.messager.show({
+             title: '系统提示',
+             msg: data.status
+         });
+	});
+	
+}
+// 打开修改医院编码
+function openupdateYybm() {
+	var array = $('#customer').datagrid('getSelections');// 获取删除选中项数组
+	if(array.length==0){
+		$.messager.alert("提示","请选择一个定点!");
+	}else if(array.length==1){
+		$('#nfdbm').dialog('open').dialog('center').dialog('setTitle', '编辑医院编码');
+		$('#form').form('clear'); // 清除表单数据
+	}else{
+		$.messager.alert("提示",'只能选择一个定点!');
+		$('#customer').datagrid('clearSelections');
+	}		
+}
+// 修改医院编码
+function updateYybm() {
+	var yybm = $("#yybm").val();
+	if(checkyybm(yybm)){
+			var array = $('#customer').datagrid('getSelected');// 获取选中行
+			var cusId=array.cusId;
+			$.post("updateYybm",{cusId:cusId,yybm:yybm}, function(data) { 
+				var status=data.status;
+				 $.messager.show({
+		                title: '系统提示',
+		                msg: status
+		            });	
+				 $("#customer").datagrid('reload');
+				 $('#nfdbm').dialog('close');
+			});	
+		}
+}
+// 校验验证医院编码
+function checkyybm(yybm) {
+	if ($.trim(yybm) != ''){
+		// 判断是否为整数 var ex = /^\d+$/; if (!ex.test(yybm))
+		if (yybm < 0 || yybm != parseInt(yybm) || yybm.length != 6) {
+			$.messager.show( {
+				title : '系统提示',
+				msg : "医院编码只能是六位正整数!"
+			});
+			return false;
+		}
+	}
+	return true;
+}

@@ -1,0 +1,93 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>系统参数</title>
+		<c:set value="${pageContext.request.contextPath}" var="path"
+			scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/sysparam/sysparam.js"></script>
+	</head>
+	<style>
+		.w_200{width:200px}
+		#paramform .input_box{text-align:center;margin-bottom:15px}
+	</style>
+	<body>
+		<div class="easyui-layout" data-options="fit:'true',">
+			<div class="xqgl">
+				<div class="easyui-panel" title="系统参数"
+					data-options="border:true,fit:true" iconCls="icon-zc">
+					<table id="sysparam"
+						data-options="checkOnSelect:true,fit:true,singleSelect:true,rownumbers:true,pagination:true"
+						width="95%" cellpadding="2" cellspacing="1" toolbar="#mytoolbar">
+						<thead>
+							<th data-options="field:'sb',checkbox:true"></th>
+							<th
+								data-options="field:'paramType',halign:'center',align:'center',width:100">
+								业务类型
+							</th>
+							<th
+								data-options="field:'paramKey',halign:'center',align:'center',width:100">
+								参数名
+							</th>
+							<th data-options="field:'paramValue',halign:'center',align:'center',width:800">
+								参数值
+							</th>
+							</tr>
+						</thead>
+					</table>
+				</div>
+				<div id="mytoolbar"
+					style="width: 100%; height: 25px; padding: 2px 0;" class="">
+					<a href="javascript:void(0)" onclick="addSysParam(this);"
+						class="easyui-linkbutton"
+						data-options="iconCls:'icon-addd',plain:true" style="float: left;">新增</a>
+					<a href="javascript:void(0)" onclick="editSysParam(this);"
+						class="easyui-linkbutton"
+						data-options="iconCls:'icon-edit',plain:true" style="float: left;">编辑</a>
+					<a href="javascript:void(0)" class="easyui-linkbutton"
+						iconcls="icon-remove" plain="true" onclick="delSysParam()">删除</a>
+				</div>
+			</div>
+		</div>
+		</div>
+		</div>
+		</div>
+		<div id="parambtn" class="easyui-dialog" title="新增参数"
+			style="width: 430px; height: 300px;"
+			data-options="iconCls:'icon-addd',buttons:'#nfd1_btns',closed:true,modal:true,">
+
+			<form id="paramform" action="" method="">
+			
+				<div class="input_box">   
+			        <h1 style="margin:25px 0 20px 0">参数信息</h1>
+			    </div>  
+				<div class="input_box">   
+			        <label>业务类型：</label>   
+			        <input id="paramType" name="paramType" class="easyui-textbox w_200"> 
+			    </div>  
+			    <div class="input_box">   
+			        <label>参数名：</label>   
+			        <input id="paramKey" name="paramKey" class="easyui-textbox w_200"> 
+			    </div>  
+			    <div class="input_box">   
+			        <label>参数值：</label>   
+			        <input id="paramValue" name="paramValue" class="easyui-textbox w_200"> 
+			    </div> 
+			    <input id="paramId" name="paramId" type="hidden" value="" />
+			</form>
+		</div>
+		<div id="nfd1_btns">
+			<a href="#" onclick="javascript: saveSysParam();"
+				class="easyui-linkbutton" data-options="iconCls:'icon-ok'">保存</a>
+			<a href="#" onclick="javascript: $('#parambtn').dialog('close');"
+				class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a>
+		</div>
+	</body>
+</html>

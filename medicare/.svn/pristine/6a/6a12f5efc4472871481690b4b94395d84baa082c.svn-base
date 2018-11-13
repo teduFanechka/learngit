@@ -1,0 +1,39 @@
+$(function() {
+    $('#dsc').datagrid({
+        pageSize: 20,
+        pageList: [5, 10, 20, 50, 100],
+       // url: 'getDSC',
+    });
+});
+
+// 本位码查询
+function searchDSC() {
+	// 获取本位码
+    var str=$("#searchname").val();
+    if(str!=''){
+		 str=str.trim();
+		 var c = encodeURI(encodeURI(str));
+		 $('#dsc').datagrid({
+	        url: 'getDSC?name='+c,
+		 });
+	 }
+}
+
+// 显示定点类型
+function fmtFlag(value,row,index){
+	if(value==101){
+		return '单体药店';
+	}else if(value==102){
+		return '连锁药店';
+	}else if(value==201){
+		return '门诊';
+	}else if(value==301){
+		return '医院';
+	}
+}
+
+
+// 点击清空按钮出发事件
+function clearForm() {
+    $('#searchForm').form('clear');
+}

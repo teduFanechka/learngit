@@ -1,0 +1,182 @@
+$(function() {
+	var cusFlag=$("#cusFlag").attr("cusFlag");
+	//var areacode=$("#customer").attr("areacode");
+	var datagrid;
+	var editRow = undefined; // 定义全局变量,当前编辑的行
+	datagrid = $('#customer').datagrid( {
+		title : '客户记录表',
+		iconCls : 'icon-ok',
+		idField : 'cusId',// 主键
+		pageSize : 20,// 默认选择的分页是每页5行数据
+		pageList : [ 5, 10, 20, 50 ],// 可以选择的分页集合
+		nowrap : false,// true,列内容多时自动折至第二行
+		striped : true,// 设置为true将交替显示行背景。
+		collapsible : false,// 显示可折叠按钮
+		url : 'getConditionCustomer?cusFlag='+cusFlag,
+		//url : 'getConditionCustomer?cusFlag='+cusFlag+'&areacode='+areacode,
+		loadMsg : '数据装载中......',
+		singleSelect : false,// 为true时只能选择单行,无法批量删除
+		fit : true, // datagrid自适应宽度
+		fitColumns : true,// 允许表格自动缩放，以适应父容器，防止水平滚动
+		//sortName : 'cusRegdate',// 当数据表格初始化时以哪一列来排序
+		//sortOrder : 'desc',// 定义排序顺序，可以是'asc'或者'desc'（正序或者倒序）。
+		remoteSort : true,// 定义从服务器对数据进行排序。
+		checkbox : true,
+		pagination : true,// 分页
+		rownumbers : false, // 行数
+		queryParams : {}, // 查询条件
+		toolbar : [ {
+			text : '添加',
+			iconCls : 'icon-add',
+			handler : function() {// 添加列表的操作按钮添加，修改，删除等
+				// 添加时先判断是否有开启编辑的行，如果有则把开户编辑的那行结束编辑
+			if (editRow != undefined) {
+				datagrid.datagrid("endEdit", editRow);
+			}
+			// 添加时如果没有正在编辑的行，则在datagrid的第一行插入一行
+			if (editRow == undefined) {
+				datagrid.datagrid("insertRow", {
+					index : 0, // index start with 0
+					row : {
+
+					}
+				});
+				// 将新插入的那一行开启编辑状态
+				datagrid.datagrid("beginEdit", 0);
+				// 给当前编辑的行赋值
+				editRow = 0;
+			}
+
+		}
+		}, '-', {
+			text : '修改',
+			iconCls : 'icon-edit',
+			handler : function() {
+				// 修改时要获取选择到的行
+			var rows = datagrid.datagrid("getSelections");
+			// 如果只选择了一行则可以进行修改，否则不操作
+			if (rows.length == 1) {
+				// 修改之前先关闭已经开启的编辑行，当调用endEdit该方法时会触发onAfterEdit事件
+			if (editRow != undefined) {
+				datagrid.datagrid("endEdit", editRow);
+			}
+			// 当无编辑行时
+			if (editRow == undefined) {
+				// 获取到当前选择行的下标
+				var index = datagrid.datagrid("getRowIndex", rows[0]);
+				// 开启编辑
+				datagrid.datagrid("beginEdit", index);
+				// 把当前开启编辑的行赋值给全局变量editRow
+				editRow = index;
+				// 当开启了当前选择行的编辑状态之后，
+				// 应该取消当前列表的所有选择行，要不然双击之后无法再选择其他行进行编辑
+				datagrid.datagrid("unselectAll");
+			}
+		}
+	}
+		}, '-', {
+			text : '保存',
+			iconCls : 'icon-save',
+			handler : function() {
+				// 保存时结束当前编辑的行，自动触发onAfterEdit事件如果要与后台交互可将数据通过Ajax提交后台
+			// alert(editRow);//显示当前第几行数据
+			datagrid.datagrid("endEdit", editRow);
+
+			// 使用JSON序列化datarow对象，发送到后台。
+			var rows = datagrid.datagrid('getChanges');
+			var json = JSON.stringify(rows);
+			// alert("json:" + json);
+			$.post("addOrUpdateCustomer", {
+				json : json
+			}, function(data) {
+				if (data.status == "add") {
+					$.messager.alert('提示', "保存成功!", 'info');
+					datagrid.datagrid('reload');
+				} else if (data.status == "update") {
+					$.messager.alert('提示', "修改成功!", 'info');
+					datagrid.datagrid('reload');
+				}
+			}, "json");
+		}
+		}, '-', {
+			text : '取消(编辑/选择)',
+			iconCls : 'icon-redo',
+			handler : function() {
+				// 取消当前编辑行把当前编辑行罢undefined回滚改变的数据,取消选择的行
+			editRow = undefined;
+			datagrid.datagrid("rejectChanges");
+			datagrid.datagrid("unselectAll");
+		}
+		}, '-', {
+			text : '批量删除',
+			iconCls : 'icon-remove',
+			handler : function() {
+				var array = $('#customer').datagrid('getSelections');// 获取删除选中项数组
+			var ids = "";// 要删除的id字符串
+			for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+				if (i != array.length - 1) {
+					ids += array[i].cusId + ",";
+				} else {
+					ids += array[i].cusId;
+				}
+			}
+			if (array != "") {
+				$.messager.confirm('提示', '是否要删除选中信息?', function(r) {
+					if (r) {
+						$.post("delCustomer", {
+							ids : ids
+						// 传向后台的参数,用,分隔
+								}, function() { // 前台没有返回json,里面就没有data
+									$('#customer').datagrid( {
+										url : 'getConditionCustomer?cusFlag='+cusFlag
+										//url.../?cusFlag='+cusFlag+'&areacode='+areacode
+									});
+									$.messager.alert('操作提示', "删除成功!", 'info');
+								});
+					}
+				});
+			} else {
+				$.messager.alert("提示", "请先选择要删除的信息！", "error");
+			}
+
+		}
+		}, '-' ],
+		onAfterEdit : function(rowIndex, rowData, changes) {
+					// endEdit该方法触发此事件
+				// console.info(rowData); //ie 不兼容
+				editRow = undefined;
+			},
+		onDblClickRow : function(rowIndex, rowData) {
+				// 双击开启编辑行
+				if (editRow != undefined) {
+					datagrid.datagrid("endEdit", editRow);
+				}
+				if (editRow == undefined) {
+					datagrid.datagrid("beginEdit", rowIndex);
+					editRow = rowIndex;
+				}
+			}
+
+	});
+
+});
+
+//表格查询  
+function queryForm(){
+  var params = $('#customer').datagrid('options').queryParams; //先取得 datagrid 的查询参数  
+  var fields =$('#searchForm').serializeArray(); //自动序列化表单元素为JSON对象  
+  $.each( fields, function(i, field){  
+      params[field.name] = field.value; //设置查询参数  
+  });   
+  $('#customer').datagrid('reload'); //设置好查询参数 reload 
+} 
+
+//点击清空按钮出发事件
+function clearForm() {
+	//$("#searchForm").find("input").val("");// 找到form表单下的所有input标签并清空
+	 $('#searchForm').form('clear');  
+	 //queryForm(); 
+}
+
+
+

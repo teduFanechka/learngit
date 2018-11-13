@@ -1,0 +1,195 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Drugcatalog;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IDrugcatalogManager;
+
+/**
+ * 项目编码
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class DrugcatalogManager implements IDrugcatalogManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 添加项目编码
+	 */
+	@Override
+	public void addDrugcatalogs(String path, String cusId, String cusName, Date upCollectdate, int upId,String fileName) throws IOException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;
+		String[] name = null;// 定义当前行String数组
+		Drugcatalog drugcatalog;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					if (name.length < 26) {// 上传文件解析不正确,可能为数据不全
+						throw new DataException("正确字段数:26,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						drugcatalog = new Drugcatalog();//项目编码，连锁药店都解析在总店，查询时也是查总店
+						drugcatalog.setCusId(cusId);
+						drugcatalog.setCusParentid("0");
+						drugcatalog.setDcCode(name[0].trim());
+						drugcatalog.setDcCategory(name[1].trim());
+						drugcatalog.setDcCommercial(name[2].trim());// 商品名 3
+						drugcatalog.setDcGenericname(name[3].trim());
+						drugcatalog.setDcMnemoniccode(name[4].trim());
+						drugcatalog.setDcSpecification(name[5].trim());
+						drugcatalog.setDcUnit(name[6].trim());
+						drugcatalog.setDcDosageform(name[11].trim());
+						drugcatalog.setDcPermission(name[12].trim());
+						if(name[13].trim().equals("")){
+							drugcatalog.setDcMfrs(name[14].trim());
+						} else {
+							drugcatalog.setDcMfrs(name[13].trim());
+						}
+						if(name[14].trim().equals("")){
+							drugcatalog.setDcMakein(name[13].trim());
+						} else {
+							drugcatalog.setDcMakein(name[14].trim());
+						}
+						drugcatalog.setDcHcscode(name[15].trim());
+						drugcatalog.setDcPrice(name[7].trim());// 8 最小包装单价(零售) 小数
+						drugcatalog.setDcPackagingunit(name[8].trim());// 9 大包装单位 字符串
+						drugcatalog.setDcPackagingprice(name[9].trim());// 10 大包装单价 小数
+						drugcatalog.setDcPackagingnum(name[10].trim());// 11 大包装数量 小数
+						drugcatalog.setDcCatcode(name[16].trim());// 17 目录类别 整数
+						drugcatalog.setDcSettlementcode(name[17].trim());// 18 结算项目编码
+						drugcatalog.setDcIsrx(name[18].trim());// 19 处方药标识
+						drugcatalog.setDcIsspecial(name[19].trim());// 20 特药标识
+						drugcatalog.setDcIsephedradine(name[20].trim());// 21 含麻黄碱标识
+						drugcatalog.setDcIsspirit(name[21].trim());// 22 精神药品标识
+						drugcatalog.setDcIsimport(name[22].trim());// 23 进口药标识
+						drugcatalog.setDcTaboo(name[23].trim());// 24 禁忌描述
+						drugcatalog.setDcIndication(name[24].trim());// 25 适应症
+						drugcatalog.setDcStatus(name[25].trim());// 26 状态
+						drugcatalog.setCusDareway("");// 医院编码
+						drugcatalog.setDcPicktime(upCollectdate);// 采集日期
+						drugcatalog.setDcAddtime(new Date());// 创建日期
+						baseDao.save(drugcatalog);
+						count++;
+					} catch (Exception e) {
+						error++;
+						if(error <= 5){//只记录文件的5行错误
+							String log = e.toString();
+							if (log.length() > 300){
+								log = log.substring(0, 300);
+							}
+							errorlog = new Errorlog();
+							errorlog.setCusId(cusId);
+							errorlog.setCusName(cusName);
+							errorlog.setErrAddtime(new Date());
+							errorlog.setErrFileflag("项目编码");
+							errorlog.setErrFilepath(fileName);
+							errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+							errorlog.setErrType("数据解析错误");
+							baseDao.save(errorlog);
+						}
+					}
+				}
+				String info;
+				if(count > 0 && error == 0){
+					info = "<font color='green'>全部成功，共"+count+"条</font>";
+				} else if(count ==0 && error > 0){
+					info = "<font color='red'>全部失败，共"+error+"条</font>";
+				} else {
+					info = "<font color='green'>成功"+count+"条，</font><font color='red'>失败"+error+"条</font>";
+				}
+				baseDao.updateOrDelete(qsql, count,info,upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"<font color='red'>非文件</font>", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("项目编码");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 26) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"<font color='red'>数据上传字段不全错误,正确字段数:26,实际解析字段数:" + name.length + "</font>", upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"<font color='red'>数据解析错误</font>", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (null != bufr) {
+				bufr.close();
+			}
+		}
+	}
+
+	// 根据cusId 商品编码集合获取(药品目录表 Drugcatalog)对应的商品名集合 *已失效*
+	@Override
+	public List getAlldcCommercials(List drugCodes) {
+		int count = 0;
+		List list = new ArrayList();
+		if (drugCodes.size() > 0) {
+			for (int i = 0; i < drugCodes.size(); i++) {
+				Object dcCode = drugCodes.get(i);
+				String hql = "select d.dcCommercial from Drugcatalog d where d.dcCode=?0";
+				List temp = baseDao.find(hql, dcCode);
+				if (temp.size() > 0) {
+					@SuppressWarnings("unused")
+					String dcCommercial = temp.get(0).toString();
+					// 如果查找到编码对应的药品名称才会添加到list中
+					list.add(count, temp.get(0));
+					count++;
+				}
+			}
+		}
+		return list;
+	}
+
+	// 根据cusId,hql 获取药品编码集合
+	@Override
+	public List getDrugCodes(String hql, List cusIds) throws ParseException {
+		List list = new ArrayList();
+		list = baseDao.find(hql, cusIds);
+		return list;
+	}
+
+
+}

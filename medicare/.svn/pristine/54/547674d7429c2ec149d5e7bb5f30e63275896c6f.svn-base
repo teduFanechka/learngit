@@ -1,0 +1,77 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import static javax.persistence.GenerationType.SEQUENCE;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+/**
+ * 文件上传日志表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_UPLOADLOG", schema = "YIWEI")
+public class Uploadlog implements java.io.Serializable {
+
+	private int upId;//上传ID，主键
+	private String cusId;//客户ID
+	private String upFlag;//上传类型标志
+	private String upLogcontent;//日志详细内容
+	private Date upDatetime;//上传日期
+
+	@SequenceGenerator(name = "Uploadlog_id",sequenceName="SEQ_tbl_uploadlogNew")
+	@Id
+	@GeneratedValue(strategy = SEQUENCE, generator = "Uploadlog_id")
+	@Column(name = "UP_ID", unique = true, nullable = false, precision = 22, scale = 0)
+	public int getUpId() {
+		return this.upId;
+	}
+
+	public void setUpId(int upId) {
+		this.upId = upId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "UP_FLAG", length = 3)
+	public String getUpFlag() {
+		return this.upFlag;
+	}
+
+	public void setUpFlag(String upFlag) {
+		this.upFlag = upFlag;
+	}
+
+	@Column(name = "UP_LOGCONTENT")
+	public String getUpLogcontent() {
+		return this.upLogcontent;
+	}
+
+	public void setUpLogcontent(String upLogcontent) {
+		this.upLogcontent = upLogcontent;
+	}
+
+	@Column(name = "UP_DATETIME", length = 7)
+	public Date getUpDatetime() {
+		return this.upDatetime;
+	}
+
+	public void setUpDatetime(Date upDatetime) {
+		this.upDatetime = upDatetime;
+	}
+
+}

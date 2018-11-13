@@ -1,0 +1,109 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Salesorder;
+import yibao.yiwei.service.ISalesorderManager;
+
+/**
+ * 未应用
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class SalesorderManager implements ISalesorderManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	// 根据上传文件路径批量保存数据
+	@Override
+	public boolean addSalesorders(String path, String cusId) throws IOException, ParseException {
+		FileReader fr;
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		boolean b = false;// 定义解析是否正常
+		String line = null;
+		Salesorder salesorder;
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				fr = new FileReader(file);
+				bufr = new BufferedReader(fr);
+				while ((line = bufr.readLine()) != null) {
+					String[] name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 6) {
+						System.out.println("当前行错误行:" + line);
+						throw new DataException("异常信息:正确字段总数:8,实际解析字段数:" + name.length + ",数据不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						salesorder = new Salesorder();
+						salesorder.setCusId(cusId);
+						salesorder.setCusParentid("0");
+						salesorder.setSoNo(name[0]);
+						String soDatetime = name[1];
+						DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						if (soDatetime.equals("NULL") ||  soDatetime.equals("")) {
+							salesorder.setSoDatetime(null);
+						} else {
+							salesorder.setSoDatetime(df.parse(soDatetime));
+						}
+						salesorder.setSoSalespsncode(name[2]);
+						salesorder.setSoSalespsnname(name[3]);
+						String soPaytype = name[4];
+						if (soPaytype.equals("NULL") || soPaytype.equals("")) {
+							salesorder.setSoPaytype(0);
+						} else {
+							salesorder.setSoPaytype(Integer.parseInt(soPaytype));
+						}
+						String soAmount = name[5];
+						if (soAmount.equals("NULL") || soAmount.equals("")) {
+							salesorder.setSoAmount(0.0);
+						} else {
+							salesorder.setSoAmount(Double.parseDouble(soAmount));
+						}
+						salesorder.setSoCreatedatetime(null);
+						baseDao.save(salesorder);
+						count++;
+					} catch (Exception e) {
+						System.out.println("该行解析错误");
+					}
+				}
+				b = true;
+			} else {
+				System.out.println("文件不存在:" + path);
+				return b;
+			}
+		} catch (Exception e) {
+			System.out.println("解析文件错误:" + path + "错误行号:" + (count+1));
+			System.out.println("当前行错误行:" + line);
+			e.printStackTrace();
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+		return b;
+	}
+
+}

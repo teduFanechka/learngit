@@ -1,0 +1,324 @@
+package yibao.yiwei.controller.count;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.utils.JsonDateValueProcessor;
+import yibao.yiwei.utils.ProjectConstant;
+
+/**
+ * 文件上传预警查询(按上传日期)
+ * 
+ * @author Administrator
+ * 
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class UploadfileWarningController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	@Autowired
+	private ICustomerManager customerManager;
+	
+	/**
+	 * 转到上传统计页面
+	 * @param cusFlag
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/toUploadfileWarningByDate")
+	public String toUploadfileWarningByDate(String cusFlag, HttpServletRequest request) {
+		request.setAttribute("cusFlag", cusFlag);
+		return "/uploadfilewarning/listUploadfileByDate";
+	}
+
+	/**
+	 * 上传统计
+	 * @param cusFlag
+	 * @param cusName
+	 * @param page
+	 * @param rows
+	 * @param request
+	 * @param response
+	 * @param session
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@RequestMapping("/getListUploadfileByDateJson")
+	public void getListUploadfileByDateJson(String cusFlag, String cusName, String page, String rows, HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException {
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		int total = 0;
+		cusName = (cusName == null) ? "" : cusName.trim();
+		String acAreacode = (String) request.getSession().getAttribute("acAreacode");
+		String DateHql = "SELECT max(u.cuf_Createdate) FROM COU_UPLOADFILEBYUPDATE u where u.cus_Flag=?0";//只查询最新创建日期的统计数据
+		List tem = baseService.findSql(DateHql, cusFlag);
+		if (null != tem.get(0)) {
+			Date cufCreatedate = (Date) tem.get(0);
+			cufCreatedate = sf.parse(sf.format(cufCreatedate));//格式化去时分秒
+			String hql, countHql;
+			List list = new ArrayList();
+			hql = "from CouUploadfileByDate c where c.cusFlag=?0 and c.cufCreatedate =?1 "
+				+ "and c.cusId in(select a.cusId from CusareaRelate a where a.acAreacode in("+ acAreacode + "))";//当前登录用户所能看到的区县
+			countHql = "select count(c.cufId) from CouUploadfileByDate c where c.cusFlag=?0 and c.cufCreatedate = ?1 "
+				+ "and c.cusId in(select a.cusId from CusareaRelate a where a.acAreacode in("+ acAreacode + "))";
+			if (!cusName.equals("")) {
+				hql += " and( c.cusName like '%" + cusName + "%' or c.cufFileflag='" + cusName + "')";
+				countHql += "and (c.cusName like '%" + cusName + "%' or c.cufFileflag='" + cusName + "')";
+			}
+			hql += " order by c.cufFilecount desc";
+			list = baseService.findByPage(hql, rows, page, cusFlag, cufCreatedate);
+			total = baseService.findCount(countHql, cusFlag, cufCreatedate);
+			toBeJson(list, total, response);
+		}
+	}
+
+	/**
+	 * 上传统计调用的json
+	 * @param list
+	 * @param total
+	 * @param response
+	 * @throws IOException
+	 */
+	public void toBeJson(List list, int total, HttpServletResponse response) throws IOException {
+		// 调用工具类 list(含有java.util.Date)转换成json
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		response.setContentType("application/json;charset=UTF-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+
+	/**
+	 * 转到上传统计查看详情
+	 * @param cusId
+	 * @param cufUpdate
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	@RequestMapping("/toLastUploadDetail")
+	public String toLastUploadDetail(String cusId, String cufUpdate, HttpServletRequest request) throws UnsupportedEncodingException {
+		request.setAttribute("cusId", cusId);
+		request.setAttribute("cufUpdate", URLDecoder.decode(cufUpdate, "UTF-8"));
+		return "/uploadfilewarning/uploadDetail";
+	}
+
+	/**
+	 * 上传统计查看详情
+	 * @param cusId
+	 * @param cufUpdate
+	 * @param response
+	 * @throws IOException
+	 */
+	@RequestMapping("/getLastUploadDetailJson")
+	public void getLastUploadDetailJson(String cusId, String cufUpdate, HttpServletResponse response) throws IOException {
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		Customer customer = (Customer)baseService.get(Customer.class, cusId);
+		String cusFlag = customer.getCusFlag();
+		List<String> flags = new ArrayList();
+		if (cusFlag.equals("101") || cusFlag.equals("102")) {
+			flags.add("116");// 库存 共10
+			flags.add("106");// 入库
+			flags.add("102");// 项目编码
+			flags.add("103");// 生产商
+			flags.add("104");// 医护人员
+			flags.add("114");// 库房信息
+			flags.add("115");// 科室信息
+			flags.add("112");// 出库信息
+			flags.add("108");// 销售信息
+			flags.add("110");// 处方信息
+		} else if (cusFlag.equals("201")) {
+			flags.add("216");// 库存 共10
+			flags.add("206");// 入库
+			flags.add("202");// 项目编码
+			flags.add("203");// 供应商
+			flags.add("204");// 医护人员
+			flags.add("208");// 销售信息
+			flags.add("210");// 处方信息
+			flags.add("212");// 出库信息
+			flags.add("214");// 库房信息
+			flags.add("215");// 科室信息
+		} else if (cusFlag.equals("301")) {
+			flags.add("303");// 项目编码
+			flags.add("304");// 供应商
+			flags.add("305");// 医护人员
+			flags.add("307");// 入库
+			flags.add("308");// 住院信息
+			flags.add("309");// 出院信息
+			flags.add("310");// 医嘱信息
+			//flags.add("311");// 住院费用
+			flags.add("313");// 诊断记录
+			flags.add("314");// 库房信息
+			flags.add("315");// 科室信息
+			flags.add("316");// 出库信息
+			flags.add("317");// 销售信息
+			flags.add("318");// 库存 共14
+			flags.add("319");// 医嘱执行信息
+			flags.add("321");// 检查结果主表
+			flags.add("322");// 检查结果明细
+			flags.add("325");// 病案首页
+			flags.add("326");// 出院诊断
+			flags.add("327");// 手术操作
+		}
+		String typeName;// 定义文件上传类型名称 ex:库存信息
+		String lastUpdatedate;// 定义 最后更新日期 有时分秒
+		List rows = new ArrayList();
+		for (String fileFlag : flags) {
+			int upCount = 0;// 定义最后一次上传文件解析数目
+			typeName = ProjectConstant.map.get(fileFlag);// 根据文件标识获取对应的文件类型
+			//获取当前fileFlag 最后的上传日期
+			String hql = "select max(u.up_Date) from tbl_Uploadfile u where u.cus_Id=?0 and u.up_Fileflag=?1 and u.is_Handle=1";
+			List tem = baseService.findSql(hql, cusId, fileFlag);
+			if (null != tem.get(0)) {
+				lastUpdatedate = sf.format(tem.get(0));
+				// 获取当前fileFlag 最后一次上传文件解析数目
+				String hql1 = "select u.upCount from Uploadfile u where u.cusId=?0 and u.upFileflag=?1 and u.upDate=?2 ";
+				List tem1 = baseService.find(hql1, cusId, fileFlag, tem.get(0));
+				if (null != tem1.get(0)){
+					upCount = Integer.parseInt(tem1.get(0).toString());
+				}
+			} else {
+				lastUpdatedate = "——";
+			}
+			Map map = new HashMap();
+			map.put("lastUpdatedate", lastUpdatedate);
+			map.put("typeName", typeName);
+			map.put("upCount", upCount);
+			rows.add(map);
+		}
+		JSONObject jobj = new JSONObject();// new一个JSON
+		jobj.accumulate("rows", rows);// row是代表显示的页的数据
+		response.setCharacterEncoding("utf-8");// 指定为utf-8
+		response.getWriter().write(jobj.toString());// 转化为JSOn格式
+	}
+
+	/**
+	 * 旧方法 手动查询获取文件上传预警json(按日期)(在没有数据表的情况下) 拼接json 字符串,无法分页 知识 点:map 及
+	 * Object[]数组[]的使用
+	 * @param cusFlag
+	 * @param request
+	 * @param response
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	public void getListUploadfileByDateJsonUUUUUUUUUUUUUUUU(String cusFlag, HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException {
+		String hql = "select c.cusId from Customer c where c.cusFlag=?0 and c.cusStatus=1";
+		// 查询当前已通过审核,条件标识的cusIDs 集合
+		List cusIds = baseService.find(hql, cusFlag);
+		// 定义有上传记录cusids 对应的最后上传日期,cusid (数组元素)集合
+		List list = new ArrayList();
+		// 定义没有上传记录的cusids 集合
+		List empCusids = new ArrayList();
+		Object[] obj = null;
+		for (int i = 0; i < cusIds.size(); i++) {
+			Object cusId = cusIds.get(i);
+			String hql1 = "select u.cusId, u.upDate from Uploadfile u where u.cusId=?0 order by u.upDate desc ";
+			// 获取当前cusid 最后一次上传日期
+			int size = baseService.find(hql1, cusId).size();
+			if (size > 0) {// 有上传记录
+				obj = (Object[]) baseService.find(hql1, cusId).get(0);
+				list.add(obj);
+			} else {// 无上传记录
+				empCusids.add(cusId);
+			}
+		}
+		// System.out.println("从未上传过的CusIds>>>>>>>>:" + empCusids.toString());
+		// 把(元素为数组)list 转存到TreeMap中按上传日期倒序排序,再分别保存在list中
+		Map map = new TreeMap().descendingMap();
+		for (int i = 0; i < list.size(); i++) {
+			obj = (Object[]) list.get(i);// 获取第i个元素
+			map.put(obj[1], obj[0]);
+		}
+		//定义排序后的cusIds 与 最后上传日期
+		List realCusIds = new ArrayList();// 定点cusId
+		List cusNames = new ArrayList();// 定义定点名称集合
+		List realUpDates = new ArrayList();// 最后上传日期集合
+		List fileCounts = new ArrayList();// 定义文件数集合
+		List recordCounts = new ArrayList();// 定义记录数集合
+		Set<Date> keyset = map.keySet();
+		Iterator<Date> it = keyset.iterator();
+		for (int i = 0; it.hasNext(); i++) {
+			Date key = it.next();// 最后上传日期
+			String value = (String) map.get(key);// 对应的cusId
+			realUpDates.add(key);
+			realCusIds.add(value);
+		}
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		for (int i = 0; i < realCusIds.size(); i++) {
+			// 格式化日期去掉时分秒
+			Date upDate = (Date) realUpDates.get(i);
+			String updateStr = sf.format(upDate);
+			String hql2 = "select count(u.upFileflag) from Uploadfile u where u.cusId=?0 and u.upDate like to_date( ?1 ,'yyyy-mm-dd')";
+			// 查询统计上传文件总数
+			List tem = baseService.find(hql2, realCusIds.get(i), updateStr);
+			int num = Integer.parseInt(tem.get(0).toString());
+			fileCounts.add(num);
+			String hql3 = "select sum(u.upCount) from Uploadfile u where u.cusId=?0 and u.upDate like to_date( ?1 ,'yyyy-mm-dd')";
+			// 查询统计解析所有文件总条数
+			tem = baseService.find(hql3, realCusIds.get(i), updateStr);
+			int num1 = Integer.parseInt(tem.get(0).toString());
+			recordCounts.add(num1);
+		}
+		hql = "select c.cusName from Customer c where c.cusId=?0 ";
+		cusNames = customerManager.getCusNames(hql, realCusIds);
+		List rows = new ArrayList();
+		for (int i = 0; i < realCusIds.size(); i++) {
+			String cusId = (String) realCusIds.get(i);
+			String cusName = cusNames.get(i).toString();
+			Date upDate = (Date) realUpDates.get(i);
+			String fileCount = fileCounts.get(i).toString();
+			String recordCount = recordCounts.get(i).toString();
+			String updateStr = sf.format(upDate);
+			Map map2 = new HashMap();
+			map2.put("cusId", cusId);
+			map2.put("cusName", cusName);
+			map2.put("upDate", updateStr);
+			map2.put("fileCount", fileCount);
+			map2.put("recordCount", recordCount);
+			rows.add(map2);
+		}
+		// 添加从未上传过的定点信息
+		List empCusnames = customerManager.getCusNames(hql, empCusids);
+		for (int i = 0; i < empCusids.size(); i++) {
+			String cusId = (String) empCusids.get(i);
+			String cusName = empCusnames.get(i).toString();
+			Map map3 = new HashMap();
+			map3.put("cusId", cusId);
+			map3.put("cusName", cusName);
+			map3.put("upDate", "");
+			map3.put("fileCount", "0");
+			map3.put("recordCount", "0");
+			rows.add(map3);
+		}
+		int total = realCusIds.size() + 1;
+		toBeJson(rows, total, response);
+	}
+}

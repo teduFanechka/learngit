@@ -1,0 +1,25 @@
+package yibao.yiwei.service.system;
+
+public interface ITzddlogManager {
+
+	/**
+	 * 抽取开启或停止定点共性方法
+	 * 
+	 * @param ids 主键串
+	 * @param operate 开启1/停止0
+	 */
+	public void updateOperateTzddlog(String ids, int operate, String manual);
+	/**
+	 * 抽取批量开启或停止扫描定点 更新方法
+	 * @param ids 主键串
+	 * @param scan 0扫描 1注销不扫描
+	 */
+	public void updateScanStatus(String ids, String scan);
+	/**
+	 * 抽取批量更新方法是否使用医保进销存软件
+	 * @param ids
+	 * @param ybcx 0是1否
+	 */
+	public void updateIsOrNotYbcx(String ids, String ybcx);
+
+}

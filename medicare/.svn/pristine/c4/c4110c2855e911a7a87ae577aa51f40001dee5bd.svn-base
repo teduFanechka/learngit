@@ -1,0 +1,55 @@
+$(function() {
+    $(".tabb").tabs({
+        fit: true,
+        border: false,
+        selected: 0,
+    });
+    $('#checkWI').datagrid({
+        pageSize: 20,
+        pageList: [5, 20, 50, 100],
+    });
+});
+function checkWarehouseitem() {
+		var yybm = $("input[name='yybm']").val();
+		var fd = $("input[name='fd']").val();
+		var sd = $("input[name='sd']").val();
+		if (checktype(yybm)) {
+			if (fd > sd && sd != '') {
+				$.messager.show( {
+					title : '系统提示',
+					msg : "开始日期不能大于结束日期!"
+				});
+				return;
+			}else if(fd==''&& sd!=''){
+				fd=sd;
+				sd='';
+			}
+			$('#checkWI').datagrid({
+				url : 'checkWarehouseitem?yybm='+yybm+'&fDate='+fd+'&sDate='+sd
+			});
+		}
+}
+// 校验医院编码
+function checktype(yybm) {
+	if ($.trim(yybm) == '') {
+		$.messager.show( {
+			title : '系统提示',
+			msg : "医院编码不能为空!"
+		});
+		return false;
+	} else {
+		// 判断是否为整数 var ex = /^\d+$/; if (!ex.test(yybm))
+		if (yybm < 0 || yybm != parseInt(yybm) || yybm.length != 6) {
+			$.messager.show( {
+				title : '系统提示',
+				msg : "医院编码只能是六位正整数!"
+			});
+			return false;
+		}
+	}
+	return true;
+}
+// 点击清空按钮出发事件
+function clearForm() {
+	$('#checkform').form('clear');
+}

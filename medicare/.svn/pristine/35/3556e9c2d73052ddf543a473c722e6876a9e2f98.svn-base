@@ -1,0 +1,105 @@
+package yibao.yiwei.service;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
+import yibao.yiwei.entity.Page;
+
+@SuppressWarnings("unchecked")
+public interface ICustomerManager {
+
+
+
+	/**
+	 * 分页查询page方式
+	 * 
+	 * @param hql
+	 * @param url
+	 *            请求地址
+	 * @param pagenum
+	 *            currentPage 当前第几页
+	 * @return 封闭了分页信息(包括记录集list)的Bean 　
+	 */
+	public Page queryForPage(String hql, String url, int pagenum);
+
+	/**
+	 * 分页条件查询page方式
+	 * 
+	 * @param countHql
+	 *            统计条数
+	 * @param hql
+	 *            查询hql
+	 * @param url
+	 *            请求地址
+	 * @param currentPage
+	 *            当前第几页
+	 * @param params
+	 *            条件参数...
+	 * @return 封闭了条件查询分页信息(包括记录集list)的Bean
+	 */
+	public Page queryForPage(String countHql, String hql, String url, int currentPage, Object... params);
+
+	/**
+	 * 添加分店信息
+	 * @param path
+	 * @param cusId
+	 * @param upDate
+	 * @param upId
+	 * @param cusName
+	 * @param fileName
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public void addCustomers(String path, String cusId, String cusName, Date upDate, int upId, String fileName) throws IOException, ParseException;
+
+	/**
+	 * 
+	 * @param hql
+	 *            查询id hql
+	 * @param cusIds
+	 *            客户id字符串
+	 * @return 对应的药店名称集合
+	 */
+	public List getCusNames(String hql, List cusIds);
+
+	/**
+	 * @param cusName
+	 * @return cusName 对应的cusID
+	 */
+	public String getCusId(String cusName);
+
+	/**
+	 * 
+	 * @param cusFlag 
+	 * @param CusareaRelate 区划编码
+	 * @param hql
+	 * @return 所有客户名称列表
+	 */
+	public List getAllCusName(String cusFlag, String CusareaRelate);
+
+
+	/**
+	 * 
+	 * @param cusIds
+	 * @param cusFlag
+	 * @return 过滤后的cusIds
+	 */
+	public List getRealCusIds(List cusIds, String cusFlag);
+	/**
+	 * 根据客户标识过滤list
+	 * @param list Object[cusId,dcCode]元素类型
+	 * @param cusFlag 客户标识
+	 * @return 符合标识条件的结果
+	 */
+	public List getArrayCusIds(List arrList, String cusFlag);
+	/**
+	 * 
+	 * @param idHql
+	 * @param arrList Object[cusId,dcCode]元素类型 集合
+	 * @return 对应的药店名称集合
+	 */
+	public List getArrCusNames(String idHql, List realarrList);
+
+}

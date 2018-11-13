@@ -1,0 +1,66 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.GenericGenerator;
+
+
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "Abc", schema = "YIWEI")
+public class Abc implements java.io.Serializable {
+
+	@GenericGenerator(name = "Abc_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Abc_id")
+	@Column(name = "A_ID", unique = true, nullable = false, length = 32)
+	private String aId;
+	
+	@Column(name = "A_DATE")
+	private Date aDate;
+	
+	@Column(name = "A_CLASS", length = 2000)
+	private String aClass;
+	
+	@Column(name = "A_INFO", length = 2000)
+	private String aInfo;
+
+	public String getaId() {
+		return aId;
+	}
+
+	public void setaId(String aId) {
+		this.aId = aId;
+	}
+
+	public Date getaDate() {
+		return aDate;
+	}
+
+	public void setaDate(Date aDate) {
+		this.aDate = aDate;
+	}
+
+	public String getaClass() {
+		return aClass;
+	}
+
+	public void setaClass(String aClass) {
+		this.aClass = aClass;
+	}
+
+	public String getaInfo() {
+		return aInfo;
+	}
+
+	public void setaInfo(String aInfo) {
+		this.aInfo = aInfo;
+	}
+	
+}

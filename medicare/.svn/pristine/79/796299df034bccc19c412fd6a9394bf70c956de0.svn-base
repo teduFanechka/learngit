@@ -1,0 +1,28 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>删除重复数据</title>
+	</head>
+	<body>
+		<a href="deleteDrugcatalog">项目编码</a><br/>
+		<a href="">供应商</a><br/>
+		<a href="">医护人员</a><br/>
+		<a href="">入库信息</a><br/>
+		<a href="">出库信息</a><br/>
+		<a href="">库存信息</a><br/>
+		<a href="">销售信息</a><br/>
+		<a href="">库房信息</a><br/>
+		<a href="">处方信息</a><br/>
+		<a href="">住院记录</a><br/>
+		<a href="">出院记录</a><br/>
+		<a href="">医嘱信息</a><br/>
+		<a href="">医嘱执行记录</a><br/>
+		<a href="">诊断记录</a><br/>
+		<a href="">科室信息</a><br/>
+		<a href="">住院病案首页</a><br/>
+		<a href="">检查/检验信息</a><br/>
+		<a href="">检查/检验详细</a>
+	</body>
+</html>

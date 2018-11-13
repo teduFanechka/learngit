@@ -1,0 +1,62 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 定点区划关联表
+ */
+@Entity
+@Table(name = "SYS_CUSAREA_RELATE", schema = "YIWEI")
+public class CusareaRelate implements java.io.Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2081681235041401892L;
+	
+	// 定义地区编码 acAreacode属性,作为标识属性的成员(联合主键A)
+	@Id
+	@Column(name = "AC_AREACODE", nullable = false, length = 6)
+	private String acAreacode;
+	// 定义定点id cus_id 属性,作为标识属性的成员(联合主键B)
+	@Id
+	@Column(name = "CUS_ID", nullable = false, length = 32)
+	private String cusId;
+
+	public String getAcAreacode() {
+		return this.acAreacode;
+	}
+
+	public void setAcAreacode(String acAreacode) {
+		this.acAreacode = acAreacode;
+	}
+
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+//	// 重写equals()方法,根据cusId,acAreacode进行判断
+//	public boolean equals(Object obj) {
+//		if (this == obj) {
+//			return true;
+//		}
+//		if (obj != null && obj.getClass() == CusareaRelate.class) {
+//			CusareaRelate target = (CusareaRelate) obj;
+//			return target.getCusId().equals(this.cusId)
+//					&& target.getAcAreacode().equals(this.acAreacode);
+//		}
+//		return false;
+//	}
+//
+//	// 重写hashCode()方法,根据cusId,acAreacode 计算hashCodew值
+//	public int hashCode() {
+//		return getAcAreacode().hashCode() * 31 + getCusId().hashCode();
+//	}
+}

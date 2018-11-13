@@ -1,0 +1,162 @@
+package yibao.yiwei.entity.system;
+
+import static javax.persistence.GenerationType.SEQUENCE;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+import yibao.yiwei.utils.JacksonDateHMSSerializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+/**
+ * 文件上传记录表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_UPLOADFILE", schema = "YIWEI")
+public class Uploadfile implements java.io.Serializable {
+
+	private Integer upId;// 主键
+	private String cusId; // 客户ID
+	private String upFileflag;// 文件类型标志，43种
+	private String upFilepath;// 存放路径
+	private String filename;// 文件名
+	private Integer filesize;// 文件大小
+	private Integer isEncrypt;// 是否加密 0否 1是 默认1
+	private Integer isHandle;//处理结果：0待解析，1解析成功，-1解析失败
+	private Date upDate;// 上传日期
+	private Date upCollectiondate; // 采集日期
+	private Integer upCount;// 统计条数
+	private String upName;//定点名称 
+	private String cusName;//定点名称
+
+	@Id
+	@SequenceGenerator(name = "Uploadfile_id", allocationSize = 1, initialValue = 1, sequenceName = "SEQ_tbl_uploadlog")
+	@GeneratedValue(strategy = SEQUENCE, generator = "Uploadfile_id")
+	@Column(name = "UP_ID", unique = true, nullable = false, precision = 10, scale = 0)
+	public Integer getUpId() {
+		return this.upId;
+	}
+	public void setUpId(Integer upId) {
+		this.upId = upId;
+	}
+	
+	@Column(name = "UP_NAME", length = 120)
+	public String getUpName() {
+		return upName;
+	}
+	public void setUpName(String upName) {
+		this.upName = upName;
+	}
+	
+	@Column(name = "CUS_NAME", length = 120)
+	public String getCusName() {
+		return cusName;
+	}
+	
+	public void setCusName(String cusName) {
+		this.cusName = cusName;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "UP_FILEFLAG", length = 3)
+	public String getUpFileflag() {
+		return this.upFileflag;
+	}
+
+	public void setUpFileflag(String upFileflag) {
+		this.upFileflag = upFileflag;
+	}
+
+	@Column(name = "UP_FILEPATH", length = 400)
+	public String getUpFilepath() {
+		return this.upFilepath;
+	}
+
+	public void setUpFilepath(String upFilepath) {
+		this.upFilepath = upFilepath;
+	}
+
+	@Column(name = "FILENAME", length = 120)
+	public String getFilename() {
+		return this.filename;
+	}
+
+	public void setFilename(String filename) {
+		this.filename = filename;
+	}
+
+	@Column(name = "FILESIZE")
+	public Integer getFilesize() {
+		return filesize;
+	}
+
+	public void setFilesize(Integer filesize) {
+		this.filesize = filesize;
+	}
+
+	@Column(name = "IS_ENCRYPT", precision = 3, scale = 0)
+	public Integer getIsEncrypt() {
+		return this.isEncrypt;
+	}
+
+	public void setIsEncrypt(Integer isEncrypt) {
+		this.isEncrypt = isEncrypt;
+	}
+
+	@Column(name = "IS_HANDLE", precision = 3, scale = 0)
+	public Integer getIsHandle() {
+		return this.isHandle;
+	}
+
+	public void setIsHandle(Integer isHandle) {
+		this.isHandle = isHandle;
+	}
+
+	@JsonSerialize(using = JacksonDateHMSSerializer.class)
+	@Column(name = "UP_DATE", length = 7)
+	public Date getUpDate() {
+		return upDate;
+	}
+
+	public void setUpDate(Date upDate) {
+		this.upDate = upDate;
+	}
+
+	@JsonSerialize(using = JacksonDateHMSSerializer.class)
+	@Column(name = "UP_COLLECTIONDATE", length = 7)
+	public Date getUpCollectiondate() {
+		return upCollectiondate;
+	}
+
+	public void setUpCollectiondate(Date upCollectiondate) {
+		this.upCollectiondate = upCollectiondate;
+	}
+
+	@Column(name = "UP_COUNT")
+	public Integer getUpCount() {
+		return upCount;
+	}
+
+	public void setUpCount(Integer upCount) {
+		this.upCount = upCount;
+	}
+
+}

@@ -1,0 +1,142 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Department;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IDepartmentManager;
+
+/**
+ * 科室信息
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class DepartmentManager implements IDepartmentManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 添加科室信息
+	 */
+	@Override
+	public void addDepartment(String path, String cusId, String cusName, Date upCollectdate, int upId, String cusFlag,String fileName) throws IOException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Department department;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 5) {
+						throw new DataException("正确字段总数:5,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						//判断定点是否连锁,数据解析至分店cusid下
+						// 判断定点类型是连锁药店并且上传有最后一位分店编码
+						department = new Department();
+						if (cusFlag.equals("102") && name.length > 5) {// length:25
+							// 分店标识为零,则保存在总店id下
+							if (name[5].trim().equals("0")) {
+								department.setCusId(cusId);
+							} else {
+								// 查找分店id,父id是当前cusid,分店编码为name[]最后一位
+								String hql = "select c.cusId from Customer c where c.cusParentid =?0 and c.cusBranchcode=?1 ";
+								List list = baseDao.find(hql, cusId,name[5].trim());
+								if (list.size() > 0) {
+									// 分店已注册查找到分店id
+									department.setCusId(list.get(0).toString());
+								} else {// 如果当前分店编码未注册,执行下次循环
+									continue;
+								}
+							}
+						} else {
+							department.setCusId(cusId);
+						}
+						department.setCusDareway(""); // 医院编码
+						department.setCusPid("");// 客户上级id
+						department.setDeptAddtime(new Date());// 创建日期
+						department.setDeptPicktime(upCollectdate);// 采集日期从传来的文件采集时间获取
+						department.setDeptCode(name[0].trim());// 科室编码1
+						department.setDeptName(name[1].trim());// 科室名称2
+						department.setDeptBeds(name[2].trim());// 床位数3
+						department.setDeptEmps(name[3].trim());// 医护人员数4
+						department.setDeptStatus(name[4].trim());// 状态5
+						baseDao.save(department);
+						count++;
+					} catch (Exception e) {
+						error++;
+						String log = e.toString();
+						if (log.length() > 300){
+							log = log.substring(0, 300);
+						}
+						errorlog = new Errorlog();
+						errorlog.setCusId(cusId);
+						errorlog.setCusName(cusName);
+						errorlog.setErrAddtime(new Date());
+						errorlog.setErrFileflag("科室信息");
+						errorlog.setErrFilepath(fileName);
+						errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+						errorlog.setErrType("数据解析错误");
+						baseDao.save(errorlog);
+					}
+				}
+				baseDao.updateOrDelete(qsql, count,"成功"+count+"条，失败"+error+"条",upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"非文件", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("科室信息");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 5) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"数据上传字段不全错误,正确字段数:5,实际解析字段数:" + name.length, upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"数据解析错误", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+	}
+}

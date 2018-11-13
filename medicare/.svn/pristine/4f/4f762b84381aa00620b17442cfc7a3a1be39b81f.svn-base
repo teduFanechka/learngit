@@ -1,0 +1,34 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "SYS_PRIVILEGE_ROLE", schema = "YIWEI")
+public class PrivilegeRole implements java.io.Serializable {
+
+	private static final long serialVersionUID = 779348126425813144L;
+
+	@Id
+	@Column(name = "PRI_ID")
+	private String priId;
+	
+	@Id
+	@Column(name = "RO_ID")
+	private String roId;
+	
+	public String getPriId() {
+		return priId;
+	}
+	public void setPriId(String priId) {
+		this.priId = priId;
+	}
+	public String getRoId() {
+		return roId;
+	}
+	public void setRoId(String roId) {
+		this.roId = roId;
+	}
+}

@@ -1,0 +1,66 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>客户管理</title>
+		<c:set value="${pageContext.request.contextPath}" var="path"
+			scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/editpasswd/editpasswd.js"></script>
+	</head>
+	<html>
+ <head></head>
+ <body> 
+  <div id="editpasswd" class="easyui-dialog" title="修改密码" style="width: 450px; height: 205px;" data-options="iconCls:'icon-user_add',buttons:'#nfd1_btns',modal:true,"> 
+   <form id="editform" action="" method=""> 
+    <input id="muUserid" name="muUserid" type="hidden" value="${sessionScope.orgId}" />
+    <input id="muUsercode" name="muUsercode" type="hidden" value="${sessionScope.userCode}" />
+    <input id="muUsername" name="muUsername" type="hidden" value="${sessionScope.userName}" />
+    <input id="muEmail" name="muEmail" type="hidden" value="${sessionScope.email}" />
+    <input id="muPhone" name="muPhone" type="hidden" value="${sessionScope.phone}" />
+    <input id="muStatus" name="muStatus" type="hidden" />
+    <table class="ew_table" border="1"> 
+     <tbody> 
+      <tr> 
+       <input id="muUserid" name="muUserid" type="hidden" value="${sessionScope.orgId}" /> 
+      </tr> 
+      <tr> 
+       <input id="muUsercode" name="muUsercode" type="hidden" value="${sessionScope.userCode}" /> 
+      </tr> 
+      <tr> 
+       <input id="muUsername" name="muUsername" type="hidden" value="${sessionScope.userName}" /> 
+      </tr> 
+      <tr> 
+       <input id="muEmail" name="muEmail" type="hidden" value="${sessionScope.email}" /> 
+      </tr> 
+      <tr> 
+       <input id="muPhone" name="muPhone" type="hidden" value="${sessionScope.phone}" /> 
+      </tr> 
+      <tr> 
+       <input id="muStatus" name="muStatus" type="hidden" /> 
+      </tr> 
+      <tr> 
+       <th> 请输入新密码： </th> 
+       <td> <input id="muPasswd" name="muPasswd" type="text" class="easyui-validatebox" required="required" style="width: 240px; height: 25px; margin: 5px auto;" /> </td> 
+      </tr> 
+      <tr> 
+       <th> 请再次输入新密码： </th> 
+       <td> <input id="muPasswd1" name="muPasswd1" type="text" class="easyui-validatebox" required="required" validtype="equals['#muPasswd']" style="width: 240px; height: 25px; margin: 5px auto;" autocomplete="off" /> </td> 
+      </tr> 
+     </tbody> 
+    </table> 
+   </form> 
+  </div> 
+  <div id="nfd1_btns"> 
+   <a href="javascript:void(0)" onclick="saveManager1()" class="easyui-linkbutton" data-options="iconCls:'icon-ok'">保存</a> 
+   <a href="javascript:void(0)" onclick="javascript: $('#editpasswd').dialog('close');" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a> 
+  </div> 
+ </body>
+</html>
+</html>

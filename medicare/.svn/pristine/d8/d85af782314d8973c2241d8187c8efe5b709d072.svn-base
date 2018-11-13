@@ -1,0 +1,64 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 统筹区划表(地区编码表)
+ * 
+ * @author Administrator
+ * 
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_AREACODE", schema = "YIWEI")
+public class Areacode implements java.io.Serializable {
+	// 定义上级编码 acParentcode属性,作为标识属性的成员(联合主键A)
+	@Id
+	@Column(name = "AC_PARENTCODE", length = 6)
+	private String acParentcode;
+	// 定义地区编码 ac_areacode 属性,作为标识属性的成员(联合主键B)
+	@Id
+	@Column(name = "AC_AREACODE", length = 6)
+	private String acAreacode;
+	@Column(name = "AC_AREANAME", length = 32)
+	private String acAreaname;// 地区名称
+	@Column(name = "AC_STATUS", precision = 22, scale = 0)
+	private int acStatus;// '启用状态 0停用 1 正常 9删除';(默认1)
+
+	public String getAcParentcode() {
+		return acParentcode;
+	}
+
+	public void setAcParentcode(String acParentcode) {
+		this.acParentcode = acParentcode;
+	}
+
+	public String getAcAreacode() {
+		return acAreacode;
+	}
+
+	public void setAcAreacode(String acAreacode) {
+		this.acAreacode = acAreacode;
+	}
+
+	public String getAcAreaname() {
+		return acAreaname;
+	}
+
+	public void setAcAreaname(String acAreaname) {
+		this.acAreaname = acAreaname;
+	}
+
+	public int getAcStatus() {
+		return acStatus;
+	}
+
+	public void setAcStatus(int acStatus) {
+		this.acStatus = acStatus;
+	}
+
+	
+}

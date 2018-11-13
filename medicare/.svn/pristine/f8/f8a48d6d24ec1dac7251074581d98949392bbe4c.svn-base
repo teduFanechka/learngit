@@ -1,0 +1,603 @@
+package yibao.yiwei.controller.query;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.dto.SalesqueryDto;
+import yibao.yiwei.dto.StockanalyzeDto;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Drug;
+import yibao.yiwei.entity.Drugcatalog;
+import yibao.yiwei.entity.Salesitem;
+import yibao.yiwei.service.IBaseService;
+
+/**
+ * 销售统计查询
+ * @author Administrator
+ * 按照定点查询药品销售情况
+ *
+ */
+
+@SuppressWarnings("unchecked")
+@Controller
+public class SalequeryController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	/**
+	 * 药品销售
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/toDrugSales")
+	public String toDrugSales(Model model) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar cal = Calendar.getInstance();    
+		cal.add(Calendar.MONTH, 0);
+		cal.set(Calendar.DAY_OF_MONTH,1);
+		model.addAttribute("begindt", sdf.format(cal.getTime()));
+		model.addAttribute("enddt", sdf.format(new Date()));
+		return "/query/drugsales";
+	}
+	
+	/**
+	 * 药品销售查询
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/getDrugSales")
+	@ResponseBody
+	public Map getDrugSales(HttpServletRequest request) {
+		Map map = new HashMap();
+		try {		
+			String drugcode = request.getParameter("dwcode");
+			System.out.println("drugcode="+drugcode);
+			String st = request.getParameter("bgdt");
+			String et = request.getParameter("eddt");
+			String rows = request.getParameter("rows");// 每页显示的记录数
+			String page = request.getParameter("page");// 当前第几页
+			
+			Integer fstRow = 1;//起始索引
+			Integer maxRow = 10;//结束索引
+			if(Integer.parseInt(page)==0){
+				fstRow = 1;
+			} else{
+				fstRow = (Integer.parseInt(page) - 1) * Integer.parseInt(rows) + 1;
+			}
+			maxRow = fstRow + Integer.parseInt(rows) - 1;
+			
+			String sql = "select count(*) from "
+				+ "	(select s.cus_id cusid, s.drug_code drugcode, s.drug_name drugname, s.drug_specification drugspecification, "
+				+ "sum(s.drug_num) totalquantity, sum(s.drug_salesprice * s.drug_num) totalamount, "  
+				+ "	s.drug_mfrs drugmfrs, s.drug_madein drugmadein from tbl_salesitem s "
+				+ "	where s.drug_code = '"+drugcode+"'" 
+				+ "and s.so_datetime >= to_date('"+st+" 00:00:00','yyyy-mm-dd hh24:mi:ss') "
+				+ "and s.so_datetime <= to_date('"+et+" 23:59:59','yyyy-mm-dd hh24:mi:ss') "
+				+ "	group by s.cus_id, s.drug_code, s.drug_name, s.drug_specification, s.drug_mfrs, s.drug_madein "
+				+ ") ";
+			
+			Number total = baseService.findCountSql(sql);
+
+			sql = "select cusid, drugcode, drugname, drugspecification, totalquantity,"
+				+ "totalamount, drugmfrs, drugmadein from ("
+				+ "select rownum rid, a.* from "
+				+ "	(select s.cus_id cusid, s.drug_code drugcode, s.drug_name drugname, s.drug_specification drugspecification, "
+				+ " sum(s.drug_num) totalquantity, sum(s.drug_salesprice * s.drug_num) totalamount, "  
+				+ "	s.drug_mfrs drugmfrs, s.drug_madein drugmadein from tbl_salesitem s "
+				+ "	where s.drug_code = '"+drugcode+"'" 
+				+ "and s.so_datetime >= to_date('"+st+" 00:00:00','yyyy-mm-dd hh24:mi:ss') "
+				+ "and s.so_datetime <= to_date('"+et+" 23:59:59','yyyy-mm-dd hh24:mi:ss') "
+				+ "	group by s.cus_id, s.drug_code, s.drug_name, s.drug_specification, s.drug_mfrs, s.drug_madein "
+				+ "	order by totalquantity desc"
+				+ ") a where rownum<=" +maxRow
+				+ ") where rid >= " + fstRow;
+			
+			List<SalesqueryDto> sals = baseService.findDto(sql, SalesqueryDto.class);
+			
+			map.put("rows", sals);
+			map.put("total", total);
+			
+			return map;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	/**
+	 * 查询cusName
+	 * @param cusId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/findCustomerName ")
+	public Map findCustomerName(String cusId){
+		Map<String, Object> map = new HashMap<String, Object>();
+		String hql = "from Customer where cusId=?0";
+		List<Customer> list = baseService.find(hql, cusId);
+		String cusName = "";
+		if(null != list.get(0)){
+			cusName = list.get(0).getCusName();
+		}
+		map.put("cusName", cusName);
+		return map;
+	}
+	
+	@RequestMapping(value="getDrugName")
+    @ResponseBody
+	public List getDrugName(String str){
+		String hql = "from Drug where dName like '%"+str+"%'";
+		List<Drug> list = baseService.find(hql);
+		List list2 = new ArrayList();
+		Map<String, Object> map;
+		Drug drug;
+		for(int i = 0; i < list.size(); i++){
+			drug = list.get(i);
+			map = new HashMap<String, Object>();
+			map.put("id", drug.getdCode());
+			map.put("text", drug.getdName());
+			list2.add(map);
+		}
+		return list2;
+	}
+	
+	/**
+	 * 某个药店销售查询
+	 * @param request
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping("/toSalesDruglist")
+	public String toSalesDruglist(HttpServletRequest request, Model model) {
+		String cusid = request.getParameter("cus");
+		String drug  = request.getParameter("dc");
+		String st = request.getParameter("bgdt");
+		String et = request.getParameter("eddt");
+		
+		String sql = "from Customer c where c.cusStatus != -1 and c.cusId=?0";
+		List<Customer> customer = baseService.find(sql, cusid);
+		Customer cus = customer.get(0);
+		
+		model.addAttribute("drug", drug);
+		model.addAttribute("cus", cus);
+		model.addAttribute("begindt", st);
+		model.addAttribute("enddt", et);
+		
+		return "/query/saleslist2";
+	}
+	
+	//销售查询
+	@RequestMapping("/toQuerysales")
+	public String toQuerysales(Model model) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar cal = Calendar.getInstance();    
+		cal.add(Calendar.MONTH, 0);
+		cal.set(Calendar.DAY_OF_MONTH,1);
+		model.addAttribute("begindt", sdf.format(cal.getTime()));
+		model.addAttribute("enddt", sdf.format(new Date()));
+		return "/query/salesquery";
+	}
+	
+	//销售查询数据
+	@RequestMapping("/getAllSales")
+	@ResponseBody
+	public Map getAllSales(HttpServletRequest request) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Map map = new HashMap();
+		try {		
+			String yybm = request.getParameter("dwcode");
+			String st = request.getParameter("bgdt");
+			String et = request.getParameter("eddt");
+			String rows = request.getParameter("rows");// 每页显示的记录数
+			String page = request.getParameter("page");// 当前第几页
+			String sort = request.getParameter("sort");// 排序字段
+			String order= request.getParameter("order");// 排序类型
+			
+			Integer fstRow = 1;
+			Integer maxRow = 10;
+			if(Integer.parseInt(page)==0){
+				fstRow = 1;
+			}else{
+				fstRow = (Integer.parseInt(page) - 1) * Integer.parseInt(rows) + 1;
+			}
+			maxRow = fstRow + Integer.parseInt(rows) - 1;
+			
+			//get partition
+			Date ptdt = sdf.parse(st);
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(ptdt);
+			cal.add(Calendar.MONTH, 1);		
+			ptdt = cal.getTime();
+			
+			String cusID = "0";
+			
+			String sql = "from Customer c where c.cusStatus != -1 and c.cusDareway=?0";
+			List<Customer> cus = baseService.find(sql, yybm);
+			if(cus.size() > 0){
+				cusID = cus.get(0).getCusId();
+			}
+			
+			//按销售日期查询
+			String dtBegin = "and s.so_datetime >= to_date('"+st+" 00:00:00','yyyy-mm-dd hh24:mi:ss') ";
+			String dtEnd   = "and s.so_datetime <= to_date('"+et+" 23:59:59','yyyy-mm-dd hh24:mi:ss') ";
+			
+			sql = "select count(*) from "
+				+ "	(select s.drug_code drugcode, s.drug_name drugname, s.drug_specification drugspecification, sum(s.drug_num) totalquantity, "
+				+ "	sum(s.drug_salesprice * s.drug_num) totalamount, "  
+				+ "	s.drug_mfrs drugmfrs, s.drug_madein drugmadein from tbl_salesitem s "//partition("+tabpart+") s "
+				+ "	where s.cus_id = '"+cusID+"' " + dtBegin + dtEnd
+				+ "	group by s.drug_code, s.drug_name, s.drug_specification, s.drug_mfrs, s.drug_madein "
+				+ ") ";
+			
+			Number total = baseService.findCountSql(sql);
+
+			sql = "select drugcode, drugname, drugspecification, totalquantity,"
+				+ "totalamount, drugmfrs, drugmadein, 0 remark from ("
+				+ "select rownum rid, a.* from "
+				+ "	(select s.drug_code drugcode, s.drug_name drugname, s.drug_specification drugspecification, sum(s.drug_num) totalquantity, "
+				+ "	sum(s.drug_salesprice * s.drug_num) totalamount, "  
+				+ "	s.drug_mfrs drugmfrs, s.drug_madein drugmadein from tbl_salesitem s "//partition("+tabpart+") s "
+				+ "	where s.cus_id = '"+cusID+"' " + dtBegin + dtEnd
+				+ "	group by s.drug_code, s.drug_name, s.drug_specification, s.drug_mfrs, s.drug_madein ";
+				//+ "	order by totalquantity desc"
+				//+ ") a) where rid >= " + fstRow + " and rid <= " + maxRow;
+			
+			
+			if(sort != null){
+				sql = sql + " order by " + sort + " " + order;
+			}else{
+				sql = sql + " order by totalquantity desc";
+			}
+			
+			sql = sql + ") a) where rid >= " + fstRow + " and rid <= " + maxRow;
+			
+			map.put("cus", cus.get(0));
+			List<SalesqueryDto> sals = baseService.findDto(sql, SalesqueryDto.class);
+			
+			map.put("rows", sals);
+			map.put("total", total);
+			
+			return map;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	//销售记录
+	@RequestMapping("/toSaleslist")
+	public String toSaleslist(HttpServletRequest request, Model model) {
+		try {		
+			String drug  = request.getParameter("dc");
+			String cusid = request.getParameter("cus");
+			String st = request.getParameter("bgdt");
+			String et = request.getParameter("eddt");
+			
+			String sql = "from Customer c where c.cusStatus != -1 and c.cusId=?0";
+			List<Customer> customer = baseService.find(sql, cusid);
+			Customer cus = null;
+			if(customer.size() > 0){
+				cus = customer.get(0);
+			}
+			
+			model.addAttribute("drug", drug);
+			model.addAttribute("cus", cus);
+			model.addAttribute("begindt", st);
+			model.addAttribute("enddt", et);
+			
+			return "/query/saleslist";
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+		
+	}
+	
+	//销售记录数据
+	@RequestMapping("/getSaleslist")
+	@ResponseBody
+	public Map getSaleslist(HttpServletRequest request) {
+		Map map = new HashMap();
+		try {		
+			String drug  = request.getParameter("dc");
+			String cusid = request.getParameter("cus");
+			String st = request.getParameter("bgdt");
+			String et = request.getParameter("eddt");
+			String rows = request.getParameter("rows");// 每页显示的记录数
+			String page = request.getParameter("page");// 当前第几页
+			
+			Integer fstRow = 1;
+			Integer maxRow = 10;
+			if(Integer.parseInt(page)==0){
+				fstRow = 1;
+			}else{
+				fstRow = (Integer.parseInt(page) - 1) * Integer.parseInt(rows) + 1;
+			}
+			maxRow = fstRow + Integer.parseInt(rows) - 1;
+			
+			//get partition
+//			Date ptdt = sdf.parse(st);
+//			Calendar cal = Calendar.getInstance();
+//			cal.setTime(ptdt);
+//			cal.add(Calendar.MONTH, 1);		
+//			ptdt = cal.getTime();
+//			
+			String sql;
+//			
+//			String tabpart = "T_" + sdf2.format(ptdt); //T_201707
+			sql = "from Customer c where c.cusStatus != -1 and c.cusId=?0";
+			Customer cus = null;
+			List<Customer> customer = baseService.find(sql, cusid);
+			if(customer.size() > 0){
+				cus = customer.get(0);
+			}
+			//按销售日期查询
+			String dtBegin = "and s.so_datetime >= to_date('"+st+" 00:00:00','yyyy-mm-dd hh24:mi:ss') ";
+			String dtEnd   = "and s.so_datetime <= to_date('"+et+" 23:59:59','yyyy-mm-dd hh24:mi:ss') ";
+			
+			
+			sql = "select count(*) " 
+				+ "from tbl_salesitem s " //partition("+tabpart+") s "
+				+ "where s.cus_id = '"+cusid+"' and s.drug_code = '"+drug+"' " + dtBegin + dtEnd;
+			 
+			Number total = baseService.findCountSql(sql);
+			
+			sql = "select si_id, cus_id, cus_parentid, so_no, drug_code, drug_num,"
+				+ "drug_salesprice, drug_batchno, drug_mfrs, drug_madein, drug_mfgdate, drug_expdate,"
+				+ "drug_eid, so_createdatetime, so_datetime, so_paytype, drug_picktime, so_salespsnname,"
+				+ "cus_dareway, si_ptssex, si_ptsage, si_ptsidcard, si_ptshealthcard, drug_name,"
+				+ "drug_specification, si_settlementname, si_status, si_opcode, si_opname, si_unit " 
+				+ "from ("
+				+ "	select rownum rid, s.* from tbl_salesitem s" //partition("+tabpart+") s "
+				+ "	where s.cus_id = '"+cusid+"' and s.drug_code = '"+drug+"' " + dtBegin + dtEnd
+				+ ") a where rid >= " + fstRow + " and rid <= " + maxRow
+				+ " order by so_datetime desc";
+			
+			//System.out.println(sql);
+			map.put("cus", cus);
+			
+			List<Salesitem> sals = baseService.findDto2(sql, Salesitem.class);
+			double sum = 0;
+			List<Map> footer = new ArrayList<Map>();
+			Map footerfields = new HashMap();
+        	for(int j=0; j<sals.size(); j++){
+        		sum = sum + sals.get(j).getDrugNum();
+        	}
+        	footerfields.put("isfooter", 1);
+        	footerfields.put("drugName", "<span style='float:right;color:blue;'>合计:</span>");
+        	footerfields.put("drugNum", sum);
+        	footer.add(footerfields);
+        	
+        	map.put("footer", footer);
+			map.put("rows", sals);
+			map.put("total", total);//
+			
+			return map;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	//库存分析
+	@RequestMapping("/toStockanalyze")
+	public String toStockanalyze(HttpServletRequest request, Model model) {
+		try {		
+			String drugcode  = request.getParameter("dc");
+			String cusid = request.getParameter("cus");
+			String st = request.getParameter("bgdt");
+			String et = request.getParameter("eddt");
+			
+			String sql = "from Customer c where c.cusId=?0";
+			Customer cus = null;
+			List<Customer> customer = baseService.find(sql, cusid);
+			if(customer.size() > 0){
+				cus = customer.get(0);
+			}
+			
+			sql = "from Drugcatalog d where d.cusId = ?0 and d.dcCode = ?1";
+			List<Drugcatalog> drugcatalog = baseService.find(sql, cusid, drugcode);
+			Drugcatalog drug = null;
+			if(drugcatalog.size() > 0){
+				drug = drugcatalog.get(0);
+			}
+			
+			if (drug != null){
+				model.addAttribute("drugname", drug.getDcCommercial());
+			}else{
+				model.addAttribute("drugname", "未知编码("+drugcode+")");
+			}
+			
+			model.addAttribute("drugcode", drugcode);			
+			model.addAttribute("cus", cus);
+			model.addAttribute("begindt", st);
+			model.addAttribute("enddt", et);
+			
+			return "/query/stockanalyze";
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+		
+	}
+	
+	//库存分析数据
+	@RequestMapping("/getStockanalyze")
+	@ResponseBody
+	public Map getStockanalyze(HttpServletRequest request) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Map map = new HashMap();
+		try {		
+			String drugcode = request.getParameter("dc");
+			String cusid = request.getParameter("cus");
+			String st = request.getParameter("bgdt");
+			String et = request.getParameter("eddt");
+
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(sdf.parse(st));
+			int day1 = cal.get(Calendar.DAY_OF_YEAR);
+			cal.setTime(sdf.parse(et));
+	        int day2 = cal.get(Calendar.DAY_OF_YEAR);
+	        int days = day2 - day1 + 1;
+			
+	        cal.setTime(sdf.parse(st));
+	        List<Map> fields = new LinkedList<Map>();
+
+	        for(int i=1; i<=days; i++){
+	        	Map field = new HashMap();
+	        	field.put("field", "day"+String.valueOf(i));
+	        	field.put("title", sdf.format(cal.getTime()));
+	        	field.put("width", 80);
+	        	field.put("align", "center");
+	        	fields.add(field);
+	        	
+	        	cal.add(Calendar.DAY_OF_MONTH, 1);
+	        }	
+	        //fields.putAll(field);
+	        map.put("cols", fields);
+	        
+			String sql;
+			Map data = new HashMap();
+			List<Map> rows = new LinkedList<Map>();
+			//String cusid = "53756274933F4814E053D8AA730A00F3";
+			//String drugcode = "Y02334";
+			//每天库存汇总  : 同一药品一天中只取最后一次上传数据，并且计算合计值（不同批次求和）
+			sql = "select TO_CHAR(item_picktime, 'YYYY-MM-DD') dt, sum(item_num)||'' num from tbl_itemstock "
+				+ "where cus_id = '"+cusid+"' and item_code = '"+drugcode+"' "
+				+ "and item_picktime in "
+				+ "	(select max(item_picktime) from "
+				+ "		(select TO_CHAR(item_picktime, 'YYYY-MM-DD') item_pickdate,item_picktime from tbl_itemstock" 
+				+ "		 where cus_id = '"+cusid+"' and item_code = '"+drugcode+"')"
+				+ "	group by item_pickdate) "
+				+ "group by item_picktime order by item_picktime";
+			
+			List<StockanalyzeDto> allstocks = baseService.findDto(sql, StockanalyzeDto.class);
+			cal.setTime(sdf.parse(st));
+			LinkedHashMap stocks = new LinkedHashMap();
+			stocks.put("colflag", "库存情况");
+	        for(int i=1; i<=days; i++){
+	        	Boolean b = false;
+	        	for(int j=0; j<allstocks.size(); j++){
+	        		String d1, d2;
+	        		d1 = allstocks.get(j).getDT();
+	        		d2 = sdf.format(cal.getTime());
+	        		if(d1.equals(d2)){
+	        			stocks.put("day"+String.valueOf(i), allstocks.get(j).getNUM());
+	        			b = true;
+	        			break;
+	        		}
+	        	}
+	        	if (!b) {
+	        		stocks.put("day"+String.valueOf(i), "--");
+	        	}
+	        	cal.add(Calendar.DAY_OF_MONTH, 1);
+	        }	        
+	        //map.put("stocks", stocks);
+	        rows.add(stocks);
+			
+	        
+			//按入库日期查询
+			String dtBegin = "and wi_datetime >= to_date('"+st+" 00:00:00','yyyy-mm-dd hh24:mi:ss') ";
+			String dtEnd   = "and wi_datetime <= to_date('"+et+" 23:59:59','yyyy-mm-dd hh24:mi:ss') ";
+			//每天入库汇总
+			sql = "select wi_date dt, sum(drug_num)||'' num from " 
+				+ "	(select drug_num,TO_CHAR(wi_datetime, 'YYYY-MM-DD') wi_date from tbl_warehouseitem "
+				+ "	 where cus_id = '"+cusid+"' and drug_code = '"+drugcode+"' "+dtBegin + dtEnd+")"
+				+ "group by wi_date order by wi_date";
+			
+			List<StockanalyzeDto> allstockin = baseService.findDto(sql, StockanalyzeDto.class);
+			cal.setTime(sdf.parse(st));
+			LinkedHashMap stockin = new LinkedHashMap();
+			int totalin = 0;
+        	for(int j=0; j<allstockin.size(); j++){
+        		totalin = totalin + Integer.parseInt(allstockin.get(j).getNUM());
+        	}
+			stockin.put("colflag", "入库合计(<span style='color:green'>+"+String.valueOf(totalin)+"</span>)");			
+			
+			Boolean b = false;
+			String d1, d2, num;
+	        for(int i=1; i<=days; i++){
+	        	b = false;
+	        	d2 = sdf.format(cal.getTime());
+	        	for(int j=0; j<allstockin.size(); j++){
+	        		d1 = allstockin.get(j).getDT();
+	        		if(d1.equals(d2)){
+	        			num = allstockin.get(j).getNUM();
+	        			stockin.put("day"+String.valueOf(i), "<span style='color:green'>+" + num +"</span>");
+	        			b = true;
+	        			break;
+	        		}
+	        	}
+	        	if (!b) {
+	        		stockin.put("day"+String.valueOf(i), "--");
+	        	}
+	        	cal.add(Calendar.DAY_OF_MONTH, 1);
+	        }
+	        //map.put("stockin", stockin);
+	        rows.add(stockin);
+			
+	        
+			//按销售日期查询
+			dtBegin = "and so_datetime >= to_date('"+st+" 00:00:00','yyyy-mm-dd hh24:mi:ss') ";
+			dtEnd   = "and so_datetime <= to_date('"+et+" 23:59:59','yyyy-mm-dd hh24:mi:ss') ";
+			//每天出库汇总	        
+			sql = "select so_date dt, sum(drug_num)||'' num from " 
+				+ "	(select drug_num,TO_CHAR(so_datetime, 'YYYY-MM-DD') so_date from tbl_salesitem" 
+				+ "	 where cus_id = '"+cusid+"' and drug_code = '"+drugcode+"' "+dtBegin + dtEnd +") "
+				+ "group by so_date order by so_date";
+			
+			List<StockanalyzeDto> allstockout = baseService.findDto(sql, StockanalyzeDto.class);
+			cal.setTime(sdf.parse(st));
+			LinkedHashMap stockout = new LinkedHashMap();
+			int totalout = 0;
+			for(int j=0; j<allstockout.size(); j++){
+        		totalout = totalout + Integer.parseInt(allstockout.get(j).getNUM());
+        	}
+			stockout.put("colflag", "销售合计(<span style='color:red'>-"+String.valueOf(totalout)+"</span>)");
+	        for(int i=1; i<=days; i++){
+	        	b = false;
+	        	d2 = sdf.format(cal.getTime());
+	        	for(int j=0; j<allstockout.size(); j++){
+	        		d1 = allstockout.get(j).getDT();
+	        		num = allstockout.get(j).getNUM();
+	        		if(d1.equals(d2)){
+	        			stockout.put("day"+String.valueOf(i), "<span style='color:red'>-" + num+"</span>");
+	        			b = true;
+	        			break;
+	        		}
+	        	}
+	        	if (!b) {
+	        		stockout.put("day"+String.valueOf(i), "--");
+	        	}
+	        	cal.add(Calendar.DAY_OF_MONTH, 1);
+	        }      
+	        //map.put("stockout", stockout);
+	        rows.add(stockout);
+	        
+	        data.put("total", 3);
+	        data.put("rows", rows);
+	        map.put("data", data);
+			
+			return map;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+}

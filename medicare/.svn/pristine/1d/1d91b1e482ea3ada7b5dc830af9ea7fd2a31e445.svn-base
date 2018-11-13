@@ -1,0 +1,47 @@
+package yibao.yiwei.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 机构管理员关联表
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "SYS_ORGMAN_RELATE", schema = "YIWEI")
+public class OrgmanRelate implements java.io.Serializable {
+
+	private String orgId;
+	private String muUserid;
+
+	/**
+	 * 定义机构id orgId属性,作为标识属性的成员(联合主键A)
+	 * @return
+	 */
+	@Id
+	@Column(name = "ORG_ID", nullable = false, length = 32)
+	public String getOrgId() {
+		return this.orgId;
+	}
+
+	public void setOrgId(String orgId) {
+		this.orgId = orgId;
+	}
+
+	/**
+	 * 定义管理员id muUserid 属性,作为标识属性的成员(联合主键B)
+	 * @return
+	 */
+	@Id
+	@Column(name = "MU_USERID", nullable = false, length = 32)
+	public String getMuUserid() {
+		return this.muUserid;
+	}
+
+	public void setMuUserid(String muUserid) {
+		this.muUserid = muUserid;
+	}
+
+}

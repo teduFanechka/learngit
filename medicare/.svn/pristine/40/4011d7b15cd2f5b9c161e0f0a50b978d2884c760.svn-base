@@ -1,0 +1,41 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "SYS_ROLE_MANAGER", schema = "YIWEI")
+public class RoleManager implements java.io.Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3526003880863833703L;
+
+	@Id
+	@Column(name = "MU_USERID")
+	private String muUserid;
+	
+	@Id
+	@Column(name = "RO_ID")
+	private String roId;
+
+	public String getMuUserid() {
+		return muUserid;
+	}
+
+	public void setMuUserid(String muUserid) {
+		this.muUserid = muUserid;
+	}
+
+	public String getRoId() {
+		return roId;
+	}
+
+	public void setRoId(String roId) {
+		this.roId = roId;
+	}
+
+}

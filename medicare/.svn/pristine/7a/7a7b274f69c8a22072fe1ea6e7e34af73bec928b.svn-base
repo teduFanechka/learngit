@@ -1,0 +1,23 @@
+package yibao.yiwei.service;
+
+import yibao.yiwei.entity.system.Uploadfile;
+
+public interface ITimerTask {
+
+	/**
+	 * 解析文件
+	 * @param uploadfile
+	 */
+	public void parseFile(Uploadfile uploadfile);
+	
+	/**
+	 * 定点上传统计生成
+	 */
+	public void couUploadfile();
+	
+	/**
+	 * 定点资格
+	 */
+	public void tzddlog();
+
+}

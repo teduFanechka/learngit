@@ -1,0 +1,106 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Systypes;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+
+@Controller
+public class SystypesController {
+	
+	@Autowired
+	private IBaseService<Systypes> baseService;
+
+	// 请求视图
+	@RequestMapping("/toSystypes")
+	public String toSystypes() {
+		return "/systypes/systypes";
+	}
+
+	// 新增或修改表格数据
+	@RequestMapping("/addOrUpdateSystypes ")
+	public void addOrUpdateSystypes(HttpServletRequest request, HttpServletResponse response) {
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String stId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		Systypes systypes = new Systypes();
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {
+			// 获取jsonArray第一个json对象 jsonObject
+			JSONObject jsonObject = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jsonObject.size() > 0) {
+				// 解析jsonObject 并获取实体字段值
+				String stParentcode = jsonObject.getString("stParentcode");
+				String stTypecode = jsonObject.getString("stTypecode");
+				String stRemark = jsonObject.getString("stRemark");
+				Object stStatus = jsonObject.get("stStatus");
+				if (stStatus.equals("")) {
+					systypes.setStStatus(1);
+				} else {
+					systypes.setStStatus(Integer.parseInt(String.valueOf(stStatus)));
+				}
+				String stTypename = jsonObject.getString("stTypename");
+				systypes.setStParentcode(stParentcode);
+				systypes.setStRemark(stRemark);
+				systypes.setStTypecode(stTypecode);
+				systypes.setStTypename(stTypename);
+				// 如果等于6 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jsonObject.size() == 6) {
+					// 获取id主键
+					stId = jsonObject.getString("stId");
+					systypes.setStId(Integer.parseInt(stId));
+					baseService.update(systypes);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(systypes);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	// 获取datagrid 所有Systypes对象
+
+	@RequestMapping("/getAllSystypes")
+	public void getAllSystypes(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		List<Systypes> list;// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String hql = "from Systypes s order by s.stId";// 注意hql 查询的是实体类,并不是数据库名称
+		list = baseService.findByPage(hql, rows, page);
+		Utils.toBeJson(list, baseService.findCount(Systypes.class), response);
+	}
+
+	// 批量删除信息 return null; 返回string 也可以
+	@RequestMapping("/delSystypes")
+	public void delSystypes(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 要批量删除的id字符串获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.delete(Systypes.class, arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+}

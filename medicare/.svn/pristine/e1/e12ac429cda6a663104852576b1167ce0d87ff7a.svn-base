@@ -1,0 +1,46 @@
+$(function() {
+	var cusId = $("#itemstock").attr("name");
+	var datagrid;
+	var editRow = undefined; // 定义全局变量,当前编辑的行
+	datagrid = $('#itemstock').datagrid( {
+		title : '库存信息',
+		iconCls : 'icon-ok',
+		idField : 'itemId',// 主键
+		pageSize : 10,// 默认选择的分页是每页5行数据
+		pageList : [ 5, 10, 20, 50 ],// 可以选择的分页集合
+		nowrap : false,// true,列内容多时自动折至第二行
+		striped : true,// 设置为true将交替显示行背景。
+		collapsible : false,// 显示可折叠按钮
+		url : 'getAllItemstock?cusId='+cusId,
+		loadMsg : '数据装载中......',
+		singleSelect : true,// 为true时只能选择单行,无法批量删除
+		fit : true, // datagrid自适应宽度
+		fitColumns : true,// 允许表格自动缩放，以适应父容器，防止水平滚动
+		sortName : 'itemId',// 当数据表格初始化时以哪一列来排序
+		sortOrder : 'desc',// 定义排序顺序，可以是'asc'或者'desc'（正序或者倒序）。
+		remoteSort : true,// 定义从服务器对数据进行排序。
+		checkbox : false,
+		pagination : true,// 分页
+		rownumbers : true, // 行数
+		queryParams : {}, // 查询条件
+		toolbar : []
+	});
+
+});
+
+//表格查询  
+function queryForm(){  
+  var params = $('#itemstock').datagrid('options').queryParams; //先取得 datagrid 的查询参数  
+  var fields =$('#searchForm').serializeArray(); //自动序列化表单元素为JSON对象  
+  $.each( fields, function(i, field){  
+      params[field.name] = field.value; //设置查询参数  
+  });   
+  $('#itemstock').datagrid('reload'); //设置好查询参数 reload 
+} 
+
+//点击清空按钮出发事件
+function clearForm() {
+	//$("#searchForm").find("input").val("");// 找到form表单下的所有input标签并清空
+	 $('#searchForm').form('clear');  
+	 //queryForm(); 
+}

@@ -1,0 +1,91 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>定点列表</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" href="${path}/css/icon.css" />
+		<link rel="stylesheet" href="${path }/css/ew-main.css" />
+		<link rel="stylesheet" href="${path }/css/ew-home.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/js/listload.js"></script>
+	</head>
+	<body>
+		<div id="content_wrap" class="easyui-layout content_wrap" data-options="fit:true" style="">
+			<!-- 左侧药店列表  -->
+			<div data-options="region:'west',title:'定点列表',split:true,width:200,minWidth:200,border:false" class="menu_warp" style="">
+				<div class="easyui-list">
+					<ul class="easyui-tree" data-options="lines:false">
+						<c:forEach items="${list}" var="list">
+							<li data-options="state:'open', selected:true, checked:true " iconCls="icon-folder1">
+								<span><a ghref="${path }/getCustomerInfo?cusId=${list[1]}">${list[0] }</a> </span>
+								<ul>
+									<c:if test="${cusFlag=='102' }"><!-- 连锁 -->
+										<li><span><a cusname="${list[0]}" ghref="${path }/toDrugcatalog?cusId=${list[1]}&cusFlag=${cusFlag}">项目编码</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toSupplier?cusId=${list[1]}&cusFlag=${cusFlag}">供应商/生产商信息</a></span></li>
+									</c:if>
+									<c:if test="${cusFlag!='102' }">
+										<li><span><a cusname="${list[0]}" ghref="${path }/toDrugcatalog?cusId=${list[1]}">项目编码</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toSupplier?cusId=${list[1]}">供应商/生产商信息</a></span></li>
+									</c:if>
+									
+									<c:if test="${cusFlag!='301' }">
+										<li><span><a cusname="${list[0]}" ghref="${path }/toEmployee?cusId=${list[1]}">药师信息</a></span></li>
+									</c:if>
+									
+									<c:if test="${cusFlag=='301' }"><!-- 医院 -->
+										<li><span><a cusname="${list[0]}" ghref="${path }/toEmployee?cusId=${list[1]}">医护人员信息</a></span></li>
+									</c:if>
+									
+									<li><span><a cusname="${list[0]}" ghref="${path }/toWarehouseitem?cusId=${list[1]}">入库信息</a></span></li>
+									<li><span><a cusname="${list[0]}" ghref="${path }/toDeliveryitem?cusId=${list[1]}">出库信息</a></span></li>
+									<li><span><a cusname="${list[0]}" ghref="${path }/toItemstock?cusId=${list[1]}">库存信息</a></span></li>
+									<li><span><a cusname="${list[0]}" ghref="${path }/toWarehouse?cusId=${list[1]}">库房信息</a></span></li>
+									<li><span><a cusname="${list[0]}" ghref="${path }/toDepartment?cusId=${list[1]}">科室信息</a></span></li>
+									
+									<c:if test="${manager.muUsercode=='yiwei' }">
+										<li><span><a cusname="${list[0]}" ghref="${path }/toSalesitem2?cusId=${list[1]}">销售信息自己用</a></span></li>
+									</c:if>
+									
+									<c:if test="${cusFlag!='301' }">
+										<li><span><a cusname="${list[0]}" ghref="${path }/toSalesitem?cusId=${list[1]}">销售信息</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toPrescribe?cusId=${list[1]}">处方信息</a></span></li>
+									</c:if>
+									<c:if test="${cusFlag=='301' }"><!-- 医院 -->
+										<li><span><a cusname="${list[0]}" ghref="${path }/toSalesitem?cusId=${list[1]}">门诊结算</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toHospitalized?cusId=${list[1]}">住院记录</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toDischarged?cusId=${list[1]}">出院记录</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toDoctororder?cusId=${list[1]}">医嘱信息</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toOrderperform?cusId=${list[1]}">医嘱执行记录</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toClinicrecords?cusId=${list[1]}">诊断记录</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toMedrecords?cusId=${list[1]}">病案首页(概要)</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toCheckresult?cusId=${list[1]}">检查、检验结果</a></span></li>
+										<li><span><a cusname="${list[0]}" ghref="${path }/toCheckdetail?cusId=${list[1]}">检查、检验结果详细</a></span></li>
+									</c:if>
+								</ul>
+							</li>
+						</c:forEach>
+					</ul>
+				</div>
+			</div>
+			<!-- 中间药店内容 -->
+			<div id="mainPanle" region="center" style="overflow: auto">
+				<div id="tabs" class="easyui-tabs" fit="true" border="false">
+
+					<div id="mm" class="easyui-menu" style="width: 150px; overflow: scroll">
+						<div id="mm-tabreload">刷新</div>
+						<div id="mm-tabcloseall">关闭全部</div>
+						<div id="mm-tabcloseother">关闭其他</div>
+						<div class="menu-sep"></div>
+						<div id="mm-tabcloseright">关闭右侧标签</div>
+						<div id="mm-tabcloseleft">关闭左侧标签</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

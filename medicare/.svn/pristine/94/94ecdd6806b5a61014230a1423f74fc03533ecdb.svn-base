@@ -1,0 +1,161 @@
+package yibao.yiwei.controller.system;
+
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.QuartzJob;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.system.IQuartzJobManager;
+
+@SuppressWarnings("unchecked")
+@Controller
+public class QuartzJobController {
+	
+	@Resource(name = "baseService")
+	private IBaseService baseService;
+	
+	@Resource(name = "quartzJobManager")
+	private IQuartzJobManager quartzJobManager;
+	
+	
+	@AuthPassport
+	@RequestMapping("/toQuartzJob")
+	public String toQuartzJob() {
+		return "/system/quartzjob";
+	}
+	
+	/**
+	 * 查询定时任务
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllQuartzJob")
+	public Map getAllQuartzJob(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String sql = "select qt.trigger_name, qt.job_name, qt.job_group, qjd.job_class_name, qt.trigger_state, qct.cron_expression " +
+				"from QRTZ_TRIGGERS qt inner join QRTZ_CRON_TRIGGERS qct on qt.trigger_name = qct.trigger_name " +
+				"inner join QRTZ_JOB_DETAILS qjd on qt.job_name=qjd.job_name and qt.job_group=qjd.job_group";
+		List list = baseService.findByPageSql(sql, rows, page);
+		QuartzJob quartzJob;
+		Object[] obj;
+		List list2 = new ArrayList();
+		for(int i = 0; i <list.size(); i++){
+			obj = (Object[])list.get(i);
+			quartzJob = new QuartzJob();
+			quartzJob.setTrigger_name(obj[0] != null ? obj[0].toString() : "");
+			quartzJob.setJob_name(obj[1] != null ? obj[1].toString() : "");
+			quartzJob.setJob_group(obj[2] != null ? obj[2].toString() : "");
+			String className = "";
+			if(obj[3] != null){
+				if(obj[3].equals("yibao.yiwei.utils.timer.AnalysisTimerTask")){
+					className = "1";
+				} else if(obj[3].equals("yibao.yiwei.utils.timer.WarningTimerTask")){
+					className = "2";
+				} else if(obj[3].equals("yibao.yiwei.utils.timer.TzddTimerTask")){
+					className = "3";
+				} else {
+					className = "1";
+				} 
+			}
+			quartzJob.setClassName(className);
+			quartzJob.setTrigger_state(obj[4] != null ? obj[4].toString() : "");
+			quartzJob.setCron_expression(obj[5] != null ? obj[5].toString() : "");
+			list2.add(quartzJob);
+			
+		}
+		String sqlC = "select count(*) from QRTZ_TRIGGERS qt right join QRTZ_CRON_TRIGGERS qct on qt.trigger_name = qct.trigger_name";
+		int count = baseService.findCountSql(sqlC);
+		map.put("total", count);
+		map.put("rows", list2);
+		return map;
+	}
+	
+	/*查询所有定时任务
+	@ResponseBody
+	@RequestMapping("/selectAll")
+	public JSONObject selectAll() {
+		List<QuartzJob> list = quartzJobManager.selectAll();
+		JSONObject jo = new JSONObject();
+		jo.put("code", 0);
+		jo.put("msg", true);
+		jo.put("count", list.size());
+		jo.put("data",list);
+		return jo;
+	}*/
+	
+	//添加定时任务
+	/*@ResponseBody
+	@RequestMapping("/addJobgroup")
+	public Map addJobgroup(QuartzJob quartzjob,String classId) throws Exception {
+		Map<String, Object> map = new HashMap<String, Object>();
+		Class<?> entity;
+		if(classId.equals("1")){
+			entity = AnalysisTimerTask.class;
+		} else if(classId.equals("2")){
+			entity = WarningTimerTask.class;
+		} else if(classId.equals("3")){
+			entity = TzddTimerTask.class;
+		} else {
+			entity = AnalysisTimerTask.class;
+		}
+		int i = quartzJobManager.addjobgroup(quartzjob, entity); //后者为运行任务的类
+		String status = "error";
+		if(i==1){
+			status = "添加完成";
+		}
+		map.put("status", status);
+		return map;
+		
+	}*/
+	
+	//删除定时任务
+	@ResponseBody
+	@RequestMapping("/delJobgroup")
+	public String delJobgroup(String triggername){
+		quartzJobManager.deljobgroup(triggername);
+		return  "删除成功";
+	}
+	
+	//暂停某任务
+	@ResponseBody
+	@RequestMapping("/pausejobgroup")
+	public String pausejobgroup(String triggername){
+		String result = "error";
+		int i = quartzJobManager.pauseTrigger(triggername);
+		if(i==1){
+			result = "success";
+		}
+		return result;
+	}
+	
+	//重新开始某任务
+	@ResponseBody
+	@RequestMapping("/resumeTriggers")
+	public String resumeTriggers(String triggername){
+		String result = "error";
+		int i = quartzJobManager.resumeTriggers(triggername);
+		if(i==1){
+			result = "success";
+		}
+		return result;
+	}
+
+	
+}

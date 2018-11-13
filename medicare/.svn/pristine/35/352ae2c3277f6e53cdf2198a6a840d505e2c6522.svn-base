@@ -1,0 +1,18 @@
+package yibao.yiwei.service;
+
+import yibao.yiwei.entity.Uploadfile;
+
+public interface ITimerTask {
+
+	/**
+	 * 解析
+	 * @param uploadfile
+	 */
+	public void analysis(Uploadfile uploadfile);
+	
+	/**
+	 * 统计
+	 */
+	public void count();
+
+}

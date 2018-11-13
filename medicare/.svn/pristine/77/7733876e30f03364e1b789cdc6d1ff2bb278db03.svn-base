@@ -1,0 +1,40 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>'addClient.jsp'</title>
+	</head>
+
+	<body>
+		<div>
+			<form action="<%=request.getContextPath()%>/service/register"
+				method="post">
+				上级 GUID:
+				<input type="text" name="cusParentid" />
+				分店编码:
+				<input type="text" name="cusBranchcode" />
+				客户标识:
+				<input type="text" name="cusFlag" />
+				客户名称:
+				<input type="text" name="cusName" />
+				联系地址:
+				<input type="text" name="cusAddr" />
+				</br>
+				联系人:
+				<input type="text" name="cusContact" />
+				联系电话:
+				<input type="text" name="cusPhone" />
+				唯一标识:
+				<input type="text" name="cusUniqure" />
+				注册IP:
+				<input type="text" name="cusRegip" />
+				地纬编码:
+				<input type="text" name="cusDareway" />
+
+				备注:
+				<input type="text" name="cusRemark" /></br>
+				<input type="submit" value="提交" />
+			</form>
+		</div>
+	</body>
+</html>

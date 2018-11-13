@@ -1,0 +1,327 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Warehouseitem;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IWarehouseitemManager;
+
+/**
+ * 入库信息
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class WarehouseitemManager implements IWarehouseitemManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 添加入库信息
+	 */
+	@Override
+	public void addWarehouseitems(String path, String cusId, String cusName, Date upCollectdate, int upId, String cusFlag,String fileName) throws IOException,ParseException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Warehouseitem warehouseitem;
+		Customer customer;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					if (name.length < 24) {// 上传文件解析不正确,可能为数据不全
+						throw new DataException("正确字段数:24,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						String yybm;//医院编码
+						String parentid = "";// 父id
+						warehouseitem = new Warehouseitem();
+						//判断定点是否连锁,数据解析至分店cusid下
+						// 判断定点类型是连锁药店并且上传有最后一位分店编码
+						if (cusFlag.equals("102") && name.length > 24) {// length:25
+							// 分店标识为零,则保存在总店id下
+							if (name[24].trim().equals("0")) {
+								warehouseitem.setCusId(cusId);
+								customer = (Customer)baseDao.get(Customer.class, cusId);
+								yybm = customer.getCusDareway();
+							} else {
+								// 查找分店id,父id是当前cusid,分店编码为name[]最后一位
+								String hql = "select c.cusId from Customer c where c.cusParentid =?0 and c.cusBranchcode=?1 ";
+								List list = baseDao.find(hql, cusId, name[24].trim());
+								if (list.size() > 0) {
+									// 分店已注册查找到分店id
+									warehouseitem.setCusId(list.get(0).toString());
+									// 根据分店cusid查找对应的医院编码
+									customer = (Customer)baseDao.get(Customer.class, list.get(0).toString());
+									yybm = customer.getCusDareway();
+									parentid = cusId;
+								} else {// 如果当前分店编码未注册,执行下次循环
+									continue;
+								}
+							}
+						} else {// 最后一个##后为空则length=24
+							warehouseitem.setCusId(cusId);
+							customer = (Customer)baseDao.get(Customer.class, cusId);
+							yybm = customer.getCusDareway();
+						}
+						warehouseitem.setCusDareway(yybm);// 医院编码
+						warehouseitem.setCusParentid(parentid);
+						warehouseitem.setDrugCode(name[3].trim());// 项目编码(药品编码) 4
+						if (name[5].trim().equals("NULL") || name[5].trim().equals("")) {
+							warehouseitem.setDrugNum(0.0);// 数量(入库) 6
+						} else {
+							warehouseitem.setDrugNum(Double.parseDouble(name[5].trim()));
+						}
+						if (name[6].trim().equals("NULL") || name[6].trim().equals("")) {
+							warehouseitem.setDrugPurchaseprice(0.0);// 采购价 7
+						} else {
+							warehouseitem.setDrugPurchaseprice(Double.parseDouble(name[6].trim()));
+						}
+						warehouseitem.setDrugBatchno(name[7].trim());// 生产批次 8
+						warehouseitem.setDrugMfrs(name[8].trim());// 生产商 9
+						warehouseitem.setDrugMadein(name[9].trim());// 生产地 10
+						DateFormat df;
+						if (name[10].trim().equals("NULL") || name[10].trim().equals("") || name[10].trim().equals("1900-1-1")) {
+							warehouseitem.setDrugExpdate(null);
+						} else {
+							if (name[10].trim().length() == 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else if(name[10].trim().length() == 18){
+								df = new SimpleDateFormat("yyyy-MM-ddHH:mm:ss");
+							} else if(name[10].trim().length() == 17){
+								df = new SimpleDateFormat("dd-MMM-yyHH:mm:ss",Locale.ENGLISH);
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							warehouseitem.setDrugExpdate(df.parse(name[10].trim()));// 有效期 11
+						}
+						if (name[11].trim().equals("NULL") || name[11].trim().equals("") || name[11].trim().equals("1900-1-1")) {
+							warehouseitem.setDrugMfgdate(null);
+						} else {
+							if (name[11].trim().length() == 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else if(name[11].trim().length() == 18){
+								df = new SimpleDateFormat("yyyy-MM-ddHH:mm:ss");
+							} else if(name[11].trim().length() == 17){
+								df = new SimpleDateFormat("dd-MMM-yyHH:mm:ss",Locale.ENGLISH);
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							warehouseitem.setDrugMfgdate(df.parse(name[11].trim()));// 生产日期 12
+						}
+						warehouseitem.setDrugBuyer(name[20].trim());// 采购员编码 21
+						warehouseitem.setDrugExaminer(name[22].trim());// 验收员编码 23
+						warehouseitem.setDrugEid(name[12].trim());// 电子监管码 13
+						warehouseitem.setDrugCollectdate(upCollectdate);// 采集日期， 药品采集时间=参数 文件解析时间
+						warehouseitem.setWiCode(name[0].trim());// 入库单号1
+						if (name[1].trim().equals("NULL") || name[1].trim().equals("") || name[1].trim().equals("1900-1-1")) {
+							warehouseitem.setWiDatetime(null);
+						} else {
+							if (name[1].trim().length() == 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else if(name[1].trim().length() == 18){
+								df = new SimpleDateFormat("yyyy-MM-ddHH:mm:ss");
+							} else if(name[1].trim().length() == 17){
+								df = new SimpleDateFormat("dd-MMM-yyHH:mm:ss",Locale.ENGLISH);
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							warehouseitem.setWiDatetime(df.parse(name[1].trim()));// 入库日期2
+						}
+						warehouseitem.setWiType(name[2].trim());// 入库类别3
+						warehouseitem.setDrugName(name[4].trim());// 项目名称(药品名称)5
+						if (name[13].trim().equals("NULL") || name[13].trim().equals("")) {// 零售价14
+							warehouseitem.setWiPrice(null);
+						} else {
+							warehouseitem.setWiPrice(Double.parseDouble(name[13].trim()));
+						}
+						warehouseitem.setDrugSpecification(name[14].trim());// 规格15
+						warehouseitem.setDrugUnit(name[15].trim());// 单位16
+						warehouseitem.setDrugHcscode(name[16].trim());// 医保编码17
+						warehouseitem.setWiWhcode(name[17].trim());// 仓库编码18
+						warehouseitem.setWiWhname(name[18].trim());// 仓库名称19
+						warehouseitem.setWiLocation(name[19].trim());// 货位/货架号20
+						warehouseitem.setDrugBuyername(name[21].trim());// 采购员姓名22
+						warehouseitem.setDrugExaminername(name[23].trim());// 验收员姓名24
+						warehouseitem.setWiAddtime(new Date());// 创建时间
+						baseDao.save(warehouseitem);
+						count++;
+					} catch (Exception e) {
+						error++;
+						if(error <= 5){//只记录文件的5行错误
+							String log = e.toString();
+							if (log.length() > 300){
+								log = log.substring(0, 300);
+							}
+							errorlog = new Errorlog();
+							errorlog.setCusId(cusId);
+							errorlog.setCusName(cusName);
+							errorlog.setErrAddtime(new Date());
+							errorlog.setErrFileflag("入库信息");
+							errorlog.setErrFilepath(fileName);
+							errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+							errorlog.setErrType("数据解析错误");
+							baseDao.save(errorlog);
+						}
+					}
+				}
+				baseDao.updateOrDelete(qsql, count,"成功"+count+"条，失败"+error+"条",upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"非文件", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("入库信息");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 24) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"数据上传字段不全错误,正确字段数:24,实际解析字段数:" + name.length, upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"数据解析错误", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+	}
+
+	/**
+	 * @param cusIds
+	 * @param days 1天/一周/一月
+	 * @return 药品入库数量统计集合
+	 */
+	@Override
+	public List getWIAmountTotals(String cusId, String days, List drugCodes) throws ParseException {
+		List list = new ArrayList();
+		// 定义存放当前cusId 15天每天的totals 集合
+		// 调用方法获取当前cusId 药品编码集合
+		if (drugCodes.size() > 0) {
+			for (int y = 0; y < drugCodes.size(); y++) {
+				Object drugCode = drugCodes.get(y);
+				Date today = new Date();
+				GregorianCalendar gc = new GregorianCalendar();
+				SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+				gc.setTime(today);
+				gc.add(5, -Integer.parseInt(days));// 减去的天数(days)
+				gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc.get(Calendar.DATE));
+				String todayStr = sf.format(today);
+				String dateStr = sf.format(gc.getTime());
+				today = sf.parse(todayStr);
+				Date date = sf.parse(dateStr);
+				// 定义集合存储当前cusId当前日期当前药品代码下药品数量
+				List drugNumList = new ArrayList();
+				if (Integer.parseInt(days) == 1) { // 表示取当天
+					String hqlDates = "select sum(w.drugNum) from Warehouseitem w where w.cusId=?0 "
+							+ " and w.drugCollectdate = ?1 and w.drugCode=?2";
+					// 定义获取循环一天 有没有数据
+					drugNumList = baseDao.find(hqlDates, cusId, today,
+							drugCode);
+				} else {// 取一周或一月
+					String hqlDates = "select sum(w.drugNum) from Warehouseitem w where w.cusId=?0 "
+							+ " and w.drugCollectdate between ?1 and ?2 and w.drugCode=?3";
+					drugNumList = baseDao.find(hqlDates, cusId, date, today, drugCode);
+				}
+				if (drugNumList.size() > 0) {
+					list.add(y, drugNumList.get(0));
+				}
+			}
+		}
+		return list;
+	}
+
+	// 获取当前cusId 对应时间段内药品编码集合去重
+	@Override
+	public List getgetDrugCodes(String cusId, String days) throws ParseException {
+		List list = new ArrayList();
+		Date today = new Date();
+		GregorianCalendar gc = new GregorianCalendar();
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		gc.setTime(today);
+		gc.add(5, -Integer.parseInt(days));
+		gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc  .get(Calendar.DATE));
+		String todayStr = sf.format(today);
+		String dateStr = sf.format(gc.getTime());
+		today = sf.parse(todayStr);
+		Date date = sf.parse(dateStr);
+		// 定义集合存储当前cusId当前日期当前药品代码下药品数量
+		if (Integer.parseInt(days) == 1) { // 表示取当天
+			String hqlDates = "select w.drugCode from Warehouseitem w where w.cusId=?0 "
+					+ " and w.drugCollectdate = ?1 group by w.drugCode";
+			// 定义获取循环一天 有没有数据
+			list = baseDao.find(hqlDates, cusId, today);
+		} else {// 取一周或一月
+			String hqlDates = "select w.drugCode from Warehouseitem w where w.cusId=?0 "
+					+ " and w.drugCollectdate between ?1 and ?2 group by w.drugCode";
+			list = baseDao.find(hqlDates, cusId, date, today);
+
+		}
+		return list;
+	}
+
+	// 获取当前cusid 项目名称集合
+	@Override
+	public List getAlldrugNames(String cusId, List drugCodes) {
+		int count = 0;
+		List list = new ArrayList();
+		if (drugCodes.size() > 0) {
+			for (int i = 0; i < drugCodes.size(); i++) {
+				Object drugCode = drugCodes.get(i);
+				String hql = "select w.drugName from Warehouseitem w where w.cusId=?0 and w.drugCode=?1 ";
+				List temp = baseDao.find(hql, cusId, drugCode);
+				if (temp.size() > 0) {
+					// 如果查找到编码对应的药品名称才会添加到list中
+					list.add(count, temp.get(0));
+					count++;
+				}
+			}
+		}
+		return list;
+	}
+
+}

@@ -1,0 +1,116 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 医保刷卡信息表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_HCCONSUME", schema = "YIWEI")
+public class Hcconsume implements java.io.Serializable {
+
+	private String hccId;//记录ID
+	private String cusId;//客户id	
+	private String cusParentid;//客户上级id	
+	private String soNo;//销售单号
+	private String hcuId;//参保人id
+	private String hcuHcnum;//医保卡号
+	private String hccOperator;//操作员
+	private Date hccDatetime;//操作日期
+	private Date hccCreatetime;//创建日期
+
+	@GenericGenerator(name = "Hcconsume_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Hcconsume_id")
+	@Column(name = "HCC_ID", unique = true, nullable = false, length = 32)
+	public String getHccId() {
+		return this.hccId;
+	}
+
+	public void setHccId(String hccId) {
+		this.hccId = hccId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_PARENTID", length = 32)
+	public String getCusParentid() {
+		return this.cusParentid;
+	}
+
+	public void setCusParentid(String cusParentid) {
+		this.cusParentid = cusParentid;
+	}
+
+	@Column(name = "SO_NO", length = 32)
+	public String getSoNo() {
+		return this.soNo;
+	}
+
+	public void setSoNo(String soNo) {
+		this.soNo = soNo;
+	}
+
+	@Column(name = "HCU_ID", length = 32)
+	public String getHcuId() {
+		return this.hcuId;
+	}
+
+	public void setHcuId(String hcuId) {
+		this.hcuId = hcuId;
+	}
+
+	@Column(name = "HCU_HCNUM", length = 32)
+	public String getHcuHcnum() {
+		return this.hcuHcnum;
+	}
+
+	public void setHcuHcnum(String hcuHcnum) {
+		this.hcuHcnum = hcuHcnum;
+	}
+
+	@Column(name = "HCC_OPERATOR", length = 16)
+	public String getHccOperator() {
+		return this.hccOperator;
+	}
+
+	public void setHccOperator(String hccOperator) {
+		this.hccOperator = hccOperator;
+	}
+
+	@Column(name = "HCC_DATETIME", length = 7)
+	public Date getHccDatetime() {
+		return this.hccDatetime;
+	}
+
+	public void setHccDatetime(Date hccDatetime) {
+		this.hccDatetime = hccDatetime;
+	}
+
+	@Column(name = "HCC_CREATETIME", length = 7)
+	public Date getHccCreatetime() {
+		return this.hccCreatetime;
+	}
+
+	public void setHccCreatetime(Date hccCreatetime) {
+		this.hccCreatetime = hccCreatetime;
+	}
+
+}

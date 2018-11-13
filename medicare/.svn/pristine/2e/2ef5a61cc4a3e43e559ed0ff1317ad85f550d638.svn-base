@@ -1,0 +1,275 @@
+$(function() {
+	tabCloseEven();
+	$('.cs-navi-tab').click(function() {
+		var $this = $(this);
+		var href = $this.attr('src');
+		var title = $this.text();
+		addTab(title, href);
+	});
+	// 上传预警
+	$('tbody tr').hover(function() {
+		$(this).addClass('odd');
+	}, function() {
+		$(this).removeClass('odd');
+	});
+
+	// 左侧菜单定点查询区划单击事件
+	$('.customertree').click(function() {
+		var $this = $(this);
+		var href = $this.attr('src');
+		var title = $this.text();
+		var xiaqu = $this.attr('fid');
+		if (typeof (xiaqu) != "undefined") {
+			title = title + '-' + xiaqu;
+		}
+		addTab(title, href);
+	});
+
+});
+function addTab(title, url) {
+	if ($('#tabs').tabs('exists', title)) {
+		$('#tabs').tabs('select', title);
+	} else {
+		var content = '<iframe name="mainFrame" scrolling="auto" frameborder="0"  src="' + url + '" style="width:100%;height:100%;"></iframe>';
+		$('#tabs').tabs('add', {
+			title : title,
+			content : content,
+			closable : true
+		});
+	}
+	tabClose();
+}
+
+function createFrame(url) {
+	var s = '<iframe scrolling="auto" frameborder="0"  src="' + url + '" style="width:100%;height:100%;"></iframe>';
+	return s;
+}
+function tabClose() {
+	$(".tabs-inner").dblclick(function() {
+		var subtitle = $(this).text();
+		$('#tabs').tabs('close', subtitle);
+	})
+	$(".tabs-inner").bind('contextmenu', function(e) {
+		$('#mm').menu('show', {
+			left : e.pageX,
+			top : e.pageY
+		});
+		var subtitle = $(this).text();
+		$('#mm').data("currtab", subtitle);
+		$('#tabs').tabs('select', subtitle);
+		return false;
+	});
+}
+function tabCloseEven() {
+	// 刷新
+	$('#mm-tabupdate').click(function() {
+		var currTab = $('#tabs').tabs('getSelected');
+		var url = $(currTab.panel('options').content).attr('src');
+		if (url != undefined && currTab.panel('options').title != 'Home') {
+			$('#tabs').tabs('update', {
+				tab : currTab,
+				options : {
+					content : createFrame(url)
+
+				}
+			})
+		}
+	})
+	// 关闭当前
+	$('#mm-tabclose').click(function() {
+		var currtab_title = $('#mm').data("currtab");
+		$('#tabs').tabs('close', currtab_title);
+	})
+	// 全部关闭
+	$('#mm-tabcloseall').click(function() {
+		$('.tabs-inner span').each(function(i, n) {
+			var t = $(n).text();
+			if (t != 'Home') {
+				$('#tabs').tabs('close', t);
+			}
+		});
+	});
+	// 关闭除当前之外的TAB
+	$('#mm-tabcloseother').click(function() {
+		var prevall = $('.tabs-selected').prevAll();
+		var nextall = $('.tabs-selected').nextAll();
+		if (prevall.length > 0) {
+			prevall.each(function(i, n) {
+				var t = $(n).text();
+				if (t != 'Home') {
+					$('#tabs').tabs('close', t);
+				}
+			});
+		}
+		if (nextall.length > 0) {
+			nextall.each(function(i, n) {
+				var t = $(n).text();
+				if (t != 'Home') {
+					$('#tabs').tabs('close', t);
+				}
+			});
+		}
+		return false;
+	});
+	
+	//关闭当前右侧的TAB
+    $('#mm-tabcloseright').click(function(){
+        var nextall = $('.tabs-selected').nextAll();
+        if(nextall.length==0){
+        	$.messager.alert('系统提示', '已经是最后一个了');
+            return false;
+        }
+        nextall.each(function(i,n){
+            var t=$(n).text();
+            $('#tabs').tabs('close',t);
+        });
+        return false;
+    });
+    
+    // 关闭当前左侧的TAB
+	$('#mm-tabcloseleft').click(function() {
+		var prevall = $('.tabs-selected').prevAll();
+		if (prevall.length == 0) {
+			$.messager.alert('系统提示', '已经是第一个了');
+			return false;
+		}
+		prevall.each(function(i, n) {
+			if ($('a.tabs-close', $(n)).length > 0) {
+				var t = $('a:eq(0) span', $(n)).text();
+				$('#tabs').tabs('close', t);
+			}
+		});
+		return false;
+	});
+};
+
+$(document).ready(function() {
+	$(".right_TC").click(function() {
+		var r = confirm("确认退出吗？");
+		if (r == true) {
+			open('login', '_self');
+		} else {
+			return false;
+		}
+	});
+	$(".a1").click(function() {
+		var a = confirm("确认退出吗？");
+		if (a == true) {
+			open('signOut', '_self');
+		} else {
+			return false;
+		}
+	});
+});
+var chart;
+$(function() {
+	chart = new Highcharts.Chart( {
+		chart : {
+			renderTo : 'chart_combo' // 关联页面元素div#id
+	},
+
+	title : { // 图表标题
+			text : '2018年淄博市医保数据统计'
+		},
+
+		xAxis : { // x轴
+			categories : [ '医院', '单体药店', '连锁药店', '门诊' ], // X轴类别
+			labels : {
+				y : 18
+			}
+		// x轴标签位置：距X轴下方18像素
+		},
+		yAxis : { // y轴
+			title : false, // y轴标题
+			lineWidth : 1
+		// 基线宽度
+		},
+		tooltip : {
+			formatter : function() { // 格式化鼠标滑向图表数据点时显示的提示框
+			var s;
+			if (this.point.name) { // 饼状图
+				s = '<b>' + this.point.name + '</b>: <br>' + '('
+						+ twoDecimal(this.percentage) + '%)';
+			} else {
+				s = '' + this.x + ': ' + this.y + '%';
+			}
+			return s;
+		}
+	},
+	labels : { // 图表标签
+			items : [ {
+				html : '数据量对比',
+				style : {
+					left : '48px',
+					top : '8px'
+				}
+			} ]
+		},
+		exporting : {
+			enabled : false
+		// 设置导出按钮不可用
+		},
+		credits : {
+			text : ' ',
+			href : '#'
+		},
+		series : [ { // 数据列
+					type : 'column',
+					name : '第一数据',
+					data : [ 8.4, 9.8, 11.4, 15.6 ]
+				}, {
+					type : 'column',
+					name : '第二数据',
+					data : [ 9.2, 7.8, 10.2, 16.8 ]
+				}, {
+					type : 'column',
+					name : '第三数据',
+					data : [ 6.5, 9.4, 13.2, 18.6 ]
+				}, {
+					type : 'spline',
+					name : '平均值',
+					data : [ 8.03, 9, 11.6, 17 ]
+				}, {
+					type : 'pie', // 饼状图
+					name : '数据上传总量',
+					data : [ {
+						name : '第一数据',
+						y : 45.2,
+						color : '#4572A7'
+					}, {
+						name : '第二数据',
+						y : 44,
+						color : '#AA4643'
+					}, {
+						name : '第三数据',
+						y : 47.7,
+						color : '#89A54E'
+					} ],
+					center : [ 100, 80 ], // 饼状图坐标
+					size : 100, // 饼状图直径大小
+					dataLabels : {
+						enabled : false
+					// 不显示饼状图数据标签
+					}
+				} ]
+	});
+})
+// 保留2位小数
+function twoDecimal(x) {
+	var f_x = parseFloat(x);
+	if (isNaN(f_x)) {
+		alert('错误的参数');
+		return false;
+	}
+	var f_x = Math.round(x * 100) / 100;
+	var s_x = f_x.toString();
+	var pos_decimal = s_x.indexOf('.');
+	if (pos_decimal < 0) {
+		pos_decimal = s_x.length;
+		s_x += '.';
+	}
+	while (s_x.length <= pos_decimal + 2) {
+		s_x += '0';
+	}
+	return s_x;
+}

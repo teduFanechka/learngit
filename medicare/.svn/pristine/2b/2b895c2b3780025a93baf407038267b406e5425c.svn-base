@@ -1,0 +1,24 @@
+package yibao.yiwei.service;
+
+import java.text.ParseException;
+import java.util.List;
+
+@SuppressWarnings("unchecked")
+public interface IDrugcatalogManager {
+
+	/**
+	 * @param drugCodes 商品编码集合
+	 * @return 对应的商品名集合
+	 */
+	public List getAlldcCommercials(List drugCodes);
+
+	
+	/**
+	 * @param hql
+	 * @param cusIds 客户集合(*list类型*)
+	 * @return 药品编码集合
+	 * @throws ParseException
+	 */
+	public List getDrugCodes(String hql, List cusIds) throws ParseException;
+
+}

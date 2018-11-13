@@ -1,0 +1,13 @@
+package yibao.yiwei.service.system;
+
+public interface ITzddlogManager {
+
+	/**
+	 * 抽取开启或停止定点共性方法
+	 * 
+	 * @param ids 主键串
+	 * @param operate 开启1/停止0
+	 */
+	public void updateOperateTzddlog(String ids, int operate, String manual);
+
+}

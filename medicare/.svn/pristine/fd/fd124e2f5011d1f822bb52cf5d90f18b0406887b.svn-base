@@ -1,0 +1,75 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<html>
+	<head>
+		<title>客户管理</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script type="text/javascript">
+			$(function(){
+				$(".tabb").tabs({
+					fit : true,
+					border : false,
+					selected : 0,
+				});	
+			   
+			    datagrid2("errorlog", "getSearchErrorlog"); 	
+			});
+			
+			//数据检索
+			function findUser(){ 
+				var params = $('#errorlog').datagrid('options').queryParams; //先取得 datagrid 的查询参数  
+				var fields =$('#errorForm').serializeArray(); //自动序列化表单元素为JSON对象  
+				$.each( fields, function(i, field){
+					params[field.name] = field.value; //设置查询参数  
+				});   
+				$('#errorlog').datagrid('reload'); //设置好查询参数 reload 
+			} 
+
+		</script>
+	</head>
+	
+	<body>
+		<div class="easyui-layout" data-options="fit:'true',">
+			<div class="xqgl">
+				<div class="easyui-panel" title="解析日志" data-options="border:true,fit:true" iconcls="icon-zc">
+					<table id="errorlog" data-options="checkOnSelect:true,singleSelect:true,fit:true,rownumbers:true,pagination:true" width="95%" cellpadding="2" cellspacing="1" toolbar="#toolbar"  fitColumns="true">
+						<thead>   
+                            <tr> 
+                                <th data-options="field:'sb',checkbox:true"></th>
+                                <th data-options="field:'errId',hidden:true">错误ID</th>
+                                <th data-options="field:'cusId',hidden:true">定点ID</th>
+                                <th data-options="field:'cusName',halign:'center',align:'left'">定点名称</th> 
+                                <th data-options="field:'errType',halign:'center',align:'left'">错误类型</th>
+                                <th data-options="field:'errFilepath',halign:'center',align:'left'">文件名称</th>
+                                <th data-options="field:'errFileflag',halign:'center',align:'left',formatter:fmtUpFileflag">文件类型</th>
+                                <th data-options="field:'errAddtime',halign:'center',align:'center'">日志时间</th>
+                                <th data-options="field:'errLog',halign:'center',align:'left',width:200">错误日志</th> 
+                            </tr>   
+                        </thead>
+					</table>
+				</div>
+			</div>
+			<div id="toolbar" style="width: 100%; height: 25px; padding: 2px 0;" class="">
+				<div class="barbox1-1">
+					<div style="width: 200px; height: 24px; float:left;margin-left:4px;margin-top:2px;">
+						<form id="errorForm" onkeydown="if (event.keyCode == 13) {queryForm();}">
+							<input id="searchname" name="cusName" class="easyui-searchbox" style="width: 160px; line-height: 24px;" data-options="searcher:findUser,prompt:'请输入查询条件',"></input>
+							<input id="cusFlag" cusFlag="${cusFlag }" style="visibility: hidden" />
+							<div id="mm" style="width: 120px"></div>
+						</form>
+						<div class="cl-xx">
+							<a href="javascript:" class="clear" onClick="clearForm()"> <img style="margin-top: 2px;" class="cl-xx-child" src="images/xx.png" /> </a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

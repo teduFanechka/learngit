@@ -1,0 +1,334 @@
+package yibao.yiwei.controller.system;
+
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.system.Tzddlog;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.system.ITzddlogManager;
+
+/**
+ * 定点日志表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class TzddlogController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	@Autowired
+	private ITzddlogManager tzddlogManager;
+
+	/**
+	 * 转到定点结算控制页面
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toTzddlog")
+	public String toTzddlog() {
+		return "/tzddlog/tzddlog";
+	}
+	
+	/**
+	 * 结算控制
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	@ResponseBody
+	@RequestMapping("/getSearchTzddlog")
+	public Map getSearchTzddlog(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusName = request.getParameter("cusName") != null ? request.getParameter("cusName").trim() : "";// 按定点名称查询
+		String hql = "from Tzddlog";
+		String countHql = "select count(tz_Id) from TBL_TZDDLOG";
+		if (!cusName.equals("")) {
+			hql+= " where tzCusname like '%" + cusName + "%' or tzYybm = '" + cusName + "'";
+			countHql+= " where tz_Cusname like '%" + cusName + "%' or tz_Yybm = '" + cusName + "'";
+		}
+		hql+=" order by tzDate desc nulls last";//NULLS LAST：字段为null值排在最后，需hibernate4.2.0cr1及以后支持
+		int total = baseService.findCountSql(countHql);
+		List list = baseService.findByPage(hql, rows, page);
+		map.put("total", total);
+		map.put("rows", list);
+		return map;
+	}
+	
+	/**
+	 * 检查定点上传数据情况
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws ParseException
+	 */
+	@ResponseBody
+	@RequestMapping("/scanTzddlog")
+	public Map scanTzddlog(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		String yybm = request.getParameter("yybm") != null ? request.getParameter("yybm").trim() : "";
+		String status;
+		Date date;
+		String hql = "from Customer where cusDareway=?0 and (cusStatus=1 or cusStatus=2)";
+		List list = baseService.find(hql, yybm);
+		if (list.size() > 0) {
+			Customer customer = (Customer) list.get(0);
+			String cusName = customer.getCusName();
+			String cusId = customer.getCusId();
+			if(!customer.getCusFlag().equals("102")){//非连锁药店
+				hql = "select max(UP_DATE) from TBL_UPLOADFILE where cus_id=?0";
+				list = baseService.findSql(hql, cusId);
+				if (null != list.get(0)) {
+					date = (Date) list.get(0);
+					status = cusName + ":最后上传数据日期: " + sf.format(date);
+				} else {
+					status = cusName + ":未查询到上传数据记录";
+				}
+			} else {
+				if(customer.getCusParentid().length()>1){//连锁分店
+					hql = "select max(SO_CREATEDATETIME) from TBL_SALESITEM where cus_id=?0";// 查询最后上传销售日期
+					list = baseService.findSql(hql, cusId);
+					if (null != list.get(0)) {
+						date = (Date) list.get(0);
+						status = "连锁药店:" + cusName + "销售数据最后上传日期:" + sf.format(date);
+					} else {
+						status = "连锁药店:" + cusName + "未查询到上传数据记录";
+					}
+				} else {//连锁总店
+					status = "";
+				}
+			}
+		} else {
+			status = "未注册定点";
+		}
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("status", status);
+		return map;
+	}
+	
+	/**
+	 * 开启或停止定点资格
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("updateOperateTzddlog")
+	public void updateOperateTzddlog(HttpServletRequest request, HttpServletResponse response){
+		String ids = request.getParameter("ids") != null ? request.getParameter("ids") : "";
+		String operate = request.getParameter("operate");
+		String remark = request.getParameter("remark");
+		tzddlogManager.updateOperateTzddlog(ids, Integer.parseInt(operate), remark);
+	}
+	
+	/**
+	 * 查询已停止资格定点
+	 * @param request
+	 * @param response
+	 * @return json
+	 */
+	@ResponseBody
+	@RequestMapping("/searchIsTzdd")
+	public Map searchIsTzdd(HttpServletRequest request, HttpServletResponse response) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String countHql = "select count(tzId) from Tzddlog where tzOperate=0 and tzStatus=0";
+		int total = baseService.findCount(countHql);
+		String hql = "from Tzddlog where tzOperate=0 and tzStatus=0 order by tzDate desc nulls last";//操作类型是停止，响应结果是成功
+		List list = baseService.findByPage(hql, rows, page);
+		map.put("total", total);
+		map.put("rows", list);
+		return map;
+	}
+
+	/**
+	 * 添加定点（来源customer）
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/correspondTzddlog")
+	public Map correspondTzddlog(HttpServletRequest request, HttpServletResponse response) {
+		String hql = "select c.* from TBL_CUSTOMER c left join TBL_TZDDLOG t on c.CUS_DAREWAY=t.TZ_YYBM where LENGTH(c.CUS_DAREWAY)=6 and(c.CUS_STATUS=1 or c.CUS_STATUS=2) and t.TZ_YYBM is null";
+		List<Customer> list = baseService.findEntitySql(hql,Customer.class);
+		int count = 0;
+		Tzddlog tzddlog;
+		Customer customer;
+		for (int i = 0; i < list.size(); i++) {
+			customer = list.get(i);
+			tzddlog = new Tzddlog();
+			tzddlog.setTzCusid(customer.getCusId());
+			tzddlog.setTzCusname(customer.getCusName());
+			tzddlog.setTzDate(new Date());
+			tzddlog.setTzOperate("9");// 初始化赋值
+			tzddlog.setTzStatus("9");
+			tzddlog.setTzScan("0");
+			tzddlog.setTzYbcx("1");
+			tzddlog.setTzYybm(customer.getCusDareway());
+			tzddlog.setTzStartdate(new Date());
+			tzddlog.setTzNote("初始化");
+			tzddlog.setTzManual("1");
+			baseService.save(tzddlog);
+			count++;
+		}
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("status", "新增定点数量：" + count);
+		return map;
+	}
+	
+	/**
+	 * 删除定点
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("/delTzddlog")
+	public void delTzddlog(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids") != null ? request.getParameter("ids") : "";
+		String arr[] = ids.split(",");
+		for (int i = 0; i < arr.length; i++) {
+			baseService.updateOrDelete("delete Tzddlog where tzId=?0",arr[i]);
+		}
+	}
+	
+	/**
+	 * 查询已停止扫描的定点
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/searchIsStopScan")
+	public Map searchIsStopScan(HttpServletRequest request, HttpServletResponse response) {
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String hql = "from Tzddlog where tzScan=1 order by tzDate desc nulls last";
+		String countHql = "select count(tzId) from Tzddlog where tzScan=1";
+		List list = baseService.findByPage(hql, rows, page);
+		int total = baseService.findCount(countHql);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("total", total);
+		map.put("rows", list);
+		return map;
+	}
+	
+	/**
+	 * 开启或停止扫描定点
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("updateScanStatus")
+	public void updateScanStatus(HttpServletRequest request, HttpServletResponse response){
+		String ids = request.getParameter("ids") != null ? request.getParameter("ids") : "";
+		String arr[] = ids.split(",");
+		String scan = request.getParameter("scan");
+		String hql = "update Tzddlog set tzScan=?0 where tzId=?1";
+		for (int i = 0; i < arr.length; i++) {
+			baseService.updateOrDelete(hql, scan, arr[i]);
+		}
+	}
+	
+	/**
+	 * 查询医保标记开启的定点（使用医保进销存软件）tzYbcx="0"
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/searchIsYbcx")
+	public Map searchIsYbcx(HttpServletRequest request, HttpServletResponse response) {
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String hql = "from Tzddlog where tzYbcx=0 order by tzDate desc nulls last";
+		List list = baseService.findByPage(hql, rows, page);
+		String countHql = "select count(tzId) from Tzddlog where tzYbcx=0";
+		int total = baseService.findCount(countHql);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("total", total);
+		map.put("rows", list);
+		return map;
+	}
+	
+	/**
+	 * 标记或取消医保标记
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("updateYbcx")
+	public void updateYbcx(HttpServletRequest request, HttpServletResponse response){
+		String ids = request.getParameter("ids") != null ? request.getParameter("ids") : "";
+		String arr[] = ids.split(",");
+		String ybcx = request.getParameter("ybcx");
+		String hql = "update Tzddlog set tzYbcx=?0 where tzId=?1";
+		for (int i = 0; i < arr.length; i++) {
+			baseService.updateOrDelete(hql, ybcx, arr[i]);
+		}
+		
+	}
+	
+	/**
+	 * 手动添加定点
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/addTzddlog")
+	public Map addTzddlog(HttpServletRequest request) {
+		String yybmArr = request.getParameter("yybms") != null ? request.getParameter("yybms") : "";
+		String[] arr = yybmArr.split(",");
+		Customer customer;
+		Tzddlog tzddlog;
+		String hql;
+		String status = "";
+		for (String yybm : arr) {
+			hql = "select count(tzYybm) from Tzddlog where tzYybm=?0 ";
+			int num = baseService.findCount(hql, yybm);
+			if (num > 0) {
+				status+= yybm+"已存在，";
+				continue;
+			}
+			hql = "from Customer where cusDareway=?0 and (cusStatus=1 or cusStatus=2)";
+			List<Customer> tem = baseService.find(hql, yybm);
+			if (tem.size() > 0) {
+				customer = tem.get(0);
+				tzddlog = new Tzddlog();
+				tzddlog.setTzCusid(customer.getCusId());
+				tzddlog.setTzCusname(customer.getCusName());
+				tzddlog.setTzDate(new Date());
+				tzddlog.setTzOperate("9");// 初始化赋值
+				tzddlog.setTzStatus("9");
+				tzddlog.setTzScan("0");
+				tzddlog.setTzYbcx("1");
+				tzddlog.setTzYybm(yybm);
+				tzddlog.setTzStartdate(new Date());
+				tzddlog.setTzNote("初始化");
+				tzddlog.setTzManual("1");
+				baseService.save(tzddlog);
+				status+= yybm+"添加成功，";
+			} else {
+				status+= yybm+"未注册定点，";
+			}
+		}
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("status", status);
+		return map;
+	}
+}

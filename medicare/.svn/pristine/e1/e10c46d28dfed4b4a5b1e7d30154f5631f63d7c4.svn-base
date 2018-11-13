@@ -1,0 +1,58 @@
+package yibao.yiwei.service.impl;
+
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.service.IDrugcatalogManager;
+
+/**
+ * 项目编码
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class DrugcatalogManager implements IDrugcatalogManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	// 根据cusId 商品编码集合获取(药品目录表 Drugcatalog)对应的商品名集合 *已失效*
+	@Override
+	public List getAlldcCommercials(List drugCodes) {
+		int count = 0;
+		List list = new ArrayList();
+		if (drugCodes.size() > 0) {
+			for (int i = 0; i < drugCodes.size(); i++) {
+				Object dcCode = drugCodes.get(i);
+				String hql = "select d.dcCommercial from Drugcatalog d where d.dcCode=?0";
+				List temp = baseDao.find(hql, dcCode);
+				if (temp.size() > 0) {
+					@SuppressWarnings("unused")
+					String dcCommercial = temp.get(0).toString();
+					// 如果查找到编码对应的药品名称才会添加到list中
+					list.add(count, temp.get(0));
+					count++;
+				}
+			}
+		}
+		return list;
+	}
+
+	// 根据cusId,hql 获取药品编码集合
+	@Override
+	public List getDrugCodes(String hql, List cusIds) throws ParseException {
+		List list = new ArrayList();
+		list = baseDao.find(hql, cusIds);
+		return list;
+	}
+
+
+}

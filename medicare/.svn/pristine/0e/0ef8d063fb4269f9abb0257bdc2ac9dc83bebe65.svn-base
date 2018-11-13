@@ -1,0 +1,64 @@
+package yibao.yiwei.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.Checkresult;
+import yibao.yiwei.service.IBaseService;
+
+/**
+ * 检查结果主表
+ * 
+ * @author Administrator
+ * 
+ */
+@Controller
+public class CheckresultController {
+	
+	@Autowired
+	private IBaseService<Checkresult> baseService;
+	
+	/**
+	 * 转到检查/检验信息
+	 * @param cusId
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/toCheckresult")
+	public String toCheckresult(String cusId, HttpServletRequest request) {
+		request.setAttribute("cusId", cusId);
+		return "/checkresult/checkresult";
+	}
+
+	/**
+	 * 检查/检验信息
+	 * @param cusId
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllCheckresult")
+	public Map<String, Object> getAllCheckresult(String cusId, HttpServletRequest request) {
+		String rows = request.getParameter("rows");
+		String page = request.getParameter("page");
+		List<Checkresult> list = null;
+		Map<String, Object> map = new HashMap<String, Object>();
+		String couHql = "select count(c.cr_Id) from tbl_Checkresult c where c.cus_Id=?0";
+		String hql = "from Checkresult c where c.cusId=?0 order by c.crAddtime desc";
+		int total = baseService.findCountSql(couHql, cusId);
+		if (total > 0) {
+			list = baseService.findByPage(hql, rows, page, cusId);
+		}
+		map.put("total", total);
+		map.put("rows", list);
+		return map;
+	}
+}

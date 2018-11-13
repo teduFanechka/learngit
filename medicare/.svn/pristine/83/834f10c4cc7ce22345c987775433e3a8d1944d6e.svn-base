@@ -1,0 +1,84 @@
+package yibao.yiwei.service.impl.count;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.count.CouWarehouseitem;
+import yibao.yiwei.service.count.ICouWarehouseitemManager;
+
+//药品入库详细统计
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class CouWarehouseitemManager implements ICouWarehouseitemManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+
+	// 根据id,count 保存
+	@Override
+	public void saveCouWarehouseitem(String cusId, int totalDrugkind, Date upCollectdate) {
+		CouWarehouseitem couWarehouseitem = new CouWarehouseitem();
+		couWarehouseitem.setCusId(cusId);
+		couWarehouseitem.setCusName(null);
+		couWarehouseitem.setCwiCreatetime(null);
+		couWarehouseitem.setCwiTotal(totalDrugkind);
+		couWarehouseitem.setCwiUploadtime(upCollectdate);
+		couWarehouseitem.setCwiTotalnum(0);
+		baseDao.save(couWarehouseitem);
+	}
+
+	// 获取药品入库药品种类统计数据
+	@Override
+	public List getCWIKindTotals(List cusIds, int count, String startDate) throws ParseException {
+		List list = new ArrayList();
+		if (cusIds.size() > 0) {
+			for (int i = 0; i < cusIds.size(); i++) {
+				Object num = cusIds.get(i);
+				// 定义存放当前cusId 15天每天的totals 集合
+				List l = new ArrayList();
+				//循环some天倒计
+				for (int y = 0; y <= count; y++) {
+					SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+					Date date;
+					if (startDate != null) {// 有查询条件
+						date = sf.parse(startDate);
+					} else {
+						date = new Date();
+					}
+					GregorianCalendar gc = new GregorianCalendar();
+					gc.setTime(date);
+					gc.add(5, -y);
+					gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc.get(Calendar.DATE));
+					String dateString = sf.format(gc.getTime());
+					date = sf.parse(dateString);
+					String hql = "select c.cwiTotal from CouWarehouseitem c where c.cusId=?0 and c.cwiUploadtime=?1 order by c.cwiTotal desc";
+					// 定义临时集合存储当前cusId当前日期获取到的total 降序排列
+					List temp = baseDao.find(hql, num, date);
+					String hqlDates = "select c.cwiUploadtime from CouWarehouseitem c where c.cusId=?0 and c.cwiUploadtime = ?1";
+					// 定义获取循环一天 有没有数据
+					List dates = baseDao.find(hqlDates, num, date);
+					if (dates.size() >0) {
+						l.add(y, temp.get(0));//获取当天cwiTotal第一列(最大值):因为一次会统计多次
+					} else {
+						l.add(y, 0);
+
+					}
+				}
+				list.add(i, l);
+			}
+		} 
+		return list;
+	}
+}

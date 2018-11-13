@@ -1,0 +1,67 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 临时信息表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "Abc", schema = "YIWEI")
+public class Abc implements java.io.Serializable {
+
+	private String aId;
+	private Date aDate;
+	private String aRight;
+	private String aWrong;
+
+	@GenericGenerator(name = "Abc_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Abc_id")
+	@Column(name = "A_ID", unique = true, nullable = false, length = 32)
+	public String getaId() {
+		return aId;
+	}
+
+	public void setaId(String aId) {
+		this.aId = aId;
+	}
+
+	@Column(name = "A_DATE")
+	public Date getaDate() {
+		return aDate;
+	}
+
+	public void setaDate(Date aDate) {
+		this.aDate = aDate;
+	}
+
+	@Column(name = "A_RIGHT", length = 2000)
+	public String getaRight() {
+		return aRight;
+	}
+
+	public void setaRight(String aRight) {
+		this.aRight = aRight;
+	}
+
+	@Column(name = "A_WRONG", length = 2000)
+	public String getaWrong() {
+		return aWrong;
+	}
+
+	public void setaWrong(String aWrong) {
+		this.aWrong = aWrong;
+	}
+	
+}

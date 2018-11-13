@@ -1,0 +1,21 @@
+$(function(){
+		$(".tabb").tabs({
+			fit : true,
+			border : false,
+			selected : 0,
+		});	
+		   $('#errorlog').datagrid({
+			     pageSize:20,
+			     pageList:[10,20,30,40,50],
+				 url : 'getSearchErrorlog'
+			});  	
+});
+//数据检索
+function findUser(){ 
+		var params = $('#errorlog').datagrid('options').queryParams; //先取得 datagrid 的查询参数  
+		var fields =$('#errorForm').serializeArray(); //自动序列化表单元素为JSON对象  
+		$.each( fields, function(i, field){  
+		  params[field.name] = field.value; //设置查询参数  
+		});   
+		$('#errorlog').datagrid('reload'); //设置好查询参数 reload 
+} 

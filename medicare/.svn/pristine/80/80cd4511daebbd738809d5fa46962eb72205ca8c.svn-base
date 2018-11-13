@@ -1,0 +1,232 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Medrecords;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IMedrecordsManager;
+
+/**
+ * 病案首页(概要)
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class MedrecordsManager implements IMedrecordsManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 添加病案首页(概要)
+	 */
+	@Override
+	public void addMedrecords(String path, String cusId, String cusName, Date upCollectdate, int upId,String fileName) throws IOException, ParseException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Medrecords medrecords;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 97) {
+						throw new DataException("正确字段数:97,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						medrecords = new Medrecords();
+						medrecords.setCusId(cusId);// 获取上级编码
+						medrecords.setCusDareway(""); // 医院编码
+						medrecords.setMerAddtime(new Date());// 创建日期
+						medrecords.setMerPicktime(upCollectdate);// 采集日期从传来的文件采集时间获取
+						medrecords.setMerOrgan(name[0].trim());
+						medrecords.setMerOrgancode(name[1].trim());
+						medrecords.setMerPaytype(name[2].trim());
+						medrecords.setMerHosptimes(name[3].trim());
+						medrecords.setMerCaseno(name[4].trim());
+						medrecords.setMerHospno(name[5].trim());
+						medrecords.setMerPtsname(name[6].trim());
+						medrecords.setMerPtssex(name[7].trim());
+						medrecords.setMerBirthday(name[8].trim());
+						medrecords.setMerAge(name[9].trim());
+						medrecords.setMerCountry(name[10].trim());
+						medrecords.setMerWeight(name[11].trim());
+						medrecords.setMerBirplace(name[12].trim());
+						medrecords.setMerProplace(name[13].trim());
+						medrecords.setMerNation(name[14].trim());
+						medrecords.setMerIdnumber(name[15].trim());
+						medrecords.setMerProfession(name[16].trim());
+						medrecords.setMerMarstatus(name[17].trim());
+						medrecords.setMerNowaddr(name[18].trim());
+						medrecords.setMerNowphone(name[19].trim());
+						medrecords.setMerNowpost(name[20].trim());
+						medrecords.setMerHukouaddr(name[21].trim());
+						medrecords.setMerHukoupost(name[22].trim());
+						medrecords.setMerWorkaddr(name[23].trim());
+						medrecords.setMerWorkphone(name[24].trim());
+						medrecords.setMerWorkpost(name[25].trim());
+						medrecords.setMerContactname(name[26].trim());
+						medrecords.setMerRelationship(name[27].trim());
+						medrecords.setMerContactaddr(name[28].trim());
+						medrecords.setMerContactphone(name[29].trim());
+						medrecords.setMerIntype(name[30].trim());
+						medrecords.setMerIntime(name[31].trim());
+						medrecords.setMerIndept(name[32].trim());
+						medrecords.setMerInward(name[33].trim());
+						medrecords.setMerTurndept(name[34].trim());
+						medrecords.setMerOuttime(name[35].trim());
+						medrecords.setMerOutdept(name[36].trim());
+						medrecords.setMerOutward(name[37].trim());
+						medrecords.setMerIndays(name[38].trim());
+						medrecords.setMerClinicdiag(name[39].trim());
+						medrecords.setMerClinicdiagcode(name[40].trim());
+						medrecords.setMerIndiag(name[41].trim());
+						medrecords.setMerInstatus(name[42].trim());
+						medrecords.setMerIndiagdate(name[43].trim());
+						medrecords.setMerDemagecause(name[44].trim());
+						medrecords.setMerDamagecode(name[45].trim());
+						medrecords.setMerPathological(name[46].trim());
+						medrecords.setMerPathcode(name[47].trim());
+						medrecords.setMerPathnum(name[48].trim());
+						medrecords.setMerAllergic(name[49].trim());
+						medrecords.setMerAllergicname(name[50].trim());
+						medrecords.setMerClnicout(name[51].trim());
+						medrecords.setMerInout(name[52].trim());
+						medrecords.setMerBeforafter(name[53].trim());
+						medrecords.setMerClinicpath(name[54].trim());
+						medrecords.setMerRadiopath(name[55].trim());
+						medrecords.setMerDirector(name[56].trim());
+						medrecords.setMerChief(name[57].trim());
+						medrecords.setMerAttend(name[58].trim());
+						medrecords.setMerResident(name[59].trim());
+						medrecords.setMerStudaydoc(name[60].trim());
+						medrecords.setMerIntern(name[61].trim());
+						medrecords.setMerNurse(name[62].trim());
+						medrecords.setMerCoder(name[63].trim());
+						medrecords.setMerQualty(name[64].trim());
+						medrecords.setMerQcdoc(name[65].trim());
+						medrecords.setMerQcnur(name[66].trim());
+						medrecords.setMerQcdate(name[67].trim());
+						medrecords.setMerOutway(name[68].trim());
+						medrecords.setMerReccusname(name[69].trim());
+						medrecords.setMerBloodtype(name[70].trim());
+						medrecords.setMerRh(name[71].trim());
+						medrecords.setMerImporttype(name[72].trim());
+						medrecords.setMerImportcount(name[73].trim());
+						medrecords.setMerImportresp(name[74].trim());
+						medrecords.setMerIncount(name[75].trim());
+						medrecords.setMerSelfmoney(name[76].trim());
+						medrecords.setMerBedbill(name[77].trim());
+						medrecords.setMerNursecost(name[78].trim());
+						medrecords.setMerWestern(name[79].trim());
+						medrecords.setMerChinese(name[80].trim());
+						medrecords.setMerHerb(name[81].trim());
+						medrecords.setMerRadiocost(name[82].trim());
+						medrecords.setMerTestcost(name[83].trim());
+						medrecords.setMerOxycost(name[84].trim());
+						medrecords.setMerBloodcost(name[85].trim());
+						medrecords.setMerDiagcost(name[86].trim());
+						medrecords.setMerOperatcost(name[87].trim());
+						medrecords.setMerDeliverycost(name[88].trim());
+						medrecords.setMerCheckcost(name[89].trim());
+						medrecords.setMerDrugcost(name[90].trim());
+						medrecords.setMerInfantcost(name[91].trim());
+						medrecords.setMerLacost(name[92].trim());
+						medrecords.setMerOther(name[93].trim());
+						medrecords.setMerAutopsy(name[94].trim());
+						medrecords.setMerSafenum(name[95].trim());
+						medrecords.setMerSuccnum(name[96].trim());
+						baseDao.save(medrecords);
+						count++;
+					} catch (Exception e) {
+						error++;
+						String log = e.toString();
+						if (log.length() > 300){
+							log = log.substring(0, 300);
+						}
+						errorlog = new Errorlog();
+						errorlog.setCusId(cusId);
+						errorlog.setCusName(cusName);
+						errorlog.setErrAddtime(new Date());
+						errorlog.setErrFileflag("病案首页(概要)");
+						errorlog.setErrFilepath(fileName);
+						errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+						errorlog.setErrType("数据解析错误");
+						baseDao.save(errorlog);
+					}
+				}
+				baseDao.updateOrDelete(qsql, count,"解析成功"+count+"条，失败"+error+"条",upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"非文件", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("病案首页(概要)");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 97) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"数据上传字段不全错误,正确字段数:97,实际解析字段数:" + name.length, upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"数据解析错误", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+	}
+
+	// page 方式条件查询
+	@Override
+	public Page queryForPage(String countHql, String hql, String url, int pageNum, Object... params) {
+		// 总记录数 : 如果是条件查询用List<T> find(String hql, Object... params)
+		int allRow = baseDao.findCountSql(countHql, params);
+		final int currentPage = Page.countCurrentPage(pageNum);// 当前的页码
+		// 把分页信息保存在bean中
+		Page page = new Page(allRow, currentPage);
+		final int pageSize = page.getPageSize();// 每页记录数
+		List<Medrecords> list = baseDao.findByPage(hql, currentPage, pageSize, params);// 查询出一页的结果集
+		page.setUrl(url);
+		page.setList(list);
+		return page;
+	}
+
+}

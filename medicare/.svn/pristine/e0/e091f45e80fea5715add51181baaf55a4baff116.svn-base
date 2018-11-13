@@ -1,0 +1,283 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 药品目录表(项目编码表)
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_DRUGCATALOG", schema = "YIWEI")
+public class Drugcatalog implements java.io.Serializable {
+
+	@Id
+	@GenericGenerator(name = "Drugcatalog_gen", strategy = "guid")
+	@GeneratedValue(generator = "Drugcatalog_gen")
+	@Column(name = "DC_ID", unique = true, nullable = false, length = 32)
+	private String dcId; // 主键
+	@Column(name = "CUS_ID", length = 32)
+	private String cusId;// 客户ID
+	@Column(name = "CUS_PARENTID", length = 32)
+	private String cusParentid;// 客户上级ID 0单体
+	@Column(name = "DC_CODE", length = 32)
+	private String dcCode;// 项目编码  1
+	@Column(name = "DC_COMMERCIAL", length = 32)
+	private String dcCommercial;// 商品名 3
+	@Column(name = "DC_GENERICNAME", length = 64)
+	private String dcGenericname;// 通用名 4
+	@Column(name = "DC_MNEMONICCODE", length = 32)
+	private String dcMnemoniccode;// 助记码 5
+	@Column(name = "DC_SPECIFICATION", length = 64)
+	private String dcSpecification;// 规格 6
+	@Column(name = "DC_UNIT", length = 32)
+	private String dcUnit;// 最小包装单位(计量)7
+	@Column(name = "DC_DOSAGEFORM", length = 32)
+	private String dcDosageform;// 剂型 12
+	@Column(name = "DC_PERMISSION", length = 64)
+	private String dcPermission;// 批准文号 13
+	@Column(name = "DC_MFRS", length = 120)
+	private String dcMfrs;// 生产商 14
+	@Column(name = "DC_MAKEIN", length = 120)
+	private String dcMakein;// 生产地 15
+	@Column(name = "DC_HCSCODE", length = 32)
+	private String dcHcscode;// 药品医保编码 (本位码)16........
+	@Column(name = "DC_CATEGORY", length = 32)
+	private String dcCategory;// 药品类别 改为(项目类别) 2
+	@Column(name = "DC_PRICE", length = 32)
+	private String dcPrice;// 8 最小包装单价(零售) 小数
+	@Column(name = "DC_PACKAGINGUNIT", length = 32)
+	private String dcPackagingunit;// 9 大包装单位 字符串
+	@Column(name = "DC_PACKAGINGPRICE", length = 32)
+	private String dcPackagingprice;// 10 大包装单价 小数
+	@Column(name = "DC_PACKAGINGNUM", length = 32)
+	private String dcPackagingnum;// 11 大包装数量 小数
+	@Column(name = "DC_CATCODE", length = 32)
+	private String dcCatcode;// 17 目录类别 整数
+	@Column(name = "DC_SETTLEMENTCODE", length = 32)
+	private String dcSettlementcode;// 18 结算项目编码
+	@Column(name = "DC_ISRX", length = 32)
+	private String dcIsrx;// 19 处方药标识
+	@Column(name = "DC_ISSPECIAL", length = 32)
+	private String dcIsspecial;// 20 特药标识
+	@Column(name = "DC_ISEPHEDRADINE", length = 32)
+	private String dcIsephedradine;// 21 含麻黄碱标识
+	@Column(name = "DC_ISSPIRIT", length = 32)
+	private String dcIsspirit;// 22 精神药品标识
+	@Column(name = "DC_ISIMPORT", length = 32)
+	private String dcIsimport;// 23 进口药标识
+	@Column(name = "DC_TABOO", length = 32)
+	private String dcTaboo;// 24 禁忌描述
+	@Column(name = "DC_INDICATION", length = 32)
+	private String dcIndication;// 25 适应症
+	@Column(name = "DC_STATUS", length = 32)
+	private String dcStatus;// 26 状态
+	@Column(name = "CUS_DAREWAY", length = 32)
+	private String cusDareway;// 医院编码
+	@Column(name = "DC_PICKTIME", length = 7)
+	private Date dcPicktime;// 采集时间
+	@Column(name = "DC_ADDTIME", length = 7)
+	private Date dcAddtime;// 创建时间
+	
+	public String getDcId() {
+		return dcId;
+	}
+	public void setDcId(String dcId) {
+		this.dcId = dcId;
+	}
+	public String getCusId() {
+		return cusId;
+	}
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+	public String getCusParentid() {
+		return cusParentid;
+	}
+	public void setCusParentid(String cusParentid) {
+		this.cusParentid = cusParentid;
+	}
+	public String getDcCode() {
+		return dcCode;
+	}
+	public void setDcCode(String dcCode) {
+		this.dcCode = dcCode;
+	}
+	public String getDcCommercial() {
+		return dcCommercial;
+	}
+	public void setDcCommercial(String dcCommercial) {
+		this.dcCommercial = dcCommercial;
+	}
+	public String getDcGenericname() {
+		return dcGenericname;
+	}
+	public void setDcGenericname(String dcGenericname) {
+		this.dcGenericname = dcGenericname;
+	}
+	public String getDcMnemoniccode() {
+		return dcMnemoniccode;
+	}
+	public void setDcMnemoniccode(String dcMnemoniccode) {
+		this.dcMnemoniccode = dcMnemoniccode;
+	}
+	public String getDcSpecification() {
+		return dcSpecification;
+	}
+	public void setDcSpecification(String dcSpecification) {
+		this.dcSpecification = dcSpecification;
+	}
+	public String getDcUnit() {
+		return dcUnit;
+	}
+	public void setDcUnit(String dcUnit) {
+		this.dcUnit = dcUnit;
+	}
+	public String getDcDosageform() {
+		return dcDosageform;
+	}
+	public void setDcDosageform(String dcDosageform) {
+		this.dcDosageform = dcDosageform;
+	}
+	public String getDcPermission() {
+		return dcPermission;
+	}
+	public void setDcPermission(String dcPermission) {
+		this.dcPermission = dcPermission;
+	}
+	public String getDcMfrs() {
+		return dcMfrs;
+	}
+	public void setDcMfrs(String dcMfrs) {
+		this.dcMfrs = dcMfrs;
+	}
+	public String getDcMakein() {
+		return dcMakein;
+	}
+	public void setDcMakein(String dcMakein) {
+		this.dcMakein = dcMakein;
+	}
+	public String getDcHcscode() {
+		return dcHcscode;
+	}
+	public void setDcHcscode(String dcHcscode) {
+		this.dcHcscode = dcHcscode;
+	}
+	public String getDcCategory() {
+		return dcCategory;
+	}
+	public void setDcCategory(String dcCategory) {
+		this.dcCategory = dcCategory;
+	}
+	public String getDcPrice() {
+		return dcPrice;
+	}
+	public void setDcPrice(String dcPrice) {
+		this.dcPrice = dcPrice;
+	}
+	public String getDcPackagingunit() {
+		return dcPackagingunit;
+	}
+	public void setDcPackagingunit(String dcPackagingunit) {
+		this.dcPackagingunit = dcPackagingunit;
+	}
+	public String getDcPackagingprice() {
+		return dcPackagingprice;
+	}
+	public void setDcPackagingprice(String dcPackagingprice) {
+		this.dcPackagingprice = dcPackagingprice;
+	}
+	public String getDcPackagingnum() {
+		return dcPackagingnum;
+	}
+	public void setDcPackagingnum(String dcPackagingnum) {
+		this.dcPackagingnum = dcPackagingnum;
+	}
+	public String getDcCatcode() {
+		return dcCatcode;
+	}
+	public void setDcCatcode(String dcCatcode) {
+		this.dcCatcode = dcCatcode;
+	}
+	public String getDcSettlementcode() {
+		return dcSettlementcode;
+	}
+	public void setDcSettlementcode(String dcSettlementcode) {
+		this.dcSettlementcode = dcSettlementcode;
+	}
+	public String getDcIsrx() {
+		return dcIsrx;
+	}
+	public void setDcIsrx(String dcIsrx) {
+		this.dcIsrx = dcIsrx;
+	}
+	public String getDcIsspecial() {
+		return dcIsspecial;
+	}
+	public void setDcIsspecial(String dcIsspecial) {
+		this.dcIsspecial = dcIsspecial;
+	}
+	public String getDcIsephedradine() {
+		return dcIsephedradine;
+	}
+	public void setDcIsephedradine(String dcIsephedradine) {
+		this.dcIsephedradine = dcIsephedradine;
+	}
+	public String getDcIsspirit() {
+		return dcIsspirit;
+	}
+	public void setDcIsspirit(String dcIsspirit) {
+		this.dcIsspirit = dcIsspirit;
+	}
+	public String getDcIsimport() {
+		return dcIsimport;
+	}
+	public void setDcIsimport(String dcIsimport) {
+		this.dcIsimport = dcIsimport;
+	}
+	public String getDcTaboo() {
+		return dcTaboo;
+	}
+	public void setDcTaboo(String dcTaboo) {
+		this.dcTaboo = dcTaboo;
+	}
+	public String getDcIndication() {
+		return dcIndication;
+	}
+	public void setDcIndication(String dcIndication) {
+		this.dcIndication = dcIndication;
+	}
+	public String getDcStatus() {
+		return dcStatus;
+	}
+	public void setDcStatus(String dcStatus) {
+		this.dcStatus = dcStatus;
+	}
+	public String getCusDareway() {
+		return cusDareway;
+	}
+	public void setCusDareway(String cusDareway) {
+		this.cusDareway = cusDareway;
+	}
+	public Date getDcPicktime() {
+		return dcPicktime;
+	}
+	public void setDcPicktime(Date dcPicktime) {
+		this.dcPicktime = dcPicktime;
+	}
+	public Date getDcAddtime() {
+		return dcAddtime;
+	}
+	public void setDcAddtime(Date dcAddtime) {
+		this.dcAddtime = dcAddtime;
+	}
+
+}

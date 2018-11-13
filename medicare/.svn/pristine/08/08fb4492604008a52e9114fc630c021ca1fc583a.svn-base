@@ -1,0 +1,71 @@
+package yibao.yiwei.controller.system;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.SysParam;
+import yibao.yiwei.service.IBaseService;
+
+@Controller
+public class SysParamController {
+	
+	@Autowired
+	private IBaseService<SysParam> baseService;
+	
+	@AuthPassport
+	@RequestMapping("/toSysParam")
+	public String toSysParam() {
+		return "/sysparam/sysparam";
+	}
+	
+	@ResponseBody
+	@RequestMapping("/getAllSysParam")
+	public Map<String, Object> getAllSysParam(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		List<SysParam> list;
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String hql = "from SysParam  ";
+		list = baseService.findByPage(hql, rows, page);
+		String hqlC = "select count(s.paramId) from SysParam s";
+		int count = baseService.findCount(hqlC);
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+	
+	@ResponseBody
+	@RequestMapping("/addOrUpdateSysParam")
+	public Map<String, Object> addOrUpdateSysParam(HttpServletRequest request, HttpServletResponse response,SysParam sysParam) throws ParseException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String status;
+		if (sysParam.getParamId() == null || sysParam.getParamId().equals("")) {
+			baseService.save(sysParam);
+			status = "添加完成";
+		} else {
+			baseService.update(sysParam);
+			status = "更新完成";
+		}
+		map.put("status", status);
+		return map;
+
+	}
+	
+	@ResponseBody
+	@RequestMapping("/delSysParam")
+	public void delSysParam(HttpServletRequest request, HttpServletResponse response,String paramId) {
+		baseService.updateOrDelete("delete SysParam where paramId=?0",paramId);
+
+	}
+}

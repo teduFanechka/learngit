@@ -1,0 +1,25 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<div id="nfdbm" class="easyui-dialog" title="编辑医院编码" style="width: 450px; height: 282px;" data-options="iconCls:'icon-user_add',buttons:'#nfd1_btns',closed:true,modal:true,">
+	<form id="form" action="" method="">
+		<table class="ew_table2">
+			<tbody>
+				<tr>
+					<th colspan="2" style="padding: 5px; font-size: 18px">编辑医院编码</th>
+				</tr>
+				<tr>
+					<th>医院编码：</th>
+					<td>
+						<input id="yybm"  type="text" style="width: 200px; height: 18px; margin: 8px auto; padding: 2px 6px;" AUTOCOMPLETE="off" />
+					</td>
+				</tr>
+				</tr>
+			</tbody>
+		</table>
+	</form>
+</div>
+
+<div id="nfd1_btns">
+	<a href="javascript:void(0)" onclick="updateYybm()" class="easyui-linkbutton" data-options="iconCls:'icon-ok'">保存</a>
+	<a href="javascript:void(0)" onclick="javascript: $('#nfdbm').dialog('close');" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a>
+</div>

@@ -1,0 +1,145 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Discharged;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IDischargedManager;
+
+/**
+ * 出院信息记录表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class DischargedManager implements IDischargedManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+
+	/**
+	 * 添加出院信息记录表
+	 */
+	@Override
+	public boolean addDischarged(String path, String cusId, String cusName, Date upCollectdate, int upId) throws IOException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		boolean b = false;// 定义解析是否正常
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Discharged discharged;
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 16) {
+						throw new DataException("异常信息:正确字段总数:16,实际解析字段数:" + name.length + ",数据不全解析停止", null);
+					}
+					discharged = new Discharged();
+					discharged.setDcDoctorname(name[15].trim());// 医师名称16
+					discharged.setDcDoctorcode(name[14].trim());// 医师编码15
+					discharged.setDcDiagname(name[13].trim());// 出院诊断名称14
+					discharged.setDcDiagcode(name[12].trim());// 出院诊断编码13
+					if (name[11].trim().equals("NULL")) {
+						discharged.setDcHosptimes(0);
+					} else {
+						discharged.setDcHosptimes(Integer.parseInt(name[11].trim()));// 住院次数12
+					}
+					discharged.setDcOutype(name[10].trim());// 出院方式11
+					if (name[9].trim().equals("NULL")) {
+						discharged.setDcHospdays(0);
+					} else {
+						discharged.setDcHospdays(Integer.parseInt(name[9].trim()));// 住院天数10
+					}
+					DateFormat df;
+					if (name[8].trim().equals("NULL")) {
+						discharged.setDcOutdate(null);
+					} else {
+						if (name[8].trim().length() == 10) {// 出院日期9
+							df = new SimpleDateFormat("yyyy-MM-dd");
+						} else {
+							df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						}
+						discharged.setDcOutdate(df.parse(name[8].trim()));
+					}
+					if (name[7].trim().equals("NULL")) {
+						discharged.setDcIndate(null);
+					} else {
+						if (name[7].trim().length() == 10) {
+							df = new SimpleDateFormat("yyyy-MM-dd");
+						} else {
+							df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						}
+						discharged.setDcIndate(df.parse(name[7].trim()));// 入院日期8
+					}
+					discharged.setSiPtsage(name[6].trim());// 年龄7
+					if (name[5].trim().equals("NULL")) {
+						discharged.setSiPtssex(0);
+					} else if (name[5].trim().contains("男")) {
+						discharged.setSiPtssex(1);
+					} else if (name[5].trim().contains("女")) {
+						discharged.setSiPtssex(2);
+					} else {
+						discharged.setSiPtssex(Integer.parseInt(name[5].trim()));// 性别6
+					}
+					discharged.setSiPtsname(name[4].trim());// 姓名 5
+					discharged.setSiPtshealthcard(name[3].trim());// 医保卡号4
+					discharged.setSiPtsidcard(name[2].trim());// 个人编号3
+					discharged.setHospNo(name[1].trim());// 住院号 2
+					discharged.setCaseNo(name[0].trim());// 病案号 1
+					discharged.setDcPickime(upCollectdate);// 采集日期从传来的文件采集时间获取
+					discharged.setDcAddtime(new Date());// 创建日期
+					discharged.setCusDareway(""); // 医院编码
+					discharged.setCusId(cusId);// 获取上级编码
+					baseDao.save(discharged);
+					count++;
+				}
+				String upHql = "update Uploadfile u set u.upCount=?0 where u.upId=?1 ";
+				baseDao.updateOrDelete(upHql, count, upId);
+				b = true;
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 400){
+				log = log.substring(0, 300);
+			}
+			Errorlog errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("出院信息表");
+			errorlog.setErrFilepath(path);
+			errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+			if (null !=name && name.length < 16) {
+				errorlog.setErrType("数据上传字段不全错误");
+			} else {
+				errorlog.setErrType("数据解析错误");
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+		return b;
+	}
+
+}

@@ -1,0 +1,182 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Prescribe;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+
+@Controller
+public class PrescribeController {
+
+	@Autowired
+	private IBaseService<Prescribe> baseService;
+
+	/**
+	 * 转到处方信息
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/toPrescribe")
+	public String toPrescribe(HttpServletRequest request) {
+		String cusId = request.getParameter("cusId");
+		request.setAttribute("cusId", cusId);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar cal = Calendar.getInstance();    
+		cal.add(Calendar.MONTH, 0);
+		cal.set(Calendar.DAY_OF_MONTH,1);
+		request.setAttribute("startDate", sdf.format(cal.getTime()));
+		request.setAttribute("endDate", sdf.format(new Date()));
+		return "/prescribe/prescribe";
+	}
+
+	// 新增或修改表格数据   结构改变未使用
+	@SuppressWarnings("unused")
+	@RequestMapping("/addOrUpdatePrescribe ")
+	public void addOrUpdatePrescribe(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String presId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {/*
+			// 获取jsonArray第一个json对象 jsonObject
+			JSONObject jo = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jo.size() > 0) {
+				// 解析jo 并获取实体字段值
+				String cusId = jo.getString("cusId");
+				String cusParentid = jo.getString("cusParentid");
+				String soNo = jo.getString("soNo");
+				String presNo = jo.getString("presNo");
+				String presType = jo.getString("presType");
+				String presDept = jo.getString("presDept");
+				String presUnit = jo.getString("presUnit");
+				String presDoctor = jo.getString("presDoctor");
+				String presRemark = jo.getString("presRemark");
+				String presAnnex = jo.getString("presAnnex");
+
+				String presDatetime1 = jo.getString("presDatetime");
+				DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				if (presDatetime1.equals("")) {
+					prescribe.setPresDatetime(null);
+				} else {
+					Date presDatetime = df.parse(presDatetime1);
+					prescribe.setPresDatetime(presDatetime);
+				}
+				String presCreatetime1 = jo.getString("presCreatetime");
+				if (presCreatetime1.equals("")) {
+					prescribe.setPresCreatetime(null);
+				} else {
+					Date presCreatetime = df.parse(presCreatetime1);
+					prescribe.setPresCreatetime(presCreatetime);
+				}
+				prescribe.setCusId(cusId);
+				prescribe.setCusParentid(cusParentid);
+				prescribe.setSoNo(soNo);
+				prescribe.setPresAnnex(presAnnex);
+				prescribe.setPresDept(presDept);
+				prescribe.setPresDoctor(presDoctor);
+				prescribe.setPresNo(presNo);
+				prescribe.setPresRemark(presRemark);
+				prescribe.setPresType(presType);
+				prescribe.setPresUnit(presUnit);
+				// 如果等于6 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jo.size() == 13) {
+					// 获取id主键
+					presId = jo.getString("presId");
+					prescribe.setPresId(presId);
+					baseService.update(prescribe);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(prescribe);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		*/}
+	}
+
+	/**
+	 * 处方信息
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 */
+	@RequestMapping("/getAllPrescribe")
+	public void getAllPrescribe(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException {
+		List<Prescribe> list = new ArrayList<Prescribe>();// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");
+		String startDate = request.getParameter("startDate") != null ? request.getParameter("startDate") : "";
+		String endDate = request.getParameter("endDate") != null ? request.getParameter("endDate") : "";
+		int count = 0;
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		String hql = "from Prescribe where cusId=?0 ";
+		String countSql = "select count(p.RP_ID) from tbl_Prescribe p where p.cus_Id=?0";
+		Date itemPicktime = null;
+		Date itemPicktime2 = null;
+		if (!startDate.equals("") && !endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			itemPicktime2 = sf.parse(endDate);
+			countSql+=" and RP_ADDTIME between ?1 and ?2";
+			hql+=" and rpAddtime between ?1 and ?2 order by rpAddtime desc";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime,itemPicktime2);
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime,itemPicktime2);
+		}
+		if (startDate.equals("") && endDate.equals("")) {
+			hql+=" order by rpAddtime desc";
+			count = baseService.findCountSql(countSql,cusId);
+			list = baseService.findByPage(hql, rows, page,cusId);
+		}
+		if (startDate.equals("") && !endDate.equals("")) {
+			itemPicktime2 = sf.parse(endDate);
+			countSql+="and RP_ADDTIME <?1";
+			hql+="and rpAddtime <?1 order by rpAddtime desc";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime2);
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime2);
+		}
+		if (!startDate.equals("") && endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			countSql+="and RP_ADDTIME >?1";
+			hql+="and rpAddtime >?1 order by rpAddtime desc";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime);
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime);
+		}
+		Utils.toBeJson(list, count, response);
+	}
+
+	// 批量删除信息 return null; 返回string 也可以
+	@RequestMapping("/delPrescribe")
+	public void delPrescribe(HttpServletRequest request,HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 要批量删除的id字符串获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.delete(Prescribe.class,arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+}

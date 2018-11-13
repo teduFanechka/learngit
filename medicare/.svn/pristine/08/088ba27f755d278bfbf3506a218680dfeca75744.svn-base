@@ -1,0 +1,125 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Orderperform;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IOrderperformManager;
+
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class OrderperformManager implements IOrderperformManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	// 根据上传文件路径批量保存数据
+	@Override
+	public boolean addOrderperform(String path, String cusId, String cusName, Date upCollectdate, int upId) throws IOException {
+		FileReader fr;
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		boolean b = false;// 定义解析是否正常
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Errorlog errorlog = new Errorlog();
+		Orderperform orderperform;
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				fr = new FileReader(file);
+				bufr = new BufferedReader(fr);
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 13) {
+						throw new DataException("异常信息:正确字段总数:13,实际解析字段数:" + name.length + ",数据不全解析停止", null);
+					}
+					orderperform = new Orderperform();
+					DateFormat df;
+					orderperform.setCusId(cusId);// 获取上级编码
+					orderperform.setCusDareway(""); // 医院编码
+					orderperform.setCusPid("");// 客户上级id
+					orderperform.setDoAddtime(new Date());// 创建日期
+					orderperform.setDoPicktime(upCollectdate);// 采集日期从传来的文件采集时间获取
+					orderperform.setCaseNo(name[0].trim());// 病案号1
+					orderperform.setHospNo(name[1].trim());// 住院号2
+					orderperform.setDoNo(name[2].trim());// 医嘱号3
+					orderperform.setDoType(name[3].trim());// 医嘱类型4
+					orderperform.setItemCode(name[4].trim());// 项目编码5
+					orderperform.setItemName(name[5].trim());// 项目名称6
+					if (name[6].trim().equals("NULL")) {// 单价7
+						orderperform.setItemPrice(0.0);
+					} else {
+						orderperform.setItemPrice(Double.parseDouble(name[6].trim()));
+					}
+					orderperform.setItemFreq(name[7].trim());// 频次8
+					orderperform.setItemAmount(name[8].trim());// 用量9
+					orderperform.setItmeRoute(name[9].trim());// 用法10
+					orderperform.setDoPerform(name[10].trim());// 执行护士11
+					orderperform.setDoPerformname(name[11].trim());// 执行护士名称12
+					String doPerformtime = name[12].trim();
+					if (doPerformtime.length() == 10) {// 执行时期13
+						df = new SimpleDateFormat("yyyy-MM-dd");
+					} else {
+						df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					}
+					if (doPerformtime.equals("NULL")) {
+						orderperform.setDoPerformtime(null);
+					} else {
+						orderperform.setDoPerformtime(df.parse(doPerformtime));
+					}
+					baseDao.save(orderperform);
+					count++;
+				}
+				//update Uploadfile开始
+				//修改当前upId文件上传记录表(Uploadfile)字段:upCount解析文件总条数
+				String upHql = "update Uploadfile u set u.upCount=?0 where u.upId=?1 ";
+				baseDao.updateOrDelete(upHql, count, upId);
+				///System.out.println("解析当前*医嘱执行信息*文件完毕,更新上传记录表统计条数完毕,共: " + count + " 条");
+				b = true;
+			} else {
+				//System.out.println("文件不存在:" + path);
+				return b;
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 400){
+				log = log.substring(0, 300);
+			}
+			// 上传文件解析不正确,可能为数据不全
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("医嘱执行信息表");
+			errorlog.setErrFilepath(path);
+			errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+			if (null !=name && name.length < 13) {
+				errorlog.setErrType("数据上传字段不全错误");
+			} else {
+				errorlog.setErrType("数据解析错误");
+			}
+			baseDao.save(errorlog);
+			//System.out.println("错误日志id:" + errorlog.getErrId());
+			// e.printStackTrace();
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+		return b;
+	}
+}

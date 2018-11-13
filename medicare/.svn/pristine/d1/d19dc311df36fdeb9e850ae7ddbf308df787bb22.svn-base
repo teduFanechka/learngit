@@ -1,0 +1,94 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 用户表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_MANAGER", schema = "YIWEI")
+public class Manager implements java.io.Serializable {
+	
+	private String muUserid;//id
+	private String muUsercode;//登录名
+	private String muUsername;//姓名
+	private String muPasswd;//密码
+	private String muEmail;//电子邮件
+	private String muPhone;//联系电话
+	private int muStatus;//状态：0停用，1正常(默认)，9删除
+
+	@GenericGenerator(name = "manager_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "manager_id")
+	@Column(name = "MU_USERID", unique = true, nullable = false, length = 32)
+	public String getMuUserid() {
+		return muUserid;
+	}
+
+	public void setMuUserid(String muUserid) {
+		this.muUserid = muUserid;
+	}
+
+	@Column(name = "MU_USERCODE", length = 32)
+	public String getMuUsercode() {
+		return muUsercode;
+	}
+
+	public void setMuUsercode(String muUsercode) {
+		this.muUsercode = muUsercode;
+	}
+
+	@Column(name = "MU_USERNAME", length = 32)
+	public String getMuUsername() {
+		return muUsername;
+	}
+
+	public void setMuUsername(String muUsername) {
+		this.muUsername = muUsername;
+	}
+
+	@Column(name = "MU_PASSWD", length = 32)
+	public String getMuPasswd() {
+		return muPasswd;
+	}
+
+	public void setMuPasswd(String muPasswd) {
+		this.muPasswd = muPasswd;
+	}
+
+	@Column(name = "MU_EMAIL", length = 64)
+	public String getMuEmail() {
+		return muEmail;
+	}
+
+	public void setMuEmail(String muEmail) {
+		this.muEmail = muEmail;
+	}
+
+	@Column(name = "MU_PHONE", length = 32)
+	public String getMuPhone() {
+		return muPhone;
+	}
+
+	public void setMuPhone(String muPhone) {
+		this.muPhone = muPhone;
+	}
+
+	@Column(name = "MU_STATUS", precision = 22, scale = 0)
+	public int getMuStatus() {
+		return muStatus;
+	}
+
+	public void setMuStatus(int muStatus) {
+		this.muStatus = muStatus;
+	}
+
+}

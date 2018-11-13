@@ -1,0 +1,28 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>删除重复数据</title>
+	</head>
+	<body>
+		<a href="deleteRepeat?type=drugcatalog">项目编码重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=drugcatalog">项目编码已注销</a><br/>
+		<a href="deleteRepeat?type=supplier">供应商表重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=supplier">供应商表已注销</a><br/>
+		<a href="deleteRepeat?type=employee">医护人员重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=employee">医护人员已注销</a><br/>
+		<a href="deleteRepeat?type=warehouseitem">入库信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=warehouseitem">入库信息已注销</a><br/>
+		<a href="deleteRepeat?type=deliveryitem">出库信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=deliveryitem">出库信息已注销</a><br/>
+		<a href="deleteRepeat?type=itemstock">库存信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=itemstock">库存信息已注销</a><br/>
+		<a href="deleteRepeat?type=salesitem">销售信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=salesitem">销售信息已注销</a><br/>
+		<a href="deleteRepeat?type=warehouse">库房信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=warehouse">库房信息已注销</a><br/>
+		<a href="deleteRepeat?type=prescribe">处方信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=prescribe">处方信息已注销</a><br/>
+		<a href="deleteRepeat?type=hospitalized">住院记录重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=hospitalized">住院记录已注销</a><br/>
+		<a href="deleteRepeat?type=discharged">出院记录重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=discharged">出院记录已注销</a><br/>
+		<a href="deleteRepeat?type=doctororder">医嘱信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=doctororder">医嘱信息已注销</a><br/>
+		<a href="deleteRepeat?type=orderperform">医嘱执行记录重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=orderperform">执行记录已注销</a><br/>
+		<a href="deleteRepeat?type=clinicrecords">诊断记录重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=clinicrecords">诊断记录已注销</a><br/>
+		<a href="deleteRepeat?type=department">科室信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=department">科室信息已注销</a><br/>
+		<a href="deleteRepeat?type=medrecords">住院病案首页重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=medrecords">病案首页已注销</a><br/>
+		<a href="deleteRepeat?type=checkresult">检查检验信息重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=checkresult">检查信息已注销</a><br/>
+		<a href="deleteRepeat?type=checkdetail">检查检验详细重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="deleteCancle?type=checkdetail">检查详细已注销</a>
+	</body>
+</html>

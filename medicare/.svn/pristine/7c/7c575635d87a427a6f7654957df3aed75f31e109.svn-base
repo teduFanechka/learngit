@@ -1,0 +1,306 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.utils.ChineseCharToEn;
+
+/**
+ * 客户端记录表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class CustomerManager implements ICustomerManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 分页查询page方式
+	 * 
+	 * @param pageNum 当前第几页
+	 * @param url 请求地址
+	 * @param Object ...params 有条件参数
+	 * @return 封闭了分页信息(包括记录集list)的Bean
+	 */
+	@Override
+	public Page queryForPage(String hql, String url, int pagenum) {
+		// 总记录数 : 如果是条件查询用List<T> find(String hql, Object... params)
+		int allRow = baseDao.findCount("select count(*) from Customer");
+		final int currentPage = Page.countCurrentPage(pagenum);// 当前的页码
+		// 把分页信息保存在bean中
+		Page page = new Page(allRow, currentPage);
+		final int pageSize = page.getPageSize();// 每页记录数
+		List<Customer> list = baseDao.findByPage(hql, currentPage, pageSize);// 查询出一页的结果集
+		page.setUrl(url);
+		page.setList(list);
+		return page;
+	}
+
+	// page 方式条件查询
+	@Override
+	public Page queryForPage(String countHql, String hql, String url, int pageNum, Object... params) {
+		// 总记录数 : 如果是条件查询用List<T> find(String hql, Object... params)
+		int allRow = baseDao.findCount(countHql, params);
+		final int currentPage = Page.countCurrentPage(pageNum);// 当前的页码
+		// 把分页信息保存在bean中
+		Page page = new Page(allRow, currentPage);
+		final int pageSize = page.getPageSize();// 每页记录数
+		List<Customer> list = baseDao.findByPage(hql, currentPage, pageSize, params);// 查询出一页的结果集
+		page.setUrl(url);
+		page.setList(list);
+		return page;
+	}
+
+	/**
+	 * 添加分店信息
+	 */
+	@Override
+	public void addCustomers(String path, String cusId, Date upCollectdate, int upId, String cusName,String fileName) throws IOException, ParseException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Customer customer;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 8) {
+						throw new DataException("正确字段数:8,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						// 查询当前分店编码是否注册过
+						String hql = "select count(c.cusId) from Customer c where c.cusParentid=?0 and c.cusBranchcode=?1";
+						int sum = baseDao.findCount(hql, cusId, name[0].trim());
+						if (sum > 0) {// 已注册过执行下一条
+							continue;
+						}
+						customer = new Customer();
+						customer.setCusParentid(cusId);// 获取上级编码
+						customer.setCusStatus(2);//状态 0待审 1已审 2通过 3未通过 9已删除 预警只统计 状态 为1或者3
+						customer.setCusFlag("102");
+						customer.setCusUniqure("");
+						// 注册日期 从传来的文件采集时间获取
+						customer.setCusRegdate(upCollectdate);
+						if (name[0].trim().equals("NULL") || name[0].trim().equals("")) {
+							continue;
+						} else {
+							customer.setCusBranchcode(name[0].trim());
+						}
+						if (name[1].trim().contains(cusName)) {// 机构名称2
+							customer.setCusName(name[1].trim());
+						} else {// 加上全称
+							customer.setCusName(cusName + "-" + name[1].trim());
+						}
+						// 获取客户拼音简码
+						ChineseCharToEn ctn = new ChineseCharToEn();
+						customer.setCusPcode(ctn.getAllFirstLetter(name[1].trim()));//拼音简码
+						customer.setCusAddr(name[2].trim());// 联系地址3
+						customer.setCusContact(name[3].trim());// 联系人4
+						customer.setCusPhone(name[4].trim());// 联系电话5
+						if (name[5].trim().equals("NULL") || name[5].trim().equals("")) {// 医院编码6
+							customer.setCusRemark("");
+						} else {
+							customer.setCusDareway(name[5].trim());
+						}
+						if (name[6].trim().equals("NULL") || name[6].trim().equals("")) {// 7 : ip
+							customer.setCusRegip("");
+						} else {
+							customer.setCusRegip(name[6].trim());
+						}
+						if (name[7].trim().equals("NULL") || name[7].trim().equals("")) {
+							customer.setCusRemark("");
+						} else {
+							customer.setCusRemark(name[7].trim());// 备注8
+						}
+						baseDao.save(customer);
+						count++;
+					} catch (Exception e) {
+						error++;
+						String log = e.toString();
+						if (log.length() > 300){
+							log = log.substring(0, 300);
+						}
+						errorlog = new Errorlog();
+						errorlog.setCusId(cusId);
+						errorlog.setCusName(cusName);
+						errorlog.setErrAddtime(new Date());
+						errorlog.setErrFileflag("分店信息");
+						errorlog.setErrFilepath(fileName);
+						errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+						errorlog.setErrType("数据解析错误");
+						baseDao.save(errorlog);
+					}
+				}
+				baseDao.updateOrDelete(qsql, count,"解析成功"+count+"条，失败"+error+"条",upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"非文件", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("分店信息");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 8) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"数据上传字段不全错误,正确字段数:8,实际解析字段数:" + name.length, upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"数据解析错误", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+	}
+
+	// 根据药品入库统计ids 查询对应的药店名称集合
+	@Override
+	public List getCusNames(String hql, List cusIds) {
+		List list = new ArrayList();
+		if (cusIds.size() > 0) {
+			for (int i = 0; i < cusIds.size(); i++) {
+				String cusId = (String) cusIds.get(i);
+				List ltem = baseDao.find(hql, cusId);
+				if (ltem.size() > 0) {
+					String cusName = ltem.get(0).toString();
+					list.add(i, cusName);
+				}
+			}
+		}
+		return list;
+	}
+
+	// 获取cusName 对应的cusID
+	@Override
+	public String getCusId(String cusName) {
+		String cusId = "";
+		String hql = "select c.cusId from Customer c where c.cusName=?0";
+		List list = baseDao.find(hql, cusName);
+		if (list.size() > 0) {
+			cusId = list.get(0).toString();
+		}
+		return cusId;
+	}
+
+	// 根据客户标识获取所有客户名称列表
+	@Override
+	public List getAllCusName(String cusFlag, String acAreacode) {
+		String hql;
+		List list = new ArrayList();
+		if (acAreacode != null) {
+			hql = "select c.cusName,c.cusId  from Customer c ,CusareaRelate r where c.cusFlag=?0 and (c.cusStatus=1 or c.cusStatus=2) "
+				+ "and c.cusId=r.cusId and r.acAreacode in("+ acAreacode+ ") order by nlssort(c.cusName,'NLS_SORT=SCHINESE_PINYIN_M') ";
+			list = baseDao.find(hql, cusFlag);
+			return list;
+		} else {
+			return null;
+		}
+	}
+
+	// 根据cusflag类型过滤cusids得到当前cusId集合中元素等于当于cusFlag *未应用*
+	@Override
+	public List getRealCusIds(List cusIds, String cusFlag) {
+		List list = new ArrayList();
+		if (cusIds.size() > 0) {
+			int count = 0;
+			for (int i = 0; i < cusIds.size(); i++) {
+				Object cusId = cusIds.get(i);
+				String hql = "select c.cusFlag from Customer c where c.cusId=?0";
+				List l = baseDao.find(hql, cusId);
+				String tem = l.get(0).toString();
+				if (cusFlag.equals(tem)) {
+					list.add(count, cusId);
+					count++;
+				}
+			}
+		}
+		return list;
+	}
+
+	/**
+	 * 符合标识的list 方法略同上个方法,ArrayList元素是数组需要注意 根据客户标识过滤list
+	 */
+	@Override
+	public List getArrayCusIds(List arrList, String cusFlag) {
+		List list = new ArrayList();
+		if (arrList.size() > 0) {
+			int count = 0;
+			for (int i = 0; i < arrList.size(); i++) {
+				Object[] cusId = null;
+				// 是否是数组
+				if (arrList.get(i) instanceof Object[]) {
+					cusId = (Object[]) arrList.get(i);
+				}
+				String hql = "select c.cusFlag from Customer c where c.cusId=?0";
+				// 数组的第一个元素内容是cusId
+				List l = baseDao.find(hql, cusId[0]);
+				String tem = l.get(0).toString();
+				if (cusFlag.equals(tem)) {
+					list.add(count, cusId);
+					count++;
+				}
+			}
+		}
+		return list;
+	}
+
+	// 略同(getCusNames)查询对应的药店名称集合, ArrayList元素是数组需要注意
+	@Override
+	public List getArrCusNames(String idHql, List realarrList) {
+		List list = new ArrayList();
+		if (realarrList.size() > 0) {
+			for (int i = 0; i < realarrList.size(); i++) {
+				Object[] obj = (Object[]) realarrList.get(i);
+				List l = baseDao.find(idHql, obj[0]);
+				if (l.size() > 0) {
+					String tem = l.get(0).toString();
+					list.add(i, tem);
+				}
+			}
+		}
+		return list;
+	}
+
+}

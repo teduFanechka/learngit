@@ -1,0 +1,447 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import yibao.yiwei.utils.JacksonDateHMSSerializer;
+
+/**
+ * 321检查结果主表36 Checkresult entity. checkresult
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_CHECKRESULT", schema = "YIWEI")
+public class Checkresult implements java.io.Serializable {
+
+	// Fields
+
+	private String crId;
+	private String cusId;
+	private String cusDateway;
+	private Date crPicktime;
+	private Date crAddtime;
+	private String crCheckres;// 检查来源
+	private String crCheckno;// 检查流水号
+	private String crCaseno;// 病案号
+	private String crHospno;// 住院号/门诊号
+	private String crDeptcode;// 科室编码
+	private String crDept;// 科室名称
+	private String crRoom;// 房间号
+	private String crBed;// 床位号
+	private String crClinicdiag;// 临床诊断
+	private String crCheckposi;// 检查部位
+	private String crModel;// 标本号
+	private String crModeltype;// 标本种类
+	private String crItemcode;// 项目编码
+	private String crItemname;// 项目名称
+	private String crTool;// 使用仪器
+	private String crCheckresult;// 检查结果
+	private String crPtsname;// 患者姓名
+	private String crPtssex;// 患者性别
+	private String crAge;// 年龄
+	private String crIdnum;// 身份证号
+	private String crHealthcard;// 医保卡号
+	private String crSenddate;// 送检日期
+	private String crCheckdate;// 检验日期
+	private String crReportdate;// 报告日期
+	private String crSenddoc;// 送检医生编码
+	private String crSenddocno;// 送检医生名称
+	private String crCheckdoc;// 检验医生编码
+	private String crCheckdocno;// 检验医生名称
+	private String crAuditdoc;// 审核医生编码
+	private String crAuditdocno;// 审核医生名称
+	private String crComment;// 备注
+
+	// Constructors
+
+	/** default constructor */
+	public Checkresult() {
+	}
+
+	/** full constructor */
+	public Checkresult(String cusId, String cusDateway, Date crPicktime,
+			Date crAddtime, String crCheckres, String crCheckno,
+			String crCaseno, String crHospno, String crDeptcode, String crDept,
+			String crRoom, String crBed, String crClinicdiag,
+			String crCheckposi, String crModel, String crModeltype,
+			String crItemcode, String crItemname, String crTool,
+			String crCheckresult, String crPtsname, String crPtssex,
+			String crAge, String crIdnum, String crHealthcard,
+			String crSenddate, String crCheckdate, String crReportdate,
+			String crSenddoc, String crSenddocno, String crCheckdoc,
+			String crCheckdocno, String crAuditdoc, String crAuditdocno,
+			String crComment) {
+		this.cusId = cusId;
+		this.cusDateway = cusDateway;
+		this.crPicktime = crPicktime;
+		this.crAddtime = crAddtime;
+		this.crCheckres = crCheckres;
+		this.crCheckno = crCheckno;
+		this.crCaseno = crCaseno;
+		this.crHospno = crHospno;
+		this.crDeptcode = crDeptcode;
+		this.crDept = crDept;
+		this.crRoom = crRoom;
+		this.crBed = crBed;
+		this.crClinicdiag = crClinicdiag;
+		this.crCheckposi = crCheckposi;
+		this.crModel = crModel;
+		this.crModeltype = crModeltype;
+		this.crItemcode = crItemcode;
+		this.crItemname = crItemname;
+		this.crTool = crTool;
+		this.crCheckresult = crCheckresult;
+		this.crPtsname = crPtsname;
+		this.crPtssex = crPtssex;
+		this.crAge = crAge;
+		this.crIdnum = crIdnum;
+		this.crHealthcard = crHealthcard;
+		this.crSenddate = crSenddate;
+		this.crCheckdate = crCheckdate;
+		this.crReportdate = crReportdate;
+		this.crSenddoc = crSenddoc;
+		this.crSenddocno = crSenddocno;
+		this.crCheckdoc = crCheckdoc;
+		this.crCheckdocno = crCheckdocno;
+		this.crAuditdoc = crAuditdoc;
+		this.crAuditdocno = crAuditdocno;
+		this.crComment = crComment;
+	}
+
+	// Property accessors
+	@GenericGenerator(name = "Checkresult_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Checkresult_id")
+	@Column(name = "CR_ID", unique = true, nullable = false, length = 32)
+	public String getCrId() {
+		return this.crId;
+	}
+
+	public void setCrId(String crId) {
+		this.crId = crId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_DATEWAY", length = 32)
+	public String getCusDateway() {
+		return this.cusDateway;
+	}
+
+	public void setCusDateway(String cusDateway) {
+		this.cusDateway = cusDateway;
+	}
+
+	@JsonSerialize(using = JacksonDateHMSSerializer.class)
+	@Column(name = "CR_PICKTIME", length = 7)
+	public Date getCrPicktime() {
+		return this.crPicktime;
+	}
+
+	public void setCrPicktime(Date crPicktime) {
+		this.crPicktime = crPicktime;
+	}
+
+	@Column(name = "CR_ADDTIME", length = 7)
+	public Date getCrAddtime() {
+		return this.crAddtime;
+	}
+
+	public void setCrAddtime(Date crAddtime) {
+		this.crAddtime = crAddtime;
+	}
+
+	@Column(name = "CR_CHECKRES", length = 200)
+	public String getCrCheckres() {
+		return this.crCheckres;
+	}
+
+	public void setCrCheckres(String crCheckres) {
+		this.crCheckres = crCheckres;
+	}
+
+	@Column(name = "CR_CHECKNO", length = 32)
+	public String getCrCheckno() {
+		return this.crCheckno;
+	}
+
+	public void setCrCheckno(String crCheckno) {
+		this.crCheckno = crCheckno;
+	}
+
+	@Column(name = "CR_CASENO", length = 32)
+	public String getCrCaseno() {
+		return this.crCaseno;
+	}
+
+	public void setCrCaseno(String crCaseno) {
+		this.crCaseno = crCaseno;
+	}
+
+	@Column(name = "CR_HOSPNO", length = 100)
+	public String getCrHospno() {
+		return this.crHospno;
+	}
+
+	public void setCrHospno(String crHospno) {
+		this.crHospno = crHospno;
+	}
+
+	@Column(name = "CR_DEPTCODE", length = 100)
+	public String getCrDeptcode() {
+		return this.crDeptcode;
+	}
+
+	public void setCrDeptcode(String crDeptcode) {
+		this.crDeptcode = crDeptcode;
+	}
+
+	@Column(name = "CR_DEPT", length = 100)
+	public String getCrDept() {
+		return this.crDept;
+	}
+
+	public void setCrDept(String crDept) {
+		this.crDept = crDept;
+	}
+
+	@Column(name = "CR_ROOM", length = 32)
+	public String getCrRoom() {
+		return this.crRoom;
+	}
+
+	public void setCrRoom(String crRoom) {
+		this.crRoom = crRoom;
+	}
+
+	@Column(name = "CR_BED", length = 32)
+	public String getCrBed() {
+		return this.crBed;
+	}
+
+	public void setCrBed(String crBed) {
+		this.crBed = crBed;
+	}
+
+	@Column(name = "CR_CLINICDIAG", length = 400)
+	public String getCrClinicdiag() {
+		return this.crClinicdiag;
+	}
+
+	public void setCrClinicdiag(String crClinicdiag) {
+		this.crClinicdiag = crClinicdiag;
+	}
+
+	@Column(name = "CR_CHECKPOSI", length = 100)
+	public String getCrCheckposi() {
+		return this.crCheckposi;
+	}
+
+	public void setCrCheckposi(String crCheckposi) {
+		this.crCheckposi = crCheckposi;
+	}
+
+	@Column(name = "CR_MODEL", length = 100)
+	public String getCrModel() {
+		return this.crModel;
+	}
+
+	public void setCrModel(String crModel) {
+		this.crModel = crModel;
+	}
+
+	@Column(name = "CR_MODELTYPE", length = 100)
+	public String getCrModeltype() {
+		return this.crModeltype;
+	}
+
+	public void setCrModeltype(String crModeltype) {
+		this.crModeltype = crModeltype;
+	}
+
+	@Column(name = "CR_ITEMCODE", length = 32)
+	public String getCrItemcode() {
+		return this.crItemcode;
+	}
+
+	public void setCrItemcode(String crItemcode) {
+		this.crItemcode = crItemcode;
+	}
+
+	@Column(name = "CR_ITEMNAME", length = 100)
+	public String getCrItemname() {
+		return this.crItemname;
+	}
+
+	public void setCrItemname(String crItemname) {
+		this.crItemname = crItemname;
+	}
+
+	@Column(name = "CR_TOOL", length = 100)
+	public String getCrTool() {
+		return this.crTool;
+	}
+
+	public void setCrTool(String crTool) {
+		this.crTool = crTool;
+	}
+
+	@Column(name = "CR_CHECKRESULT", length = 400)
+	public String getCrCheckresult() {
+		return this.crCheckresult;
+	}
+
+	public void setCrCheckresult(String crCheckresult) {
+		this.crCheckresult = crCheckresult;
+	}
+
+	@Column(name = "CR_PTSNAME", length = 32)
+	public String getCrPtsname() {
+		return this.crPtsname;
+	}
+
+	public void setCrPtsname(String crPtsname) {
+		this.crPtsname = crPtsname;
+	}
+
+	@Column(name = "CR_PTSSEX", length = 32)
+	public String getCrPtssex() {
+		return this.crPtssex;
+	}
+
+	public void setCrPtssex(String crPtssex) {
+		this.crPtssex = crPtssex;
+	}
+
+	@Column(name = "CR_AGE", length = 32)
+	public String getCrAge() {
+		return this.crAge;
+	}
+
+	public void setCrAge(String crAge) {
+		this.crAge = crAge;
+	}
+
+	@Column(name = "CR_IDNUM", length = 32)
+	public String getCrIdnum() {
+		return this.crIdnum;
+	}
+
+	public void setCrIdnum(String crIdnum) {
+		this.crIdnum = crIdnum;
+	}
+
+	@Column(name = "CR_HEALTHCARD", length = 32)
+	public String getCrHealthcard() {
+		return this.crHealthcard;
+	}
+
+	public void setCrHealthcard(String crHealthcard) {
+		this.crHealthcard = crHealthcard;
+	}
+
+	@Column(name = "CR_SENDDATE", length = 32)
+	public String getCrSenddate() {
+		return this.crSenddate;
+	}
+
+	public void setCrSenddate(String crSenddate) {
+		this.crSenddate = crSenddate;
+	}
+
+	@Column(name = "CR_CHECKDATE", length = 32)
+	public String getCrCheckdate() {
+		return this.crCheckdate;
+	}
+
+	public void setCrCheckdate(String crCheckdate) {
+		this.crCheckdate = crCheckdate;
+	}
+
+	@Column(name = "CR_REPORTDATE", length = 32)
+	public String getCrReportdate() {
+		return this.crReportdate;
+	}
+
+	public void setCrReportdate(String crReportdate) {
+		this.crReportdate = crReportdate;
+	}
+
+	@Column(name = "CR_SENDDOC", length = 32)
+	public String getCrSenddoc() {
+		return this.crSenddoc;
+	}
+
+	public void setCrSenddoc(String crSenddoc) {
+		this.crSenddoc = crSenddoc;
+	}
+
+	@Column(name = "CR_SENDDOCNO", length = 32)
+	public String getCrSenddocno() {
+		return this.crSenddocno;
+	}
+
+	public void setCrSenddocno(String crSenddocno) {
+		this.crSenddocno = crSenddocno;
+	}
+
+	@Column(name = "CR_CHECKDOC", length = 32)
+	public String getCrCheckdoc() {
+		return this.crCheckdoc;
+	}
+
+	public void setCrCheckdoc(String crCheckdoc) {
+		this.crCheckdoc = crCheckdoc;
+	}
+
+	@Column(name = "CR_CHECKDOCNO", length = 32)
+	public String getCrCheckdocno() {
+		return this.crCheckdocno;
+	}
+
+	public void setCrCheckdocno(String crCheckdocno) {
+		this.crCheckdocno = crCheckdocno;
+	}
+
+	@Column(name = "CR_AUDITDOC", length = 32)
+	public String getCrAuditdoc() {
+		return this.crAuditdoc;
+	}
+
+	public void setCrAuditdoc(String crAuditdoc) {
+		this.crAuditdoc = crAuditdoc;
+	}
+
+	@Column(name = "CR_AUDITDOCNO", length = 32)
+	public String getCrAuditdocno() {
+		return this.crAuditdocno;
+	}
+
+	public void setCrAuditdocno(String crAuditdocno) {
+		this.crAuditdocno = crAuditdocno;
+	}
+
+	@Column(name = "CR_COMMENT", length = 400)
+	public String getCrComment() {
+		return this.crComment;
+	}
+
+	public void setCrComment(String crComment) {
+		this.crComment = crComment;
+	}
+
+}

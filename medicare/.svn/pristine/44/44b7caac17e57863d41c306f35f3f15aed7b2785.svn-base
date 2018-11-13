@@ -1,0 +1,18 @@
+
+// ajax 实现文件上传
+
+function ajaxFileUpload(obj) {
+	var posturl = $(obj).parents('form').attr('action');
+	$.ajaxFileUpload( {
+		url : posturl,
+		secureuri : false,
+		fileElementId : "file",
+		dataType : "json",
+		success : function(data) {
+				$(obj).parents('form')[0].reset();// 表单重置
+				alert(data.errmsg);
+				return;
+	},
+
+	});
+}

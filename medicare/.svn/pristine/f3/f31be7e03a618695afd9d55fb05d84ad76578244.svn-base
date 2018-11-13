@@ -1,0 +1,114 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Itemstock;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.JsonDateValueProcessor;
+
+/**
+ * 库存信息表
+ */
+@Controller
+public class ItemstockController {
+	
+	@Autowired
+	private IBaseService<Itemstock> baseService;
+
+	@RequestMapping("toItemstock")
+	public String toItemstock(String cusId, HttpServletRequest request) {
+		request.setAttribute("cusId", cusId);
+		return "/itemstock/itemstock";
+	}
+
+	/**
+	 * datagrid分页 获取当前cusid条件查询总记录数
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	@RequestMapping("getAllItemstock")
+	public void getAllItemstock(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException {
+		List<Itemstock> list = new ArrayList<Itemstock>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");// 当前cusId
+		String startDate = request.getParameter("startDate") != null ? request.getParameter("startDate") : "";// 采集日期查询参数
+		String endDate = request.getParameter("endDate") != null ? request.getParameter("endDate") : "";
+		String itemName = request.getParameter("itemName") != null ? request.getParameter("itemName") : "";
+		int count = 0;
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		String countSql = "select count(IS_ID) from TBL_ITEMSTOCK where CUS_ID=?0 ";
+		String hql = "from Itemstock i where i.cusId=?0 ";
+		Date itemPicktime = null;
+		Date itemPicktime2 = null;
+		if (!startDate.equals("") && !endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			itemPicktime2 = sf.parse(endDate);
+			countSql+="and ITEM_PICKTIME between ?1 and ?2 and ITEM_NAME like?3";
+			hql+="and i.itemPicktime between ?1 and ?2 and itemName like?3 order by i.itemAddtime desc";
+			count = baseService.findCountSql(countSql,cusId, itemPicktime,itemPicktime2,"%"+itemName+"%");
+			if (count > 0) {
+				list = baseService.findByPage(hql, rows, page,cusId, itemPicktime,itemPicktime2,"%"+itemName+"%");
+			}
+		}
+		if (startDate.equals("") && endDate.equals("")) {
+			countSql+="and ITEM_NAME like?1";
+			hql+="and itemName like?1 order by i.itemAddtime desc";
+			count = baseService.findCountSql(countSql,cusId, "%"+itemName+"%");
+			if (count > 0) {
+				list = baseService.findByPage(hql, rows, page,cusId, "%"+itemName+"%");
+			}
+		}
+		if (startDate.equals("") && !endDate.equals("")) {
+			itemPicktime2 = sf.parse(endDate);
+			countSql+="and ITEM_PICKTIME <?1 and ITEM_NAME like?2";
+			hql+="and i.itemPicktime <?1 and itemName like?2 order by i.itemAddtime desc";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime2,"%"+itemName+"%");
+			if (count > 0) {
+				list = baseService.findByPage(hql, rows, page,cusId,itemPicktime2,"%"+itemName+"%");
+			}
+		}
+		if (!startDate.equals("") && endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			countSql+="and ITEM_PICKTIME >?1 and ITEM_NAME like?2";
+			hql+="and i.itemPicktime >?1 and itemName like?2 order by i.itemAddtime desc";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime,"%"+itemName+"%");
+			if (count > 0) {
+				list = baseService.findByPage(hql, rows, page,cusId,itemPicktime,"%"+itemName+"%");
+			}
+		}
+		toBeJson(list, count, response);
+	}
+
+	
+	public void toBeJson(List<Itemstock> list, int total, HttpServletResponse response) throws IOException {
+		// 转化为Json格式 ,将有Date 格式的list 转为json 可识别格式"2014-01-12 12:20:10"
+		// 调用工具类 list(含有java.util.Date)转换成json
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		response.setContentType("application/json;charset=UTF-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+
+}

@@ -1,0 +1,107 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>供应商信息表</title>
+
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/formatter.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script type="text/javascript">
+			$(function() {
+				var cusId=$("#supplier").attr("name");
+				var cusFlag=$("#supplier").attr("cusFlag");
+				var url =  'getAllSupplier?cusId='+cusId+'&cusFlag='+cusFlag;
+				datagrid('supplier', '供应商/生产商', 'spId', url, 'spCode', 'desc');
+			});
+		</script>
+	</head>
+
+	<body>
+		<!-- datagrid表格开始 -->
+		<table id="supplier" name="${cusId }" cusFlag="${cusFlag }">
+			<thead>
+				<tr>
+					<%--<th data-options="field:'sb',checkbox:true"></th>
+					--%>
+					<th field="spId" align="center" hidden=true>
+						<!-- hidden=true 隐藏列 -->
+						供应商id
+					</th>
+					<th field="cusId" hidden=true align="center" editor="{type:'text'}">
+						客户ID
+					</th>
+					<th field="cusParentid" hidden=true align="center">
+						客户上级ID
+					</th>
+					<th field="spCode" align="center" editor="{type:'text'}">
+						企业编码
+					</th>
+					<th field="spName" align="left">
+						企业名称
+					</th>
+					<th field="spContact" hidden=true align="center">
+						联系人
+					</th>
+					<th field="spPhone" hidden=true align="center">
+						联系电话
+					</th>
+					<th field="spCertificateno" hidden=true align="center">
+						证书编号
+					</th>
+					<th field="spQuality" hidden=true align="center">
+						质量认证情况
+					</th>
+					<th
+						data-options="field:'spCat',align:'center',formatter:formatOperSpCat">
+						企业类别
+					</th>
+					<th field="spPostcode"  hidden=true align="center">
+						邮政编码
+					</th>
+					<th field="spEmail" hidden=true  align="center">
+						电子邮件
+					</th>
+					<th field="spAddress" hidden=true  align="center">
+						详细地址
+					</th>
+					<th field="spFax"  hidden=true align="center">
+						企业传真
+					</th>
+					<th
+						data-options="field:'spStatus',align:'center',formatter:formatOperStatus">
+						状态
+					</th>
+					<th field="cusDareway" hidden=true align="center">
+						医院编码
+					</th>
+					<th field="acCode" hidden=true align="center">
+						统筹区划编码
+					</th>
+					<th field="acName" hidden=true align="center">
+						统筹区划名称
+					</th>
+					<th field="spPicktime" hidden=true align="center">
+						采集时间
+					</th>
+					<th field="spAddtime" hidden=true align="center">
+						创建时间
+					</th>
+					<th field="spAnnex" hidden=true align="center">
+						附件
+					</th>
+					<th field="spRemark" hidden=true align="center">
+						备注
+					</th>
+				</tr>
+			</thead>
+		</table>
+		<!-- datagrid表格结束 -->
+	</body>
+</html>

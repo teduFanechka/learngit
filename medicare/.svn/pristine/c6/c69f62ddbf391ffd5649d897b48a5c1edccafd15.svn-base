@@ -1,0 +1,81 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>本位码查询</title>
+		<c:set value="${pageContext.request.contextPath}" var="path"
+			scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/drugcatalog/searchDSC.js"></script>
+	</head>
+	<body>
+		<div class="easyui-layout" data-options="fit:'true',">
+				<div class="xqgl">
+			<div id="cusmytoolbar1"
+					style="width: 200%; height: 25px; padding: 2px 0;" class="">
+							<form id="searchForm"
+								onkeydown="if(event.keyCode==13){searchDSC()}">
+								<input id="searchname" style="margin-top:-10px"  class="easyui-searchbox" AUTOCOMPLETE="off"
+									data-options="searcher:searchDSC,prompt:'请输入商品名或本位码',"></input>
+								<a href="javascript:void(0);"    onClick="clearForm();">
+									<img style="margin:3px 5px;position: absolute"  src="images/xx.png"/>
+								</a>
+							</form>
+				</div>
+	
+				<div class="easyui-panel" title=""
+					data-options="border:true,fit:true" iconCls="icon-zc">
+					<table id="dsc"  
+						data-options="checkOnSelect:true,fit:true,rownumbers:true,pagination:true"
+						width="95%" cellpadding="2" cellspacing="1"
+						toolbar="#cusmytoolbar1">
+						<thead>
+							<tr class="trcus">
+								<th data-options="field:'0',align:'left',width:200">
+									定点名称
+								</th>
+								
+								<th data-options="field:'2',align:'left',width:200">
+									项目名称
+								</th>
+								<th data-options="field:'9',align:'left',width:100">
+									本位码
+								</th>
+								<th data-options="field:'3',align:'left',width:250">
+									厂家
+								<th data-options="field:'4',align:'center',width:80">
+									小包装单位
+								</th>
+								<th data-options="field:'5',align:'center',width:80">
+									小包装价格
+								</th>
+								<th data-options="field:'6',align:'center',width:80">
+									大包装单位
+								</th>
+								<th data-options="field:'7',align:'center',width:80">
+									大包装数量
+								</th>
+								<th data-options="field:'8',align:'center',width:80">
+									大包装价格
+								</th>
+								<th data-options="field:'1',align:'center',width:80,formatter:fmtFlag">
+									定点类型
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+
+						</tbody>
+					</table>
+				</div>
+			
+			</div>
+		</div>
+	</body>
+</html>

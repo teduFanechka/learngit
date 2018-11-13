@@ -1,0 +1,35 @@
+function getStockanalyze(){  
+    var drugcode = $("#drugcode").val();
+    var cusid = $("#cusid").val();
+	var begin_time = $("#begindt").text();  
+	var end_time = $("#enddt").text();
+
+    var ahref = 'getStockanalyze?dc='+drugcode+'&cus=' + cusid; 
+    ahref = ahref + '&bgdt=' + begin_time + '&eddt=' + end_time; 
+    
+    $.ajax({
+        url: ahref,
+        type: "post",
+        success: function (data) {
+    		$("#stocklist").datagrid({
+    				fit:true,
+    			    url:ahref, 
+    			    remoteSort:false,  
+    			    singleSelect:true,
+    			    frozenColumns:[[{field:'colflag',title:'统计日期',width:100,align:'center'}]],
+    			    columns:[data.cols]
+    			    
+    		});    		
+
+    		$("#stocklist").datagrid('loadData', data.data);
+        }
+    });    
+       
+    
+}
+
+
+$(function() {
+	getStockanalyze();
+});
+

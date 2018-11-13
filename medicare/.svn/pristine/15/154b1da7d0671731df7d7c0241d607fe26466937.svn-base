@@ -1,0 +1,122 @@
+package yibao.yiwei.entity;
+
+import java.util.List;
+
+@SuppressWarnings("unchecked")
+public class Page {
+
+	private List list;// 要返回的某一页的记录列表
+	private int allRow; // 总记录数
+	private int totalPage;// 总页数
+	private int currentPage;// 当前页数
+	private int pageSize = 1;// 每页记录数
+	private String url; // 页面请求地址
+	private int startPage;// 查询显示的起始页数
+	private int endPage;// 查询显示的结束页码
+
+	public List getList() {
+		return list;
+	}
+
+	public void setList(List list) {
+		this.list = list;
+	}
+
+	public int getAllRow() {
+		return allRow;
+	}
+
+	public void setAllRow(int allRow) {
+		this.allRow = allRow;
+	}
+
+	public int getTotalPage() {
+		return totalPage;
+	}
+
+	public void setTotalPage(int totalPage) {
+		this.totalPage = totalPage;
+	}
+
+	public int getCurrentPage() {
+		return currentPage;
+	}
+
+	public void setCurrentPage(int currentPage) {
+		this.currentPage = currentPage;
+	}
+
+	public int getPageSize() {
+		return pageSize;
+	}
+
+	public void setPageSize(int pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	public int getStartPage() {
+		return startPage;
+	}
+
+	public void setStartPage(int startPage) {
+		this.startPage = startPage;
+	}
+
+	public int getEndPage() {
+		return endPage;
+	}
+
+	public void setEndPage(int endPage) {
+		this.endPage = endPage;
+	}
+
+	// 构造方法当new Page的时候算出总页数
+	public Page(int allRow, int currentPage) {
+		this.allRow = allRow;
+		// 如果总记录数除以每页记录数为0,总页数就等于这个值,否则加1页显示
+		if (this.allRow % this.pageSize == 0) {
+			this.totalPage = this.allRow / this.pageSize;
+		} else {
+			this.totalPage = this.allRow / this.pageSize + 1;
+		}
+		this.currentPage = currentPage;// 1 传入1页从0个索引开始取,传第2页从第10个索引开始妈
+
+		// 根据用户想看的页码pagenum,算出jsp页面的起始与结束页码
+		if (totalPage <= 10) {
+			this.startPage = 1;
+			this.endPage = this.totalPage;
+		} else {
+			this.startPage = this.currentPage - 4;
+			this.endPage = this.currentPage + 5;
+			if (this.startPage < 1) {
+				this.startPage = 1;
+				this.endPage = 10;
+			}
+			if (this.endPage > this.totalPage) {
+				this.endPage = this.totalPage;
+				this.startPage = this.totalPage - 9;
+			}
+		}
+	}
+
+	/** */
+	/**
+	 * 计算当前页,若为0或者请求的URL中没有"?page=",则用1代替
+	 * 
+	 * @param page
+	 *            传入的参数(可能为空,即0,则返回1)
+	 * @return 当前页
+	 */
+	public static int countCurrentPage(int page) {
+		final int curPage = (page == 0 ? 1 : page);
+		return curPage;
+	}
+}

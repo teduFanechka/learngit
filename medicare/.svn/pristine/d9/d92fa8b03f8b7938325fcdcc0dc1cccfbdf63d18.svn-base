@@ -1,0 +1,23 @@
+package yibao.yiwei.service;
+
+import yibao.yiwei.entity.Page;
+
+public interface IMedrecordsManager {
+
+	/**
+	 * 分页条件查询page方式
+	 * 
+	 * @param countHql
+	 *            统计条数
+	 * @param hql
+	 *            查询hql
+	 * @param url
+	 *            请求地址
+	 * @param currentPage
+	 *            当前第几页
+	 * @param params
+	 *            条件参数...
+	 * @return 封闭了条件查询分页信息(包括记录集list)的Bean
+	 */
+	public Page queryForPage(String countHql, String hql, String url, int currentPage, Object... params);
+}

@@ -1,0 +1,127 @@
+package yibao.yiwei.controller.system;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.Areacode;
+import yibao.yiwei.service.IBaseService;
+
+/**
+ * 区划管理
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class AreacodeController {
+	
+	@Autowired
+	private IBaseService<Areacode> baseService;
+
+	/**
+	 * 转到区划管理
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toAreacode")
+	public String toAreacode() {
+		return "/system/areacode";
+	}
+	
+	/**
+	 * 区划管理
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllAreacode")
+	public Map<String, Object> getAllAreacode(HttpServletRequest request) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String hql = "from Areacode order by acOrder";
+		String countHql = "select count(acId) from Areacode";
+		List<Areacode> list = baseService.findByPage(hql, rows, page);
+		int count = baseService.findCount(countHql);
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+
+	/**
+	 * 添加或修改区划
+	 * @param areacode
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/addOrUpdateAreacode")
+	public Map<String, Object> addOrUpdateAreacode(Areacode areacode) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		try{
+			if(areacode.getAcId().equals("")){
+				areacode.setAcStatus("1");
+				baseService.save(areacode);
+				map.put("status", "区划添加成功");
+			} else {
+				baseService.update(areacode);
+				map.put("status", "区划修改成功");
+			}
+		} catch(Exception e){
+			map.put("status", "区划编码不能重复！");
+		}
+		
+		return map;
+	}
+
+	/**
+	 * 删除区划
+	 * @param ids
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/delAreacode")
+	public Map delAreacode(String ids) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String arr[] = ids.split(",");
+		for (int i = 0; i < arr.length; i++) {
+			String acId = arr[i];
+			Areacode areacode = baseService.get(Areacode.class, acId);
+			baseService.updateOrDelete("delete Areacode where acId=?0", acId);
+			baseService.updateOrDelete("delete ManareaRelate where acAreacode=?0",areacode.getAcAreacode());
+			baseService.updateOrDelete("delete CusareaRelate where acAreacode=?0",areacode.getAcAreacode());
+		}
+		map.put("status", "区划删除成功");
+		return map;
+	}
+	
+	/**
+	 * 修改区划状态
+	 * @param status
+	 * @param acId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/updateAreacodeStatus")
+	public Map updateAreacodeStatus(String status,String acId){
+		Map<String, Object> map = new HashMap<String, Object>();
+		String hql = "update Areacode a set a.acStatus=?0 where a.acId=?1";
+		if(status.equals("1")){
+			baseService.updateOrDelete(hql, "1", acId);
+			map.put("status", "区划启用成功");
+		} else {
+			baseService.updateOrDelete(hql, "0", acId);
+			map.put("status", "区划禁用成功");
+		}
+		return map;
+	}
+	
+}

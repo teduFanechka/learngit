@@ -1,0 +1,20 @@
+	$(document).ready(function() {
+		// 使用JQuery从后台获取JSON格式的数据
+			jQuery.getJSON('warehouseitemAmountChartJson?days=1',
+					null, function(data) {
+						// 为图表设置值
+					cusNames = data.cusNames;
+					jQuery.each(data.map, function(k, v) {
+						var arr = [ k, v ];
+						map.push(arr);
+					});
+					if (cusNames.length > 0) {
+						var seriedata = {
+							'type' : 'pie',
+							'name' : '占总药品数量',
+							'data' : map
+						};
+						var serie = mychart.addSeries(seriedata);
+					}
+				});
+		});

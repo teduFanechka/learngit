@@ -1,0 +1,147 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Supplier;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+
+/**
+ * 药品生产/供应商信息表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class SupplierController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	/**
+	 * 转到生产商/供应商
+	 * @param request
+	 * @param cusId
+	 * @param cusFlag
+	 * @return
+	 */
+	@RequestMapping("/toSupplier")
+	public String toSupplier(HttpServletRequest request, String cusId, String cusFlag) {
+		request.setAttribute("cusFlag", cusFlag);
+		request.setAttribute("cusId", cusId);
+		return "/supplier/supplier";
+	}
+
+	// 新增或修改表格数据
+	@RequestMapping("/addOrUpdateSupplier ")
+	public void addOrUpdateSupplier(HttpServletRequest request, HttpServletResponse response) {
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String spId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		Supplier supplier = new Supplier();
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {
+			// 获取jsonArray第一个json对象 jo
+			JSONObject jo = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jo.size() > 0) {
+				// 解析jo 并获取实体字段值
+				String cusId = jo.getString("cusId");
+				String cusParentid = jo.getString("cusParentid");
+				String spCode = jo.getString("spCode");
+				String spName = jo.getString("spName");
+				String spContact = jo.getString("spContact");
+				String spPhone = jo.getString("spPhone");
+				String spCertificateno = jo.getString("spCertificateno");
+				String spQuality = jo.getString("spQuality");
+				String spAnnex = jo.getString("spAnnex");
+				String spRemark = jo.getString("spRemark");
+				supplier.setCusId(cusId);
+				supplier.setCusParentid(cusParentid);
+				supplier.setSpAnnex(spAnnex);
+				supplier.setSpCertificateno(spCertificateno);
+				supplier.setSpCode(spCode);
+				supplier.setSpContact(spContact);
+				supplier.setSpName(spName);
+				supplier.setSpPhone(spPhone);
+				supplier.setSpQuality(spQuality);
+				supplier.setSpRemark(spRemark);
+				// 如果等于6 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jo.size() == 11) {
+					// 获取id主键
+					spId = jo.getString("spId");
+					supplier.setSpId(spId);
+					baseService.update(supplier);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(supplier);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	/**
+	 * 生产商/供应商
+	 * @param request
+	 * @param cusFlag
+	 * @param response
+	 * @throws IOException
+	 */
+	@RequestMapping("/getAllSupplier")
+	public void getAllSupplier(HttpServletRequest request, String cusFlag, HttpServletResponse response) throws IOException, ParseException {
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");
+		//判断连锁是否为连锁药店,是查询id=parentid
+		if (null != cusFlag && cusFlag.equals("102")) {
+			String phql = "select cusParentid from Customer where cusId=?0";
+			List plist = baseService.find(phql, cusId);
+			if (plist.get(0) != null) {
+				String parentid = plist.get(0).toString();
+				if (parentid.length() > 1) {
+					cusId = parentid;
+				}
+			}
+		}
+		String countSql = "select count(SP_ID) from tbl_Supplier where cus_Id=?0";
+		String hql = "from Supplier where cusId=?0";
+		int count = baseService.findCountSql(countSql,cusId);
+		if(count>0){
+			List<Supplier> list = baseService.findByPage(hql, rows, page,cusId);
+			Utils.toBeJson(list, count, response);
+		}
+	}
+
+	// 批量删除信息 return null; 返回string 也可以
+	@RequestMapping("/delSupplier")
+	public void delSupplier(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 要批量删除的id字符串获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.delete(Supplier.class,arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+}

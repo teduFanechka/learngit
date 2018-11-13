@@ -1,0 +1,294 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Salesitem;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+
+@Controller
+public class SalesitemController {
+
+	@Autowired
+	private IBaseService<Salesitem> baseService;
+
+	/**
+	 * 转到销售信息
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/toSalesitem")
+	public String toSalesitem(HttpServletRequest request) {
+		String cusId = request.getParameter("cusId");
+		request.setAttribute("cusId", cusId);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar cal = Calendar.getInstance();    
+		cal.add(Calendar.MONTH, 0);
+		cal.set(Calendar.DAY_OF_MONTH,1);
+		request.setAttribute("startDate", sdf.format(cal.getTime()));
+		request.setAttribute("endDate", sdf.format(Utils.getDate(1)));
+		return "/data/salesitem";
+	}
+	
+	/**
+	 * 销售信息
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	@RequestMapping("/getAllSalesitem")
+	public void getAllSalesitem(HttpServletRequest request, HttpServletResponse response,String startDate,String endDate,String soNo,String drugCode,String soSalespsnname) throws IOException,ParseException {
+		List<Salesitem> list = new ArrayList<Salesitem>();// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");
+		int count = 0;
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		String countSql = "select count(SI_ID) from tbl_Salesitem where cus_Id = ?0 ";
+		String hql = "from Salesitem where cusId = ?0 ";
+		
+		if(null != soNo && !soNo.equals("")){
+			soNo = soNo.trim();
+			countSql+=" and SO_NO = '"+soNo+"'";
+			hql+=" and soNo = '"+soNo+"'";
+		}
+		
+		if(null != drugCode && !drugCode.equals("")){
+			drugCode = drugCode.trim();
+			countSql+=" and (DRUG_CODE = '"+drugCode+"' or DRUG_NAME like '%"+drugCode+"%')";
+			hql+=" and (drugCode = '"+drugCode+"' or drugName like '%"+drugCode+"%')";
+		}
+		
+		if(null != soSalespsnname && !soSalespsnname.equals("")){
+			soSalespsnname = soSalespsnname.trim();
+			countSql+=" and (SI_SETTLEMENTNAME like '%"+soSalespsnname+"%' or SO_PAYTYPE like '%"+soSalespsnname+"%' or SO_SALESPSNNAME like '%"+soSalespsnname+"%')";
+			hql+=" and (siSettlementname like '%"+soSalespsnname+"%' or soPaytype like '%"+soSalespsnname+"%' or soSalespsnname like '%"+soSalespsnname+"%')";
+		}
+		
+		Date itemPicktime = null;
+		Date itemPicktime2 = null;
+		if(null != startDate && !startDate.equals("")){
+			startDate = startDate.trim() + " 00:00:00";
+		}
+		if(null != endDate && !endDate.equals("")){
+			endDate = endDate.trim() + " 23:59:59";
+		}
+		if (!startDate.equals("") && !endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			itemPicktime2 = sf.parse(endDate);
+			countSql+=" and SO_DATETIME between ?1 and ?2";
+			hql+=" and soDatetime between ?1 and ?2 order by soDatetime desc nulls last";
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime,itemPicktime2);
+			count = baseService.findCountSql(countSql,cusId,itemPicktime,itemPicktime2);
+		}
+		if (startDate.equals("") && endDate.equals("")) {
+			hql+=" order by soDatetime desc nulls last";
+			list = baseService.findByPage(hql, rows, page,cusId);
+			count = baseService.findCountSql(countSql,cusId);
+		}
+		if (startDate.equals("") && !endDate.equals("")) {
+			itemPicktime2 = sf.parse(endDate);
+			countSql+="and SO_DATETIME <?1";
+			hql+="and soDatetime <?1 order by soDatetime desc nulls last";
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime2);
+			count = baseService.findCountSql(countSql,cusId,itemPicktime2);
+		}
+		if (!startDate.equals("") && endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			countSql+="and SO_DATETIME >?1";
+			hql+="and soDatetime >?1 order by soDatetime desc nulls last";
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime);
+			count = baseService.findCountSql(countSql,cusId,itemPicktime);
+		}
+		Utils.toBeJson(list, count, response);
+	}
+	
+	// 新增或修改表格数据 **未应用 字段已改变**
+	@RequestMapping("/addOrUpdateSalesitem ")
+	public void addOrUpdateSalesitem(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String siId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		Salesitem salesitem = new Salesitem();
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {
+			// 获取jsonArray第一个json对象 jsonObject
+			JSONObject jo = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jo.size() > 0) {
+				// 解析jo 并获取实体字段值
+				String cusId = jo.getString("cusId");
+				String cusParentid = jo.getString("cusParentid");
+				String soNo = jo.getString("soNo");
+				String drugCode = jo.getString("drugCode");
+				String drugBatchno = jo.getString("drugBatchno");
+				String drugMfrs = jo.getString("drugMfrs");
+				String drugMadein = jo.getString("drugMadein");
+				String drugEid = jo.getString("drugEid");
+				@SuppressWarnings("unused")
+				String soSalespsncode = jo.getString("soSalespsncode");
+				String soSalespsnname = jo.getString("soSalespsnname");
+				String drugNum = jo.getString("drugNum");
+				if (drugNum.equals("")) {
+					salesitem.setDrugNum(0.0);
+				} else {
+					salesitem.setDrugSalesprice(Double.parseDouble(drugNum));
+				}
+				String drugSalesprice = jo.getString("drugSalesprice");
+				if (drugSalesprice.equals("")) {
+					salesitem.setDrugSalesprice(0.0);
+				} else {
+					salesitem.setDrugSalesprice(Double.parseDouble(drugSalesprice));
+				}
+				String soPaytype = jo.getString("soPaytype");
+				salesitem.setSoPaytype(soPaytype);
+				String drugMfgdate1 = jo.getString("drugMfgdate");
+				DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				if (drugMfgdate1.equals("")) {
+					salesitem.setDrugMfgdate(null);
+				} else {
+					Date drugMfgdate = df.parse(drugMfgdate1);
+					salesitem.setDrugMfgdate(drugMfgdate);
+				}
+				String drugExpdate1 = jo.getString("drugExpdate");
+				if (drugExpdate1.equals("")) {
+					salesitem.setDrugExpdate(null);
+				} else {
+					Date drugExpdate = df.parse(drugExpdate1);
+					salesitem.setDrugExpdate(drugExpdate);
+				}
+				String soDatetime1 = jo.getString("soDatetime");
+				if (soDatetime1.equals("")) {
+					salesitem.setSoDatetime(null);
+				} else {
+					Date soDatetime = df.parse(soDatetime1);
+					salesitem.setSoDatetime(soDatetime);
+				}
+				String soCreatedatetime1 = jo.getString("soCreatedatetime");
+				if (soCreatedatetime1.equals("")) {
+					salesitem.setSoCreatedatetime(null);
+				} else {
+					Date soCreatedatetime = df.parse(soCreatedatetime1);
+					salesitem.setSoCreatedatetime(soCreatedatetime);
+				}
+				salesitem.setCusId(cusId);
+				salesitem.setCusParentid(cusParentid);
+				salesitem.setDrugBatchno(drugBatchno);
+				salesitem.setDrugCode(drugCode);
+				salesitem.setDrugEid(drugEid);
+				salesitem.setDrugMadein(drugMadein);
+				salesitem.setDrugMfrs(drugMfrs);
+				salesitem.setSoNo(soNo);
+				salesitem.setDrugPicktime(null);
+				salesitem.setSoSalespsnname(soSalespsnname);
+				// 如果等于6 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jo.size() == 18) {
+					// 获取id主键
+					siId = jo.getString("siId");
+					salesitem.setSiId(siId);
+					baseService.update(salesitem);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(salesitem);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	// 批量删除信息 return null; 返回string 也可以
+	@RequestMapping("/delSalesitem")
+	public void delSalesitem(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 要批量删除的id字符串获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.updateOrDelete("delete Salesitem where siId=?0", arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+	/**
+	 * 获取datagrid分页json 所有Salesitem对象
+	 * 
+	 * @param request
+	 * @param response
+	 * @param drugName 查询项目名称
+	 * @param startDate 起始日期
+	 * @param endDate 截止日期
+	 * @param cusId 当前cusid
+	 * @return
+	 * @throws IOException
+	 */
+	//@ResponseBody
+	public Map<String, Object> getAllSalesitemMMMMMMMMMMMMMMMM(HttpServletRequest request, HttpServletResponse response, String drugName, String startDate, String endDate, String cusId) throws IOException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		List<Salesitem> list = new ArrayList<Salesitem>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String countHql = "select count(s.cusId) from Salesitem s where s.cusId = ?0 ";
+		String hql = "from Salesitem s where s.cusId = ?0 ";
+		String order = " order by s.soDatetime desc";
+		if (drugName != null || startDate != null || endDate != null) {
+			if (StringUtils.isNotBlank(drugName)) {
+				countHql += "and s.drugName like '" + drugName.trim() + "' ";
+				hql += "and s.drugName='" + drugName.trim() + "' ";
+			}
+			if (startDate != "" && endDate == "") {// 只有开始日期
+				countHql += " and s.soDatetime like to_date('" + startDate
+						+ "','yyyy-MM-dd')";
+				hql += " and s.soDatetime like to_date('" + startDate
+						+ "','yyyy-MM-dd')";
+			} else if (endDate != "" && startDate == "") {// 只有结束日期
+				countHql += " and s.soDatetime like to_date('" + endDate
+						+ "','yyyy-MM-dd')";
+				hql += " and s.soDatetime like to_date('" + endDate
+						+ "','yyyy-MM-dd')";
+
+			} else if (startDate != "" && endDate != "") {// 从开始到结束日期
+				countHql += " and s.soDatetime between to_date('" + startDate
+						+ "','yyyy-MM-dd') and to_date('" + endDate
+						+ "','yyyy-MM-dd') ";
+				hql += " and s.soDatetime between to_date('" + startDate
+						+ "','yyyy-MM-dd') and to_date('" + endDate
+						+ "','yyyy-MM-dd') ";
+			}
+		}
+		hql += order;// 排序
+		int total = baseService.findCount(countHql, cusId);
+		if (total > 0) {
+			list = baseService.findByPage(hql, rows, page, cusId);
+		}
+		map.put("total", total);
+		map.put("rows", list);
+		return map;
+	}
+}

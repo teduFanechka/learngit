@@ -1,0 +1,27 @@
+body {
+	text-align:center;
+	font-family: verdana, helvetica, arial, sans-serif;
+	font-size: 14px;
+	margin: 0;
+}
+
+.div {
+	width: 100%;
+	line-height: 28px;
+	border-collapse : collapse;
+	border: solid #999;
+	border-width: 1px;
+	border-collapse: collapse;
+}
+
+.border2 {
+	width: 100%;
+	border-collapse: collapse;
+	border: solid #999;
+	border-width: 0;
+}
+
+.border2 tr td {
+	border: solid #999;
+	border-width: 1px;
+}

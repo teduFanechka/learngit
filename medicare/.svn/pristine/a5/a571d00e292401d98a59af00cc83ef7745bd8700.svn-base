@@ -1,0 +1,261 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.controller.system.AuthPassport;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.IUploadfileManager;
+import yibao.yiwei.utils.JsonDateValueProcessor;
+
+/**
+ * 文件上传日志表控制器
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class UploadfileController {
+	
+	@Autowired
+	private IUploadfileManager uploadfileManager;
+
+	@Autowired
+	private IBaseService<Uploadfile> baseService;
+	
+	/**
+	 * 转到上传日志
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toUploadfile")
+	public String toUploadfile(HttpServletRequest request) {
+		return "/uploadfile/uploadfile";
+	}
+	
+	/**
+	 * 上传日志
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllUploadfile")
+	public Map<String, Object> getAllUploadfile(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		Map<String, Object> map = new HashMap<String, Object>();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String rows = request.getParameter("rows");
+		String page = request.getParameter("page");
+		String cusName = request.getParameter("cusName") != null ? request.getParameter("cusName").trim() : "";
+		String upFileflag = request.getParameter("upFileflag") != null ? request.getParameter("upFileflag").trim() : "";
+		String sql = "select c.cus_Name,u.up_Id,u.up_Filepath,u.up_Date,u.up_Collectiondate,u.filename,u.up_Fileflag,u.filesize,u.is_Compress,u.is_Handle,u.is_Encrypt,u.up_Count" +
+				" from tbl_Uploadfile u,tbl_Customer c where u.cus_Id=c.cus_Id";
+		String countSql = "select count(u.up_Id) from tbl_Uploadfile u,tbl_Customer c where u.cus_Id=c.cus_Id";
+		if (!cusName.equals("")) {
+			sql+= " and (c.cus_Name like '%" + cusName + "%' or c.CUS_DAREWAY='" + cusName + "')";
+			countSql+=" and (c.cus_Name like '%" + cusName + "%' or c.CUS_DAREWAY='" + cusName + "')";
+		}
+		if (!upFileflag.equals("")) {
+			sql+= " and u.UP_FILEFLAG in("+upFileflag+")";
+			countSql+=" and u.UP_FILEFLAG in ("+upFileflag+")";
+		}
+		sql += " order by u.up_Date desc";
+		List list = baseService.findByPageSql(sql, rows, page);
+		int total = baseService.findCountSql(countSql);
+		Object[] obj;
+		Uploadfile uploadfile;
+		List<Uploadfile> list2 = new ArrayList<Uploadfile>();
+		for(int i=0; i<list.size(); i++){
+			obj = (Object[])list.get(i);
+			uploadfile = new Uploadfile();
+			uploadfile.setCusName(obj[0] != null ? obj[0].toString() : "");
+			uploadfile.setCusId(obj[1] != null ? obj[1].toString() : "");
+			uploadfile.setUpFilepath(obj[2] != null ? obj[2].toString() : "");
+			uploadfile.setUpDate(obj[3] != null ? sdf.parse(obj[3].toString()) : null);
+			uploadfile.setUpCollectiondate(obj[4] != null ? sdf.parse(obj[4].toString()) : null);
+			uploadfile.setFilename(obj[5] != null ? obj[5].toString() : "");
+			uploadfile.setUpFileflag(obj[6] != null ? obj[6].toString() : "");
+			uploadfile.setFilesize(obj[7] != null ? Integer.parseInt(obj[7].toString()) : 0);
+			uploadfile.setIsCompress(obj[8] != null ? Integer.parseInt(obj[8].toString()) : 0);
+			uploadfile.setIsHandle(obj[9] != null ? Integer.parseInt(obj[9].toString()) : 0);
+			uploadfile.setIsEncrypt(obj[10] != null ? Integer.parseInt(obj[10].toString()) : 0);
+			uploadfile.setUpCount(obj[11] != null ? Integer.parseInt(obj[11].toString()) : 0);
+			list2.add(uploadfile);
+		}
+		map.put("total", total);
+		map.put("rows", list2);
+		return map;
+	}
+
+	/**
+	 * 新增或修改表格数据
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws ParseException
+	 */
+	@ResponseBody
+	@RequestMapping("/addOrUpdateUploadfile")
+	public Map<String, Object> addOrUpdateUploadfile(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		Uploadfile uploadfile = new Uploadfile();
+		String upId = request.getParameter("upId");
+		String status;
+		String upname=request.getParameter("upname");
+		String cusId = request.getParameter("cusId");
+		String upFileflag = request.getParameter("upFileflag");
+		String upFilepath = request.getParameter("upFilepath");
+		String filename = request.getParameter("filename");
+		String size = request.getParameter("filesize");
+		String handle = request.getParameter("isHandle");
+		String encrypt = request.getParameter("isEncrypt");
+		String compress = request.getParameter("isCompress");
+		String upCollectiondate1 = request.getParameter("upCollectiondate");
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String upDate1 = request.getParameter("upDate");
+		String count = request.getParameter("upCount");
+		int filesize;
+		int isEncrypt;
+		int isCompress;
+		int isHandle;
+		int upCount;
+		// 总条数 默认为0
+		if (count == null || count.equals("")) {
+			upCount = 0;
+		} else {
+			upCount = Integer.parseInt(count);
+		}
+		// 是否解压 默认为0
+		if (compress == null || compress.equals("")) {
+			isCompress = 0;
+		} else {
+			isCompress = Integer.parseInt(compress);
+		}
+		// 是否加密 默认为1
+		if (encrypt == null || encrypt.equals("")) {
+			isEncrypt = 1;
+		} else {
+			isEncrypt = Integer.parseInt(encrypt);
+		}
+		// 是否处理 默认为0
+		if (handle == null || handle.equals("")) {
+			isHandle = 0;
+		} else {
+			isHandle = Integer.parseInt(handle);
+		}
+		// 文件大小 默认为0
+		if (size == null || size.equals("")) {
+			filesize = 0;
+		} else {
+			filesize = Integer.parseInt(size);
+		}
+
+		if (upDate1.equals("")) {
+			uploadfile.setUpDate(null);
+		} else {
+			Date upDate = df.parse(upDate1);
+			uploadfile.setUpDate(upDate);
+		}
+
+		if (upCollectiondate1.equals("")) {
+			uploadfile.setUpCollectiondate(null);
+		} else {
+			Date upCollectiondate = df.parse(upCollectiondate1);
+			uploadfile.setUpCollectiondate(upCollectiondate);
+		}
+		uploadfile.setCusId(cusId);
+		uploadfile.setUpname(upname);
+		uploadfile.setFilesize(filesize);
+		uploadfile.setUpFileflag(upFileflag);
+		uploadfile.setUpFilepath(upFilepath);
+		uploadfile.setFilename(filename);
+		uploadfile.setIsEncrypt(isEncrypt);
+		uploadfile.setIsCompress(isCompress);
+		uploadfile.setIsHandle(isHandle);
+		uploadfile.setUpCount(upCount);
+		if (upId == null || upId.equals("")) {
+			baseService.save(uploadfile);
+			status = "添加完成";
+		} else {
+			int id = Integer.parseInt(upId);
+			uploadfile.setUpId(id);
+			baseService.update(uploadfile);
+			status = "更新完成";
+		}
+		map.put("status", status);
+		return map;
+	}
+
+	// 转化为Json格式 ,将有Date 格式的list 转为json 可识别格式"2014-01-12 12:20:10"
+	public void toBeJson(List<Uploadfile> list, int total, HttpServletResponse response) throws IOException {
+		/*
+		 * JSONArray jo = JSONArray.fromObject(list,
+		 * jsonConfig);只将list(包含Date类型)转换为json时用
+		 */
+		// 调用工具类 list(含有java.util.Date)转换成json
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		// System.out.println("json:" + json.toString());
+		// json.accumulate("rows", list);// row是代表显示的页的数据 无Date字段时用
+		response.setCharacterEncoding("utf-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+
+	/**
+	 * 批量删除信息
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("/delUploadfile")
+	public void delUploadfile(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.delete(Uploadfile.class, arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+	/**
+	 * 根据hql语句获取未解密文件路径集合,未应用
+	 * @return
+	 */
+	@RequestMapping("/path")
+	public List<Uploadfile> getFilePaths() {
+		String sql = "select u.upFilepath from Uploadfile as u where u.isEncrypt=0";
+		List<Uploadfile> list = baseService.find(sql);
+		return list;
+	}
+
+	/**
+	 * 根据id更新文件解析状态status,未应用
+	 * @param request
+	 * @param id
+	 */
+	public void updateHandle(HttpServletRequest request,Integer id) {
+		uploadfileManager.updateHandle(true, id);
+	}
+
+}

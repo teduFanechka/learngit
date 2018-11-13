@@ -1,0 +1,123 @@
+// 单独删除
+function deleteItem(idList)// 发出异步请求
+{ 
+	var a =window.confirm("确认删除吗?");
+	if(a){
+		publicDel(idList);
+	}
+}  
+
+// 抽取出单独删除和批量删除的公共方法
+function publicDel(idList){
+	 var xhr=createXHR();  
+	    xhr.onreadystatechange=function()  
+	    {  
+	    	// 获取XMLHTTP readyState状态==4,响应已完成；您可以获取并使用服务器的响应了
+	        if(xhr.readyState==4)  
+	        {  
+	            if(xhr.status>=200&&xhr.status<300||xhr.status==304){               
+	               <!-- alert(xhr.responseText);  -->     
+	               // 从页面列表中删除数据及样式
+	                doDeleteSuccess(idList);  	              
+	            }else{ 
+	            	alert("删除失败");
+	            }
+	        }  
+	    }  
+	    xhr.open("get","./delCustomer?id="+idList,true);  
+	    xhr.send(null);  
+}
+function createXHR()  
+{  
+    if(window.XMLHttpRequest)  
+    {  
+        return new XMLHttpRequest();  
+    }  
+    else if(window.ActiveXObject)  
+    {  
+        return new ActiveXObject("Microsoft.XMLHTTP");  
+    }  
+}  
+
+// 将已经删除的行从列表里清除，依据删除的行的id
+function doDeleteSuccess(idList)  
+{  
+    var idArray=idList.split(",");// 将id序列分割为数组
+    for(i=0;i<idArray.length;i++)  
+    {  
+        var btn=document.getElementById(idArray[i]);  
+        // 获取要删除的节点，此处为button所在的<tr></tr>标签
+        var whoToDel=btn.parentNode.parentNode;  
+        whoToDel.parentNode.removeChild(whoToDel);  
+    }  
+} 
+/*
+ * // 更新用户状态 function changeState(obj, id){ if(obj.checked==true){ var
+ * state=obj.value; $.ajax( { type:"POST",
+ * url:"./updateState?id="+id+"&state="+state, dataType:"json", success:
+ * function(data){ if(data.state=='0'){ var dId=document.getElementById(id); var
+ * parent=dId.parentNode.parentNode; parent.children[8].innerHTML="已启用";
+ * parent.children[9].innerHTML="<input type='checkbox' value='1'
+ * onclick=changeState(this,'"+id+"') />停用"; var
+ * tem=parent.children[0].innerHTML.trim(); alert(tem+"已启用"); //
+ * parent.children[5].reset(); }else if(data.state=='1'){ var
+ * dId=document.getElementById(id); var parent=dId.parentNode.parentNode;
+ * parent.children[8].innerHTML="已停用"; parent.children[9].innerHTML="<input
+ * type='checkbox' value='0' onclick=changeState(this,'"+id+"') />启用"; var
+ * tem=parent.children[0].innerHTML.trim(); alert(tem+"已停用"); } }
+ * 
+ * }); } }
+ */
+// 更新审核状态 注意id 为字符串需要引号,以及方法 onclick=changeAppState(this,'"+id+"') 语法格式很严,不能有空格等
+// <!-- '状态 0待审 1通过 2未通过 9已删除' -->
+function changeCusStatus(obj, cusId){
+	if(obj.checked==true){
+	var cusStatus=obj.value;
+		$.ajax({
+			type:"POST",
+			url:"./updateCusStatus?cusId="+cusId+"&cusStatus="+cusStatus,
+			// dataType: obj.serialize(),
+			success:function(data){
+			var dId=document.getElementById(cusId);				
+			var parent=dId.parentNode.parentNode;
+			if(cusStatus=='0'){
+				parent.children[9].innerHTML="<input type='checkbox' value='0' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') checked='checked' />待审核<br />" +
+				"<input type='checkbox' value='1' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />审核已通过<br />" +
+				"<input type='checkbox' value='2' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />审核未通过<br />" +
+				"<input type='checkbox' value='9' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />已删除<br />";
+				parent.children[11].innerHTML="<button type='button' class='btn btn-primary btn-sm' onclick=deleteItem(this.value) id='"+cusId+"' value='"+cusId+"' />删除</button>";		
+				}
+			else if(cusStatus=='1'){
+				parent.children[9].innerHTML="<input type='checkbox' value='0' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />待审核<br />" +
+				"<input type='checkbox' value='1' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') checked='checked' />审核已通过<br />" +
+				"<input type='checkbox' value='2' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />审核未通过<br />"+
+				"<input type='checkbox' value='9' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />已删除<br />";
+				parent.children[11].innerHTML="<button type='button' class='btn btn-primary btn-sm'	disabled='disabled'>删除	</button>";		
+			}
+			else if(cusStatus=='2'){
+				parent.children[9].innerHTML="<input type='checkbox' value='0' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"')  />待审核<br />" +
+				"<input type='checkbox' value='1' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />审核已通过<br />" +
+				"<input type='checkbox' value='2' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') checked='checked' />审核未通过<br />"+
+				"<input type='checkbox' value='9' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />已删除<br />";
+				parent.children[11].innerHTML="<button type='button' class='btn btn-primary btn-sm' onclick=deleteItem(this.value) id='"+cusId+"' value='"+cusId+"' />删除</button>";	
+			}
+			else if(cusStatus=='9'){
+				parent.children[9].innerHTML="<input type='checkbox' value='0' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />待审核<br />" +
+				"<input type='checkbox' value='1' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />审核已通过<br />" +
+				"<input type='checkbox' value='2' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') />审核未通过<br />"+
+				"<input type='checkbox' value='9' id='"+cusId+"' onclick=changeCusStatus(this,'"+cusId+"') checked='checked' />已删除<br />";
+				parent.children[11].innerHTML="<button type='button' class='btn btn-primary btn-sm' onclick=deleteItem(this.value) id='"+cusId+"' value='"+cusId+"' />删除</button>";	
+			}		
+			
+			}
+		});
+	// window.location.href="./updateCusStatus?cusId="+cusId+"&approveState="+appState;
+	}
+}
+// 更新状态changeStaue旧方法
+function checkme(obj, cusId){
+	if(obj.checked==true){
+	var state=obj.value;
+	window.location.href="./updateState?cusId="+cusId+"&state="+state; 
+	}						
+}

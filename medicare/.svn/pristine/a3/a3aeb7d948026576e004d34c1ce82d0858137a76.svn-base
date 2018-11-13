@@ -1,0 +1,170 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>药品销售</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path }/css/ew-main.css" />
+		<link rel="stylesheet" href="${path }/css/ew-home.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script type="text/javascript">
+		
+			$(function() {
+				$("#begindt").datebox("setValue", begin_time);  
+				$("#enddt").datebox("setValue", end_time);
+				$('#drugCode').next('span').find('input').focus();
+
+				$('#drugCode').combobox({  
+				    mode:'remote', 
+				    valueField:'id',
+			        textField:'text', 
+				    url:'getDrugName',  
+				    onChange:function(values) {
+			            if(values!="") {
+			                $("#drugCode").combobox("reload","getDrugName?str="+values);
+			            }
+			        }
+				});
+			});
+			
+			//查询
+			function getSaleslist(){  
+			    var drugCode = $("#drugCode").searchbox("getValue");
+				var begin_time = $("#begindt").datebox("getValue");  
+				var end_time = $("#enddt").datebox("getValue");
+	
+			    if(drugCode == ''){
+			    	$.messager.alert("提示", "请输入要查询药品的名称或本位码！","warning");
+			    	$('#drugCode').next('span').find('input').focus();
+			    	return;
+			    }else{
+			        var ahref = 'getDrugSales?flag=1&dwcode=' + drugCode+ '&bgdt=' + begin_time + '&eddt=' + end_time; 
+			    }
+			    $('#drugsales').datagrid({
+				     url:ahref,
+			    	 onLoadSuccess:function(data){
+				        if(data.total == 0){
+				            var body = $(this).data().datagrid.dc.body2;
+				            body.find('table tbody').append('<tr><td width="'+body.width()+'" style="height: 25px; text-align: center;" colspan="16">没有查询到满足条件的数据</td></tr>');
+				        }else{
+				        	var rows = $('#drugsales').getData();
+							for(var i=0; i<rows.length; i++){
+							    var row = rows[i]
+							}
+				        }
+				    }
+			    });     
+			}
+
+			//导出
+			/*function exportStatistics(){
+				var drugCode = $("#drugCode").searchbox("getValue");
+				var begin_time = $("#begindt").datebox("getValue");  
+				var end_time = $("#enddt").datebox("getValue");
+	
+			    if(drugCode == ''){
+			    	$.messager.alert("提示", "请输入要查询药品的名称或本位码！","warning");
+			    	$('#drugCode').next('span').find('input').focus();
+			    	return;
+			    }else{
+			        var ahref = 'expStatistics?flag=1&dwcode=' + drugCode; 
+			    }
+			    ahref = ahref + '&bgdt=' + begin_time + '&eddt=' + end_time; 
+				
+			    window.location.href = ahref;
+			}*/
+
+			//医院名称
+			function fmtCusName(value, row, index) {
+				var text;
+				$.ajax({
+					type: "POST",
+					url:"findCustomerName?cusId="+value,
+					async: false,//默认true异步，false同步
+					success: function(data){
+						text = data.cusName;
+					}
+				})
+				return "<a href='javascript:void(0)' onclick=showCus(this); name='"+text+"' name2='"+value+"'>" + text + "<a/>";
+			}
+
+			//查询医院销售记录
+			function showCus(obj){
+				var cusId = $(obj).attr('name2');
+				var drugCode = $("#drugCode").searchbox("getValue");
+				var begin_time = $("#begindt").datebox("getValue");  
+				var end_time = $("#enddt").datebox("getValue");
+				var title = obj.name + " - 销售记录";
+				var url = "toSalesDruglist?cus="+cusId+"&bgdt="+begin_time+"&eddt="+end_time+"&dc="+drugCode;
+				window.parent.addTab(title, url);
+			}
+
+			//清空
+			function clearForm() {
+			    $("#drugCode").textbox('setValue','')
+			}
+		</script>
+	</head>
+
+	<body>
+	    <div class="easyui-layout" title="药品销售查询列表" data-options="collapsible:false,noheader:true,border:false,fit:true" >
+	    	<div name="querybar" title="查询条件" data-options="region:'north',border:false" style="padding:5px; height:65px;">
+				<div class="barbox1">
+					<div style="float: left; width: 200px; line-height: 22px;">
+						<input id="drugCode" class="easyui-searchbox" style="width: 160px;" data-options="prompt:'请输入药品名称或本位码'," />
+						<a href="javascript:" class="clear" onClick=clearForm();>
+							<img style="margin:3px 5px;position: absolute" class="cl-xx-child" src="images/xx.png" />
+						</a>
+					</div>
+				</div>
+				<div class="top-time" style="background: none; float: left; margin-left: 10px;">
+					<table>
+						<tr>
+							<td>开始日期:</td>
+							<td><input id="begindt" class="easyui-datebox" data-options="sharedCalendar:'#cc',editable:false" /></td>
+							<td>结束日期:</td>
+							<td><input id="enddt" class="easyui-datebox"data-options="sharedCalendar:'#cc',editable:false" /></td>
+						</tr>
+					</table>
+
+					<div id="cc" class="easyui-calendar"></div>
+					<script type="text/javascript">
+					var begin_time = '${begindt}';
+					var end_time = '${enddt}';
+					</script>
+				</div>
+				<div style="float: left; margin-left: 5px;">
+					<a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-search'" style="width: 80px" onclick="javascript:getSaleslist();">查询</a>
+					<!-- <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-xl'" style="width: 80px" onclick="javascript:exportStatistics();">导出</a> -->
+				</div>
+	    	</div>
+	    	<div id="queryresult" title="查询结果" data-options="region:'center',noheader:false,border:false" style="height:300px;">
+				<div class="easyui-layout" title="结果" data-options="noheader:true,border:false,fit:true" >
+					<div id="querydata" data-options="region:'center',noheader:true,border:false" >
+						<!-- datagrid表格 -->
+						<table id="drugsales" class="easyui-datagrid" data-options="loadMsg:'数据装载中......',pagination:true,singleSelect:true,fit:true,border:false,rownumbers:true">
+						<thead>
+							<tr>
+								<th field="siId" align="center" hidden=true></th>
+								<th field="cusid" halign="center" align="left" width="300" sortable="true" formatter="fmtCusName">医院名称</th>
+								<th field="drugcode" halign="center" align="left" width="100" sortable="true">药品编码</th>
+								<th field="drugname" halign="center" align="left" width="180" sortable="true">药品名称</th>
+								<th field="totalquantity" halign="center" align="right" width="80" sortable="true">销售总量排名</th>
+								<th field="totalamount" halign="center" align="right" width="80" sortable="true">销售总额</th>
+								<th field="drugspecification" halign="center" align="left" width="100">项目规格</th>
+								<th field="drugmfrs" halign="center" align="left" width="180">生产商</th>
+								<th field="drugmadein" halign="center" align="left" width="180">产地</th>
+							</tr>
+						</thead>				
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

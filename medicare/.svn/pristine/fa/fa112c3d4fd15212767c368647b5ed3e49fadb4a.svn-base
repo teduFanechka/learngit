@@ -1,0 +1,68 @@
+package yibao.yiwei.controller.system;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IBaseService;
+
+@Controller
+public class ErrorlogController {
+	
+	@Autowired
+	private IBaseService<Errorlog> baseService;
+	
+	// 添加测试
+	@RequestMapping("/addErrorlog")
+	public void addErrorlog() {
+		Errorlog errorlog = new Errorlog();
+		errorlog.setCusId("test");
+		baseService.save(errorlog);
+	}
+
+	/**
+	 * 转到解析日志
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toErrorlog")
+	public String toErrorlog() {
+		return "/errorlog/errorlog";
+	}
+
+	/**
+	 * 解析日志
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/getSearchErrorlog")
+	public Map<String, Object> getSearchErrorlog(HttpServletRequest request, HttpServletResponse response) {
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusName = request.getParameter("cusName") != null ? request.getParameter("cusName").trim() : "";// 按定点名称查询
+		String hql = "from Errorlog";
+		String countHql = "select count(err_Id) from sys_Errorlog";
+		if (!cusName.equals("")) {
+			hql+= " where cusName like '%" + cusName + "%'";
+			countHql = " where cus_Name like '%" + cusName + "%'";
+		}
+		hql+=" order by errAddtime desc";
+		List<Errorlog> list = baseService.findByPage(hql, rows, page);
+		int count = baseService.findCountSql(countHql);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("rows", list);
+		map.put("total", count);
+		return map;
+	}
+}

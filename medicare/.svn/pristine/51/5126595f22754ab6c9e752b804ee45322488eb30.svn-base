@@ -1,0 +1,113 @@
+package yibao.yiwei.controller.system;
+
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.Privilege;
+import yibao.yiwei.entity.system.PrivilegeTree;
+import yibao.yiwei.service.IBaseService;
+
+@SuppressWarnings("unchecked")
+@Controller
+public class PrivilegeController {
+
+	@Autowired
+	private IBaseService baseService;
+	
+	@AuthPassport
+	@RequestMapping("/toPrivilege")
+	public String toPrivilege(HttpServletRequest request) {
+		String hql = "from Privilege where priParent='0' order by priOrder";
+		List list = baseService.find(hql);
+		request.setAttribute("list", list);
+		return "/privilege/privilege";
+	}
+	
+	@RequestMapping("/privilegeList")
+	@ResponseBody
+	public List privilegeList(){
+		String hql = "from Privilege where priParent =?0 order by priOrder";
+		List<Privilege> list = baseService.find(hql,"0");
+		List<Privilege> list2 =new ArrayList();
+		Privilege privilege;
+		for(int i = 0; i < list.size(); i++){
+			privilege = list.get(i);
+			list2 = baseService.find(hql,privilege.getPriId());
+			privilege.setChildren(list2);
+		}
+		return list;
+	}
+	
+	@RequestMapping("/privilegeList2")
+	@ResponseBody
+	public List privilegeList2(){
+		String sql = "select priId,priName from Privilege where priParent =?0 order by priOrder";
+		List list = baseService.find(sql,"0");
+		Object[] obj;
+		Object[] obj2;
+		PrivilegeTree privilegeTree;
+		PrivilegeTree privilegeTree2;
+		List list2;
+		List list3;
+		List list4 = new ArrayList();
+		for(int i = 0; i < list.size(); i++){
+			obj = (Object[])list.get(i);
+			list2 = baseService.find(sql,obj[0]);
+			privilegeTree = new PrivilegeTree();
+			privilegeTree.setId(obj[0]+"");
+			privilegeTree.setText(obj[1]+"");
+			list3 = new ArrayList();
+			for(int j = 0; j < list2.size(); j++){
+				obj2 = (Object[])list2.get(j);
+				privilegeTree2 = new PrivilegeTree();
+				privilegeTree2.setId(obj2[0]+"");
+				privilegeTree2.setText(obj2[1]+"");
+				list3.add(privilegeTree2);
+			}
+			privilegeTree.setChildren(list3);
+			list4.add(privilegeTree);
+		}
+		return list4;
+	}
+	
+	@ResponseBody
+	@RequestMapping("/addOrUpdatePrivilege")
+	public Map addOrUpdatePrivilege(Privilege privilege, HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String status;
+		if (privilege.getPriId().equals("")) {
+			status = "添加完成";
+			baseService.save(privilege);
+		} else {
+			baseService.update(privilege);
+			status = "更新完成";
+
+		}
+		map.put("status", status);
+		return map;
+	}
+	
+	@ResponseBody
+	@RequestMapping("/delPrivilege")
+	public void delPrivilege(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");
+		String arr[] = ids.split(",");
+		String hql = "delete PrivilegeRole where priId=?0";
+		for (int i = 0; i < arr.length; i++) {
+			String priId = arr[i];
+			baseService.delete(Privilege.class, priId);
+			baseService.updateOrDelete(hql, priId);
+		}
+	}
+}

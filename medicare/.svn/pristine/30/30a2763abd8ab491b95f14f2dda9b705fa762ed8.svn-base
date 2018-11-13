@@ -1,0 +1,181 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.GenericGenerator;
+
+import yibao.yiwei.utils.JacksonDateHMSSerializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+/**
+ * 客户端记录表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_CUSTOMER", schema = "YIWEI")
+public class Customer implements java.io.Serializable {
+
+	private String cusId;// 客户GUID主键
+	private String cusParentid;// 上级GUID，无或连锁总店为0
+	private String cusRegip;// 注册IP
+	private String cusFlag;// 客户标志 101单体药店， 102 连锁药店，201门诊 ，301医院
+	private String cusUniqure;// 唯一标识,硬件编码
+	private Date cusRegdate;// 注册日期
+	private String cusBranchcode;// 分店ID :1
+	private String cusName;// 客户/分店名称 :2
+	private String cusAddr;// 联系地址3
+	private String cusContact;// 联系人4
+	private String cusPhone;// 联系电话5
+	private String cusDareway;// 医院编码6
+	private int cusStatus;//状态：注销-1、待审核0、连锁2、其他1
+	private String cusRemark;// 备注8
+	private String cusPcode;//客户拼音简码
+
+	@Id
+	@GenericGenerator(name = "customerId", strategy = "guid")
+	@GeneratedValue(generator = "customerId")
+	@Column(name = "CUS_ID", unique = true, nullable = false, length = 32)
+	public String getCusId() {
+		return cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_PARENTID", length = 32)
+	public String getCusParentid() {
+		return this.cusParentid;
+	}
+
+	public void setCusParentid(String cusParentid) {
+		this.cusParentid = cusParentid;
+	}
+
+	@Column(name = "CUS_BRANCHCODE", length = 32)
+	public String getCusBranchcode() {
+		return cusBranchcode;
+	}
+
+	public void setCusBranchcode(String cusBranchcode) {
+		this.cusBranchcode = cusBranchcode;
+	}
+
+	@Column(name = "CUS_STATUS", precision = 22, scale = 0)
+	public int getCusStatus() {
+		return this.cusStatus;
+	}
+
+	public void setCusStatus(int cusStatus) {
+		this.cusStatus = cusStatus;
+	}
+
+	@Column(name = "CUS_NAME", length = 400)
+	public String getCusName() {
+		return this.cusName;
+	}
+
+	public void setCusName(String cusName) {
+		this.cusName = cusName;
+	}
+
+	@Column(name = "CUS_REGIP", length = 32)
+	public String getCusRegip() {
+		return this.cusRegip;
+	}
+
+	public void setCusRegip(String cusRegip) {
+		this.cusRegip = cusRegip;
+	}
+
+	@Column(name = "CUS_PHONE", length = 32)
+	public String getCusPhone() {
+		return this.cusPhone;
+	}
+
+	public void setCusPhone(String cusPhone) {
+		this.cusPhone = cusPhone;
+	}
+
+	@Column(name = "CUS_CONTACT", length = 32)
+	public String getCusContact() {
+		return this.cusContact;
+	}
+
+	public void setCusContact(String cusContact) {
+		this.cusContact = cusContact;
+	}
+
+	@Column(name = "CUS_ADDR", length = 400)
+	public String getCusAddr() {
+		return this.cusAddr;
+	}
+
+	public void setCusAddr(String cusAddr) {
+		this.cusAddr = cusAddr;
+	}
+
+	@Column(name = "CUS_FLAG", length = 3)
+	public String getCusFlag() {
+		return this.cusFlag;
+	}
+
+	public void setCusFlag(String cusFlag) {
+		this.cusFlag = cusFlag;
+	}
+
+	@Column(name = "CUS_UNIQURE", length = 64)
+	public String getCusUniqure() {
+		return this.cusUniqure;
+	}
+
+	public void setCusUniqure(String cusUniqure) {
+		this.cusUniqure = cusUniqure;
+	}
+
+	@JsonSerialize(using = JacksonDateHMSSerializer.class)
+	@Column(name = "CUS_REGDATE", length = 7)
+	public Date getCusRegdate() {
+		return this.cusRegdate;
+	}
+
+	public void setCusRegdate(Date cusRegdate) {
+		this.cusRegdate = cusRegdate;
+	}
+
+	@Column(name = "CUS_DAREWAY", length = 32)
+	public String getCusDareway() {
+		return this.cusDareway;
+	}
+
+	public void setCusDareway(String cusDareway) {
+		this.cusDareway = cusDareway;
+	}
+
+	@Column(name = "CUS_REMARK")
+	public String getCusRemark() {
+		return this.cusRemark;
+	}
+
+	public void setCusRemark(String cusRemark) {
+		this.cusRemark = cusRemark;
+	}
+	@Column(name="CUS_PCODE")
+	public String getCusPcode() {
+		return cusPcode;
+	}
+
+	public void setCusPcode(String cusPcode) {
+		this.cusPcode = cusPcode;
+	}
+	
+}

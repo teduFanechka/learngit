@@ -1,0 +1,79 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Dischargediag;
+import yibao.yiwei.entity.Medrecords;
+import yibao.yiwei.entity.Operation;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.IMedrecordsManager;
+
+/**
+ * 病案首页
+ * 
+ * @author Administrator
+ * 
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class MedrecordsController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	@Resource(name = "medrecordsManager")
+	private IMedrecordsManager medrecordsManager;
+	
+	/**
+	 * 请求病案首页视图(page分页)
+	 * 
+	 * @param cusId
+	 * @param request
+	 * @param response
+	 * @return medrecords.jsp/nul.jsp
+	 * @throws IOException
+	 */
+	@RequestMapping("/toMedrecords")
+	public String getMedrecords(String cusId, HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Page page;
+		String hql = "from Medrecords m where m.cusId=?0 order by m.merAddtime desc";
+		String countSql = "select count(m.mer_Id) from tbl_Medrecords m where m.cus_Id=?0";
+		String url = request.getRequestURI() + "?cusId=" + cusId;
+		String currentPage = request.getParameter("pagenum");
+		if (currentPage == null) {
+			page = medrecordsManager.queryForPage(countSql, hql, url, 1, cusId);
+		} else {
+			page = medrecordsManager.queryForPage(countSql, hql, url, Integer.parseInt(currentPage), cusId);
+		}
+		List<Medrecords> list = page.getList();
+		if (list.size() > 0) {
+			// 获取当前医院当前病人的病案号
+			String caseNo = list.get(0).getMerCaseno();
+			// 获取当前医院当前病人(出院诊断表)信息
+			String hql1 = "from Dischargediag d where d.cusId=?0 and d.ddCaseno=?1 order by d.ddAddtime desc";
+			List<Dischargediag> disList = baseService.find(hql1, cusId, caseNo);
+			// 获取当前医院当前病人(手术记录表)信息
+			String hql2 = "from Operation o where o.cusId=?0 and o.opCaseno=?1 order by o.opAddtime desc";
+			List<Operation> opList = baseService.find(hql2, cusId, caseNo);
+			request.setAttribute("list", disList);
+			request.setAttribute("oplist", opList);
+			request.setAttribute("page", page);
+			return "/medrecords/medrecords";
+		} else {
+			request.setAttribute("status", "未查找到数据!");
+			return "/public/null";
+		}
+
+	}
+
+}

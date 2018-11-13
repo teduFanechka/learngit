@@ -1,0 +1,98 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Drugsdelivery;
+import yibao.yiwei.service.IDrugsdeliveryManager;
+/**
+ * 未应用
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class DrugsdeliveryManager implements IDrugsdeliveryManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+
+	// 根据上传文件路径批量保存数据
+	@Override
+	public boolean addDrugsdeliverys(String path, String cusId, int upId) throws IOException, ParseException {
+		FileReader fr;
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		boolean b = false;// 定义解析是否正常
+		String line = null;
+		Drugsdelivery drugsdelivery;
+		try {
+			fr = new FileReader(path);
+			bufr = new BufferedReader(fr);
+			while ((line = bufr.readLine()) != null) {
+				String[] name = line.split("##");
+				// 上传文件解析不正确,可能为数据不全
+				if (name.length < 5) {
+					System.out.println("当前行错误行:" + line);
+					throw new DataException("异常信息:正确字段总数:8,实际解析字段数:" + name.length + ",数据不全解析停止", null);
+				}
+				for (int i = 0; i < name.length; i++) {
+					if (null != name[i] && name[i].trim().equals("NULL")){
+						name[i] = "";
+					}
+				}
+				try{
+					drugsdelivery = new Drugsdelivery();
+					drugsdelivery.setCusId(cusId);
+					drugsdelivery.setCusParentid("0");
+					drugsdelivery.setDdNo(name[0].trim());
+					String ddDatetime = name[1].trim();
+					DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					if (ddDatetime.equals("NULL") || ddDatetime.equals("")) {
+						drugsdelivery.setDdDatetime(null);
+					} else {
+						drugsdelivery.setDdDatetime(df.parse(ddDatetime));
+					}
+					String ddAuditdate = name[4].trim();
+					if (ddAuditdate.equals("NULL") || ddAuditdate.equals("")) {
+						drugsdelivery.setDdAuditdate(null);
+					} else {
+						drugsdelivery.setDdAuditdate(df.parse(ddAuditdate));
+					}
+					drugsdelivery.setDdType(name[2].trim());
+					drugsdelivery.setDdAuditor(name[3].trim());
+					baseDao.save(drugsdelivery);
+					count++;
+				} catch (Exception e) {
+					System.out.println("该行解析错误");
+				}
+			}
+			//update Uploadfile开始 修改当前upId文件上传记录表(Uploadfile)字段:upCount解析文件总条数
+			String upHql = "update Uploadfile u set u.upCount=?0 where u.upId=?1 ";
+			baseDao.updateOrDelete(upHql, count, upId);
+			System.out.println("解析当前*药品出库记录表*文件完毕,更新上传记录表统计条数完毕,共: " + count + " 条");
+			b = true;
+		} catch (Exception e) {
+			System.out.println("解析文件错误:" + path + "错误行号:" + (count+1));
+			System.out.println("当前行错误行:" + line);
+			e.printStackTrace();
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+		return b;
+	}
+
+}

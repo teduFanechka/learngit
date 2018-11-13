@@ -1,0 +1,93 @@
+package yibao.yiwei.entity.system;
+
+import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.hibernate.annotations.GenericGenerator;
+
+@Entity
+@Table(name = "SYS_PRIVILEGE", schema = "YIWEI")
+public class Privilege {
+	
+	@Id
+	@GeneratedValue(generator = "privilege_id")
+	@GenericGenerator(name = "privilege_id", strategy = "guid")
+	@Column(name = "PRI_ID", unique = true, nullable = false, length = 32)
+	private String priId;
+	
+	@Column(name = "PRI_NAME")
+	private String priName;//权限名称
+	
+	@Column(name = "PRI_URL")
+	private String priUrl;//链接
+	
+	@Column(name = "PRI_ICON")
+	private String priIcon;//页面图标
+	
+	@Column(name = "PRI_ORDER")
+	private Integer priOrder;//排序
+	
+	@Column(name = "PRI_STATUS")
+	private String priStatus;//状态：1启用，0禁用
+	
+	@Column(name = "PRI_PARENT")
+	private String priParent;//上级id
+	
+	@Transient
+	private List<Privilege> children;
+	
+	public String getPriId() {
+		return priId;
+	}
+	public void setPriId(String priId) {
+		this.priId = priId;
+	}
+	public String getPriName() {
+		return priName;
+	}
+	public void setPriName(String priName) {
+		this.priName = priName;
+	}
+	public String getPriUrl() {
+		return priUrl;
+	}
+	public void setPriUrl(String priUrl) {
+		this.priUrl = priUrl;
+	}
+	public String getPriIcon() {
+		return priIcon;
+	}
+	public void setPriIcon(String priIcon) {
+		this.priIcon = priIcon;
+	}
+	public Integer getPriOrder() {
+		return priOrder;
+	}
+	public void setPriOrder(Integer priOrder) {
+		this.priOrder = priOrder;
+	}
+	public String getPriStatus() {
+		return priStatus;
+	}
+	public void setPriStatus(String priStatus) {
+		this.priStatus = priStatus;
+	}
+	public String getPriParent() {
+		return priParent;
+	}
+	public void setPriParent(String priParent) {
+		this.priParent = priParent;
+	}
+	public List<Privilege> getChildren() {
+		return children;
+	}
+	public void setChildren(List<Privilege> children) {
+		this.children = children;
+	}
+}

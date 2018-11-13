@@ -1,0 +1,87 @@
+package yibao.yiwei.utils.timer;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.springframework.stereotype.Component;
+
+import yibao.yiwei.entity.Abc;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.count.CouUploadfileByDate;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.SpringContextUtils;
+import yibao.yiwei.utils.Utils;
+
+@SuppressWarnings("unchecked")
+@Component
+@DisallowConcurrentExecution
+public class WarningTimerTask implements Job {
+
+	public IBaseService baseService = (IBaseService) SpringContextUtils.getBean("baseService");
+	
+	@Override
+	public void execute(JobExecutionContext arg0) throws JobExecutionException {
+		Abc abc;
+		try{
+			SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+			String hql = "from Customer where cusStatus=1 or cusStatus=2";
+			List<Customer> customerList = baseService.find(hql);
+			Customer customer;
+			CouUploadfileByDate couUploadfileByDate;
+			abc = new Abc();
+			abc.setaDate(new Date());
+			abc.setaClass("定时预警任务开始");
+			baseService.save(abc);
+			for (int i = 0; i < customerList.size(); i++) {
+				try {
+					customer = customerList.get(i);
+					String cusId = customer.getCusId();
+					String cufUpdate = "";//最后上传日期
+					int cufRecordcount = 0;//昨日上传类型总数
+					int cufFilecount = 0;//历史上传类型总数
+					hql = "SELECT max(u.UP_DATE) FROM TBL_UPLOADFILE u where u.CUS_ID=?0";//customer最后上传文件日期
+					List tem = baseService.findSql(hql,cusId);
+					if (null != tem.get(0)) {
+						cufUpdate = sf.format((Date)tem.get(0));//最后上传日期,格式化日期去掉时分秒
+						hql = "SELECT COUNT(DISTINCT u.UP_FILEFLAG) FROM TBL_UPLOADFILE u WHERE u.CUS_ID=?0 AND u.UP_DATE>?1";
+						cufRecordcount = baseService.findCountSql(hql, cusId, Utils.getDate(-1));//大于昨天0点
+						hql = "SELECT COUNT(DISTINCT u.UP_FILEFLAG) FROM TBL_UPLOADFILE u WHERE u.CUS_ID=?0";//历史上传类型总数
+						cufFilecount = baseService.findCountSql(hql, cusId);
+					} else {//customer从来无上传
+						cufUpdate = "";
+						cufRecordcount = 0;
+						cufFilecount = 0;
+					}
+					couUploadfileByDate = new CouUploadfileByDate();
+					couUploadfileByDate.setCusId(cusId);
+					couUploadfileByDate.setCufFileflag(customer.getCusDareway());// 医院编码
+					couUploadfileByDate.setCusName(customer.getCusName());
+					couUploadfileByDate.setCufUpdate(cufUpdate); // 上传时间(最后)
+					couUploadfileByDate.setCufRecordcount(cufRecordcount);// 昨日上传项目数
+					couUploadfileByDate.setCufFilecount(cufFilecount);// 历史上传项目总数
+					String today = sf.format(new Date());
+					couUploadfileByDate.setCufCreatedate(sf.parse(today));//创建时间
+					couUploadfileByDate.setCusFlag(customer.getCusFlag());//101单体药店 102 连锁药店 201门诊 301医院
+					baseService.save(couUploadfileByDate);
+				} catch (Exception e) {
+					abc = new Abc();
+					abc.setaDate(new Date());
+					abc.setaClass("定时预警任务循环异常");
+					abc.setaInfo(e.getMessage());
+					baseService.save(abc);
+				}
+			}
+		} catch (Exception e) {
+			abc = new Abc();
+			abc.setaDate(new Date());
+			abc.setaClass("定时预警任务异常");
+			abc.setaInfo(e.getMessage());
+			baseService.save(abc);
+		}
+	}
+}

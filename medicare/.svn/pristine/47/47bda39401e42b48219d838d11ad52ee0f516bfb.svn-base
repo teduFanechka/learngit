@@ -1,0 +1,211 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>住院信息表</title>
+
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script type="text/javascript">
+			$(function() {
+				var cusId = $("#hospitalized").attr("name");
+				var url = 'getAllHospitalized?cusId='+cusId;
+				datagrid('hospitalized', '住院记录', 'hospId', url, 'hospId', 'desc');
+			});
+
+			function formatOperSex(val, row, index) {
+				if (val == '1') {
+					return '男';
+				} else if (val == '2') {
+					return '女';
+				} else if (val == '男' || val == '女') {
+					return val;
+				} else {
+					return '未做说明 ';
+				}
+			}
+
+			function formatOperdiagType(val, row, index) {
+				if (val == '001') {
+					return '新发生';
+				} else if (val == '002') {
+					return '自急诊转入';
+				} else if (val == '003') {
+					return '自门诊大病转入';
+				} else if (val == '004') {
+					return '自门诊特殊转入';
+				} else if (val == '005') {
+					return '自家庭病床转入';
+				} else if (val == '006') {
+					return '自住院转入';
+				} else if (val == '007') {
+					return '康复住院';
+				} else {
+					return '其它';
+				}
+			}
+
+			function formatOperdoctorType(val, row, index) {
+				if (val == '001') {
+					return '本地定点医院就医';
+				} else if (val == '002') {
+					return '异地安置';
+				} else if (val == '003') {
+					return '长期驻外';
+				} else if (val == '004') {
+					return '准假外出';
+				} else if (val == '005') {
+					return '异地转诊转院';
+				} else if (val == '006') {
+					return '非定点急诊';
+				} else if (val == '007') {
+					return '异地安置的异地转院';
+				} else if (val == '008') {
+					return '长驻外地的异地转院';
+				} else if (val == '009') {
+					return '累加';
+				} else {
+					return '其它';
+				}
+			}
+
+			function formatOperhospType(val, row, index) {
+				if (val == '001') {
+					return '住院';
+				} else if (val == '002') {
+					return '家庭病床';
+				} else if (val == '003') {
+					return '急诊转院';
+				} else if (val == '004') {
+					return '门诊慢性病';
+				} else {
+					return '其它';
+				}
+			}
+
+			function formatOperhospWay(val, row, index) {
+				if (val == '001') {
+					return '门诊';
+				} else if (val == '002') {
+					return '急诊';
+				} else if (val == '003') {
+					return '转入';
+				} else {
+					return '其它';
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<!-- datagrid表格开始 -->
+		<table id="hospitalized" name="${cusId }">
+			<thead>
+				<tr>
+					<%--<th data-options="field:'sb',checkbox:true"></th>
+					--%>
+					<th field="hospId" align="center" hidden=true>
+						<!-- hidden=true 隐藏列 -->
+					</th>
+					<th field="cusId" hidden=true align="center">
+						客户ID
+					</th>
+					<th field="caseNo" align="center">
+						病案号
+					</th>
+					<th field="hospNo" align="center">
+						住院号
+					</th>
+					<th field="siPtsname" align="center">
+						患者姓名
+					</th>
+					 <th  data-options="field:'siPtssex',align:'center',formatter:formatOperSex">
+						性别
+					</th>
+					<th field="siPtsage" align="center">
+						年龄
+					</th>
+					<th field="siPtsidcard" align="center">
+						身份证号
+					</th>
+					<th
+						data-options="field:'diagType',align:'center',formatter:formatOperdiagType">
+						接诊方式
+					</th>
+					<th field="diagDept" hidden=true align="center">
+						门诊科室
+					</th>
+					<th field="diagDeptname" align="center">
+						门诊科室
+					</th>
+					<th field="diagDoctor" hidden=true align="center">
+						确诊医师
+					</th>
+					<th field="diagDoctorname" align="center">
+						确诊医师
+					</th>
+					<th field="diagDatetime" align="center">
+						确诊日期
+					</th>
+					<th field="icdCode" align="center">
+						疾病编码
+					</th>
+					<th field="icdName" align="center">
+						疾病名称
+					</th>
+					<th
+						data-options="field:'doctorType',align:'center',formatter:formatOperdoctorType">
+						就医类别
+					</th>
+					<th data-options="field:'hospType',align:'center',formatter:formatOperhospType">
+						住院类别
+					</th>
+					<th  data-options="field:'hospWay',align:'center',formatter:formatOperhospWay">
+						住院方式
+					</th>
+					<th field="hospDept" hidden=true align="center">
+						入院科室
+					</th>
+					<th field="hospDeptname" align="center">
+						入院科室
+					</th>
+					<th field="hospDoctor" hidden=true align="center">
+						主治医师
+					</th>
+					<th field="hospDoctorname" align="center">
+						主治医师
+					</th>
+					<th field="hospAreas" align="center">
+						所在病区
+					</th>
+					<th field="hospWardno" hidden=true align="center">
+						房间号
+					</th>
+					<th field="hospBedno" align="center">
+						床位号
+					</th>
+					<th field="hospIntime" align="center">
+						住院日期
+					</th>
+					
+					<th field="siPtshealthcard" hidden=true align="center">
+						医保卡号
+					</th>
+					<th field="hospPicktime" hidden=true align="center">
+						采集日期
+					</th>
+					<th field="hospAddtime" align="center">
+						创建日期
+					</th>
+
+				</tr>
+			</thead>
+		</table>
+		<!-- datagrid表格结束 -->
+	</body>
+</html>

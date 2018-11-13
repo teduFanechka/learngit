@@ -1,0 +1,62 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 机构管理员关联表
+ */
+@Entity
+@Table(name = "SYS_ORGMAN_RELATE", schema = "YIWEI")
+public class OrgmanRelate implements java.io.Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2259222551429380483L;
+	// 定义机构id orgId属性,作为标识属性的成员(联合主键A)
+	@Id
+	@Column(name = "ORG_ID", nullable = false, length = 32)
+	private String orgId;
+	// 定义管理员id muUserid 属性,作为标识属性的成员(联合主键B)
+	@Id
+	@Column(name = "MU_USERID", nullable = false, length = 32)
+	private String muUserid;
+
+	public String getOrgId() {
+		return this.orgId;
+	}
+
+	public void setOrgId(String orgId) {
+		this.orgId = orgId;
+	}
+
+	public String getMuUserid() {
+		return this.muUserid;
+	}
+
+	public void setMuUserid(String muUserid) {
+		this.muUserid = muUserid;
+	}
+
+//	// 重写equals()方法,根据orgId,muUserid进行判断
+//	public boolean equals(Object obj) {
+//		if (this == obj) {
+//			return true;
+//		}
+//		if (obj != null && obj.getClass() == OrgmanRelate.class) {
+//			OrgmanRelate target = (OrgmanRelate) obj;
+//			return target.getOrgId().equals(this.orgId)
+//					&& target.getMuUserid().equals(this.muUserid);
+//		}
+//		return false;
+//	}
+//
+//	// 重写hashCode()方法,根据orgId,muUserid 计算hashCodew值
+//	public int hashCode() {
+//		return getOrgId().hashCode() * 31 + getMuUserid().hashCode();
+//	}
+
+}

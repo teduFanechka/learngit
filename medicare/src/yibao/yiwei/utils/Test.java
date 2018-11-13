@@ -1,0 +1,387 @@
+package yibao.yiwei.utils;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.Map.Entry;
+
+import javax.annotation.Resource;
+
+import yibao.yiwei.service.IBaseService;
+
+@SuppressWarnings("unused")
+public class Test {
+
+	public static void main(String[] args) throws ParseException, IOException {
+		listAddlist();
+	}
+
+	private static void listAddlist() {
+		
+	}
+
+	/**
+	 * 
+	 * @param objects
+	 *            某个参数可为null
+	 */
+	public static void goTest(Object... objects) {
+
+		// objects = null;//抛出异常
+		System.out.println("len:" + objects.length);
+		for (int i = 0, len = objects.length; i < len; i++) {
+			System.out.println(objects[i]);
+		}
+	}
+
+	/**
+	 * 写一个函数，要求输入一个字符串和一个字符长度，对该字符串进行分隔
+	 * 
+	 * @param str
+	 * @param chars
+	 * @return
+	 */
+	public static String[] split(String str, int chars) {
+		int n = (str.length() + chars - 1) / chars;
+		String ret[] = new String[n];
+		for (int i = 0; i < n; i++) {
+			if (i < n - 1) {
+				ret[i] = str.substring(i * chars, (i + 1) * chars);// 指定从begin
+				// 截取至end
+			} else {
+				ret[i] = str.substring(i * chars);// 从指定位置截取
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * 将一个字符串反转输出
+	 */
+	public static void reverse() {
+		String str = "abcdefg";
+		List<String> list = Arrays.asList(str.split(""));
+		String result = "";
+		Collections.reverse(list);
+		for (String s : list) {
+			result += s;
+		}
+		System.out.println(result);
+
+	}
+
+	/**
+	 * 生成随机数
+	 */
+	private static void showRandom() {
+		Random random = new Random();
+		String s = "";
+		for (int i = 0; i < 4; i++) {
+
+			int m = random.nextInt(10);
+			s += m + "";
+		}
+		System.out.println(s);
+	}
+
+	/**
+	 * 日期格式转换
+	 * 
+	 * @throws ParseException
+	 */
+	private static void turnDate() throws ParseException {
+		SimpleDateFormat df;
+		String diagDatetime = "2016/06/10";
+		if (diagDatetime.contains("/")) {
+			if (diagDatetime.length() >= 8 && diagDatetime.length() <= 10) {// 挂号日期
+				// 2
+				df = new SimpleDateFormat("yyyy/MM/dd");
+				Date d = df.parse(diagDatetime);
+				System.out.println(d);
+			}
+		}
+	}
+
+	/**
+	 * 移动文件
+	 */
+	private static void removeFile() {
+		String path = "D:/var/test/";
+		File file = new File(path);
+		if (file.isDirectory()) {
+			System.out.println("进入目录 !");
+			for (File firstDir : file.listFiles()) {
+				// 如果是目录则进入 第一层目录
+				if (firstDir.isDirectory()) {
+					System.out.println("进入一层:" + firstDir.getPath());// D:\var\test\1
+					for (File secondFile : firstDir.listFiles()) {
+						// 判断如果是文件则移动操作
+						if (secondFile.isFile()) {
+							// D:\var\test\1\复件 1.txt
+							boolean b = secondFile.renameTo(new File(path
+									+ secondFile.getName()));
+							System.out.println("移动二层文件:" + b + " "
+									+ secondFile.getPath());
+						}
+					}
+					System.out.println("移动完成" + firstDir.getPath());
+					if (firstDir.delete())
+						System.out.println("空目录删除完成" + firstDir.getPath());
+				}
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * treeMap 排序演示
+	 */
+	public static void treeMapSort() {
+		Map<String, Double> map = new TreeMap<String, Double>();
+		map.put("a", 52.2);
+		map.put("b", 152.2);
+		map.put("c", 582.2);
+		map.put("d", -52.2);
+		map.put("e", 32.2);
+		// 这里将map.entrySet()转换成list
+		List<Map.Entry<String, Double>> list = new ArrayList<Map.Entry<String, Double>>(
+				map.entrySet());
+		// 然后通过比较器来实现排序
+		Collections.sort(list, new Comparator<Map.Entry<String, Double>>() {
+			// 升序排序
+			public int compare(Entry<String, Double> o1,
+					Entry<String, Double> o2) {
+				return o1.getValue().compareTo(o2.getValue());
+			}
+		});
+		int count = 0;
+		for (Map.Entry<String, Double> mapping : list) {
+			System.out.println(mapping.getKey() + ":" + mapping.getValue()
+					+ "size:" + list.size());
+			count++;
+			if (count > 3) {
+				System.out.println("im b ");
+				break;
+			}
+		}
+		System.out.println("return:不执行我		break:执行我 ");
+	}
+
+	/**
+	 * 比较时间大小
+	 */
+	private static void compareDate() {
+		Date big = getDate(-1);
+		Date sma = getDate(-5);
+		System.out.println("big:" + big + "small:" + sma);
+		System.out.println(big.after(sma));
+	}
+
+	/**
+	 * 获取当前日期,并在循环中通过对gc.add(5,-i) 5为减天数,1 年,2月,3周详见书签
+	 * 
+	 * @throws ParseException
+	 */
+
+	private static void jianDate() throws ParseException {
+		Date date = new Date();
+		GregorianCalendar gc = new GregorianCalendar();
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		gc.setTime(date);
+		gc.add(5, -1);// 表示天数减一
+		gc.set(gc.get(Calendar.YEAR), gc.get(Calendar.MONTH), gc
+				.get(Calendar.DATE));
+		String dateString = sf.format(gc.getTime());
+		date = sf.parse(dateString);
+		System.out.println(date);
+
+	}
+
+	/**
+	 * 判断是否为文件
+	 * 
+	 * @throws IOException
+	 */
+	private static void isFile() throws IOException {
+		String line = null;
+		String file = "D:/upload/药店Root/118145C8DEA7451491ED918976D3F2A7/2016/1/21/MI/aefeb4e55ad66832af85b02626794b4f.txt";
+		File f = new File(file);
+		if (f.isFile()) {
+
+			FileReader fr = new FileReader(f);
+			BufferedReader bufr = new BufferedReader(fr);
+			while ((line = bufr.readLine()) != null) {
+				System.out.println(line);
+			}
+		} else {
+			System.out.println("ooood");
+		}
+	}
+
+	/**
+	 * 分割文件名称
+	 */
+	public static void doSplit() {
+
+		String temp = "D:\\java_upload\\药店Root\\006\\2015\\11\\25\\密文\\20151125141501encrypt_已加密.txt";
+		String[] arr = temp.split("java_upload");
+		System.out.println("arr[0]: " + arr[0]); // D:\
+		System.out.println("arr[1]: " + arr[1]); // \药店Root\006\2015\11\25\密文\20151125141501encrypt_已加密.txt
+
+		String tem = "/abd/deij/dfjikj.sjtst";
+		String tem1 = "\\dfdf\\1234\\时加 .txt";
+		String arr1[] = tem.split("/");
+		String brr[] = tem1.split("\\\\");
+		System.out.println(arr1[2] + brr[3]);
+
+		String temp2[] = tem1.replaceAll("\\\\", "/").split("/"); // 把前面替换成后面/
+		System.out.println("temp2::::" + temp2[3]);
+	}
+
+	// DrugcatalogController 根据客户端 id,目录明文/密文类型创建目录
+	public static String getDir(String id, String dirType) {
+		// 创建年,月,日目录
+		Calendar now = Calendar.getInstance();
+		int year = now.get(Calendar.YEAR);
+		int month = now.get(Calendar.MONTH) + 1;
+		int day = now.get(Calendar.DAY_OF_MONTH);
+
+		File file = new File("D:/java_upload/药店Root/" + id + "/" + year + "/"
+				+ month + "/" + day + "/" + dirType);
+		// 如果药店Root 目录不存在就创建
+		boolean b = false;
+		if (!file.exists() && !file.isDirectory()) {
+			b = file.mkdirs();
+			System.out.println("创建" + b);
+		}
+		System.out.println(file.getPath());
+
+		System.out.println("year:" + year + " month:" + month + " day:" + day);
+		return file.getPath();
+
+	}
+
+	/**
+	 * 日期转换常见
+	 */
+	public static void toDate() {
+		Long l = System.currentTimeMillis();
+		System.out.println("Long格式:" + l);
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String s = df.format(l);
+		System.out.println("long时间类型转字符串格式:" + s);
+		s = df.format(new Date());
+		System.out.println("Date时间类型转字符串格式:" + s);
+		Date date = new Date(l);
+		Long f = date.getTime();
+		System.out.println("date转Long:" + f);
+		System.out.println("Date格式" + date);
+	}
+
+	// list.add() 属性
+	@SuppressWarnings("unchecked")
+	public static void getList() {
+		/*
+		 * List<Double> list=new ArrayList(); list.add(5.8); list.add(2.7);
+		 * list.add(13.0); Collections.sort(list);
+		 * //System.out.println(list.toString());
+		 * 
+		 * List list2=new ArrayList(); list2.add(list); list2.add(list);
+		 * 
+		 * //System.out.println(list2.get(0).toString());//[1, 6, 2, 3, four,
+		 * five] if(list2.get(0) instanceof List){ List o=(List) list2.get(0);
+		 * //System.out.println(o.get(0).toString()+" :object"); }
+		 */
+
+		List list1 = new ArrayList();
+		list1.add("好的");
+		list1.add("非常");
+		list1.add("张店");
+		list1.add("ds ");
+		list1.add("4adfa");
+		List list2 = new ArrayList();
+		list2.add(10.0);
+		list2.add(45.0);
+		list2.add(6.0);
+		list2.add(24.0);
+		list2.add(2.0);
+		Map map = new TreeMap().descendingMap();
+		for (int i = 0; i < list1.size(); i++) {
+			map.put(list2.get(i), list1.get(i));
+		}
+		List a = new ArrayList();
+		List b = new ArrayList();
+		Set<Double> keyset = map.keySet();
+		Iterator<Double> it = keyset.iterator();
+		for (int i = 0; it.hasNext(); i++) {
+			Double key = it.next();
+			String value = (String) map.get(key);
+			a.add(key);
+			b.add(value);
+			System.out.println(key + ":" + value);
+			if (i == 2) {
+				break;
+			}
+		}
+		System.out.println(a.toString());
+		System.out.println(b.toString());
+		System.out.println("keyset:" + map.keySet().toString());
+		System.out.println("value:" + map.values().toString());
+		System.out.println("map::::::::::::" + map.toString());
+	}
+
+	// 获取昨天/明天日期
+	@SuppressWarnings("static-access")
+	public static Date getDate(int num) {
+		Date date = new Date();// 取时间
+		Calendar calendar = new GregorianCalendar();
+		calendar.setTime(date);
+		calendar.add(calendar.DATE, num);// 把日期往后增加一天.整数往后推,负数往前移动
+		date = calendar.getTime(); // 这个时间就是日期往后推一天的结果
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+		String dateString = formatter.format(date);
+
+		System.out.println(date);
+		return date;
+
+	}
+
+	/**
+	 * 时间排序
+	 * 
+	 * @throws ParseException
+	 */
+
+	@SuppressWarnings("unchecked")
+	public static void sortDate() throws ParseException {
+		List list = new ArrayList();
+		list.add(Utils.getDate(-5));
+		list.add(Utils.getDate(0));
+		list.add(Utils.getDate(-3));
+		list.add(Utils.getDate(1));
+		Collections.sort(list);
+		Collections.reverse(list);// 倒序
+		for (int i = 0; i < list.size(); i++) {
+			System.out.println(list.get(i));
+		}
+	}
+}

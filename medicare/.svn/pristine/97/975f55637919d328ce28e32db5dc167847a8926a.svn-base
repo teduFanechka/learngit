@@ -1,0 +1,222 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>权限管理</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<style>
+			.w_200{width:200px}
+			#form .input_box{text-align:center;margin-bottom:15px}
+		</style>
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script type="text/javascript">
+			$(function() {
+				$('#privilege').treegrid({
+					url : 'privilegeList',
+					idField : 'priId',
+					treeField : 'priName',
+					fitColumns : true,
+					border : false,
+					columns : [ [ 
+						{field : 'priId',title : '权限id',width : 100,hidden : true }, 
+						{field : 'priName',title : '权限名称',width : 60 }, 
+						{field : 'priUrl',title : '权限路径',width : 200 }, 
+						{field : 'priIcon',title : '页面图标',width : 100,
+							formatter : function(value, row, index) {
+								return '<img src="'+row.priIcon+'" />';
+							}
+						}, 
+						{field : 'priOrder',title : '排序',width : 20 }, 
+						{field : 'priStatus',title : '状态',width : 20,
+							formatter : function(value, row, index) {
+								if (row.priStatus==1) {
+									return '<a href="#"></a><img src="images/accept.png"  title="已启用" alt="" />';
+								} else {
+									return '<a href="#"></a><img src="images/delete.png" title="已停用" alt="" />';
+								}
+							}
+						}
+					] ]
+				});
+			});
+			
+			//添加
+			function add(id1,id2,text) {
+				$('#'+id1).val('');
+			    $('#'+id2).dialog('open').dialog('center').dialog('setTitle', text);
+			    $('#form').form('clear');
+			}
+	
+			//修改
+			function update(id1,id2,text,id3,id4) {
+			    var array = $('#'+id1).datagrid('getSelections'); // 获取删除选中项数组
+			    var len = array.length;
+			    if (len > 1) {
+			    	$.messager.alert('警告','只能选择一行记录进行修改');
+			    } else if (array.length < 1) {
+			        $.messager.alert('警告','请选择需要修改的行');
+			    } else {
+			        var row = $('#'+id1).datagrid('getSelected'); // 获取选中的行
+			        $('#'+id2).dialog('open').dialog('center').dialog('setTitle', text);
+			        $('#form').form('load', row);
+			    var aa = document.getElementById(id3).value;   //获取text的值aaa
+			    if(aa==1){
+			   		document.getElementById(id4).checked=true;
+			   	}else{
+			   		document.getElementById(id4).checked=false;
+			   	  }
+			    }
+			}
+	
+			//保存
+			function save(url,id1,id2) {
+			    $.ajax({
+			        cache: true,
+			        type: "POST",
+			        url: url,
+			        data: $('#form').serialize(),
+			        async: true,
+			        success: function(data) {
+			            $.messager.show({
+			                title: '系统提示',
+			                msg: data.status
+			            });
+			            $('#'+id1).datagrid('reload'); // 刷新
+			            $('#'+id2).dialog('close');
+			            $('#'+id1).treegrid('reload');
+			        },
+			        error: function(request) {
+			            $.messager.alert('警告','操作错误');
+			        }
+			    });
+			}
+	
+			//删除
+			function del(id1,id2,url1,url2) {
+			    var array = $('#'+id1).datagrid('getSelections'); //获取删除选中项数组
+			    var ids = ""; // 要删除的id字符串
+			    for (var i = 0; i < array.length; i++) { // 组成一个字符串，ID主键之间用逗号隔开
+			    	if (i != array.length - 1) {
+			            ids += array[i][id2] + ",";
+			        } else {
+			            ids += array[i][id2];
+			        }
+			    }
+			    if (array != "") {
+			        $.messager.confirm('提示', '是否要删除选中信息?',
+			        function(r) {
+			            if (r) {
+			                $.post(url1, {
+			                    ids: ids
+			                    // 传向后台的参数,用,分隔
+			                },
+			                function() { // 前台没有返回json,里面就没有data
+			                    $('#'+id1).datagrid({
+			                        url: url2
+			                    });
+			                    $.messager.show({
+			                        title: '系统提示',
+			                        msg: "删除成功"
+			                    });
+			                    $("#"+id1).treegrid('reload');
+			                });
+			            }
+			        });
+			    } else {
+			        $.messager.alert("提示", "请先选择要删除的信息！", "error");
+			    }
+			}
+	
+			//复选框是否启用
+			function check(id1,id2){
+				var checkbox = document.getElementById(id1);
+				if(checkbox.checked){
+					document.getElementById(id2).value="1";
+				}else{
+					document.getElementById(id2).value="0";
+				}
+			}
+	
+			//全选
+			function selectAll(name,id){
+				var ids = document.getElementsByName(name);
+				for(var i = 0; i < ids.length; i++){
+					ids[i].checked = document.getElementById(id).checked;
+				}
+			}
+		</script>
+	</head>
+	
+	<body>
+	
+		<div class="easyui-layout" data-options="fit:'true',">
+			<div class="xqgl">
+				<div class="easyui-panel" title="权限管理" data-options="border:true,fit:true" iconCls="icon-zc">
+					<table id="privilege" data-options="checkOnSelect:true,singleSelect:true,fit:true,rownumbers:true,pagination:true"
+						width="95%" cellpadding="2" cellspacing="1" toolbar="#mytoolbar"></table>
+				</div>
+				
+				<div id="mytoolbar" style="width: 100%; height: 25px; padding: 2px 0;" class="">
+					<a href="javascript:void(0)" onclick="add('priId','nfd1','新建权限')" class="xz easyui-linkbutton" data-options="iconCls:'icon-user_add',plain:true" style="float: left;">新增</a>
+					<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-user_edit" plain="true" style="float: left;" onclick="update('privilege','nfd1','编辑权限','priStatus','text')">编辑</a>
+					<a href="javascript:void(0)" class="easyui-linkbutton" style="float: left;" iconcls="icon-remove" plain="true" onclick="del('privilege','priId','delPrivilege','getAllPrivilege')">删除</a>
+				</div>
+			</div>
+		</div>
+		<div id="nfd1" class="easyui-dialog" title="新增权限"
+			style="width: 430px; height:400px;"
+			data-options="iconCls:'icon-user_add',buttons:'#nfd1_btns',closed:true,modal:true,">
+
+			<form id="form" action="" method="">
+				<div class="input_box">   
+			        <h1 style="margin:25px 0 20px 0">权限信息</h1>
+			    </div>  
+				<div class="input_box">   
+			        <label>权限名称：</label>   
+			        <input id="priName" name="priName" class="easyui-textbox w_200"> 
+			    </div>  
+			    <div class="input_box">   
+			        <label> Url链接：</label>   
+			        <input id="priUrl" name="priUrl" class="easyui-textbox w_200"> 
+			    </div>  
+			    <div class="input_box">   
+			        <label>页面图标：</label>   
+			        <input id="priIcon" name="priIcon" class="easyui-textbox w_200"> 
+			    </div>  
+			    <div class="input_box">   
+			        <label>　　排序：</label>   
+			        <input id="priOrder" name="priOrder" class="easyui-textbox w_200"> 
+			    </div>  
+			     <div class="input_box">   
+			        <label>　　上级：</label>
+			        <select id="priParent" name="priParent" class="easyui-combobox" style="width:205px">   
+					    <option value="0">根目录</option> 
+					    <c:forEach items="${list}" var="pri">
+					    	<option value="${pri.priId }">${pri.priName }</option> 
+					    </c:forEach>
+					</select>
+			    </div>
+			    <div class="input_box">
+			        <label>启用状态：</label>
+			        <div style="width:200px;display:inline-block;text-align:left">
+			        	<input id="priStatus" name="priStatus" type="hidden"/>
+						<input id="text" name="text" type="checkbox" onclick="check('text','priStatus')" checked="checked"/>
+						<span>&nbsp;启用</span>
+			        </div> 
+			    </div>  
+				<input id="priId" name="priId" type="hidden" value="" />
+			</form>
+		</div>
+
+		<div id="nfd1_btns">
+			<a href="javascript:void(0)" onclick="save('addOrUpdatePrivilege','privilege','nfd1')" class="easyui-linkbutton" data-options="iconCls:'icon-ok'">保存</a>
+			<a href="javascript:void(0)" onclick="javascript: $('#nfd1').dialog('close');" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,55 @@
+package yibao.yiwei.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.service.IBaseService;
+
+@SuppressWarnings("unchecked")
+@Controller
+public class DeleteController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	@RequestMapping("/toDelete")
+	public String toDelete(HttpServletRequest request) {
+		return "/delete";
+	}
+	
+	//删除项目编码表重复数据
+	@RequestMapping("/deleteDrugcatalog")
+	public void deleteDrugcatalog(){
+		try{
+			String sql = "from Customer where cusStatus=1 or cusStatus=2";
+			List<Customer> list = baseService.find(sql);
+			Customer customer;
+			for (int i=0;i<list.size();i++){
+				try{
+					customer = list.get(i);
+					System.out.println(i+customer.getCusName()+"  开始");
+					sql = "delete from tbl_drugcatalog where cus_id=?0 and DC_ID not in(" +
+							"select min(DC_ID) from tbl_drugcatalog where cus_id=?1 group by " +
+							"DC_CODE,CUS_ID,DC_COMMERCIAL,DC_GENERICNAME,DC_MNEMONICCODE,DC_SPECIFICATION,DC_UNIT,DC_DOSAGEFORM," +
+							"DC_PERMISSION,DC_MFRS,DC_MAKEIN,DC_HCSCODE,DC_CATEGORY,CUS_PARENTID,CUS_DAREWAY,DC_PRICE,DC_PACKAGINGUNIT," +
+							"DC_PACKAGINGPRICE,DC_PACKAGINGNUM,DC_CATCODE,DC_SETTLEMENTCODE,DC_ISRX,DC_ISSPECIAL,DC_ISEPHEDRADINE,DC_ISSPIRIT,DC_ISIMPORT," +
+							"DC_TABOO,DC_INDICATION,DC_STATUS)";
+					
+					baseService.updateOrDeleteSql(sql,customer.getCusId(),customer.getCusId());
+					System.out.println(i+customer.getCusName()+"  已完成");
+				} catch (Exception e) {
+					System.out.println("内"+e.getMessage());
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("外"+e.getMessage());
+		}
+	}
+
+}

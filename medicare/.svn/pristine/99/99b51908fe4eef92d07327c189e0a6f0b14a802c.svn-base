@@ -1,0 +1,454 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>定点数据上传手动解析</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script type="text/javascript">
+			$(function() {
+			    $(".tabb").tabs({
+			        fit: true,
+			        border: false,
+			        selected: 0,
+			    });
+
+			    datagrid2("tzddlog", "getSearchTzddlog");
+			})
+	
+			//检查定点上传数据情况
+			function checkTzddlog() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取选中项数组
+				if(array.length==0){
+					$.messager.alert("系统提示","请选择一个定点!");
+				} else {
+					var yybm=array[0].tzYybm;
+					$.post("scanTzddlog",{yybm:yybm}, function(data) { 
+						var status=data.status;
+						 $.messager.show({
+			                    title: '系统提示',
+			                    msg: status
+			                });	
+					});	
+				}
+			}
+	
+	
+			// 批量开启定点
+			function startTzddlog() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取删除选中项数组
+				var ids = "";// 要删除的id字符串
+				for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+					if (i != array.length - 1) {
+						ids += array[i].tzId + ",";
+					} else {
+						ids += array[i].tzId;
+					}
+				}
+				if (ids != "") {
+						$.messager.confirm('提示', '是否要开启选中定点?', function(r) {
+							if (r) {
+								$.post("turnOnTzddlog", {
+									ids : ids
+								// 传向后台的参数,用,分隔
+										}, function() { // 前台没有返回json,里面就没有data
+											$('#tzddlog').datagrid('reload');
+											 $.messager.show({
+								                    title: '系统提示',
+								                    msg: '操作完成!'
+								                });	
+										});
+							}
+						});
+				} else {
+					$.messager.alert("提示", "请先选择要开启的定点！", "error");
+				}
+			}
+			// 批量停止定点
+			function stopTzddlog() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取删除选中项数组
+				var ids = "";// 要删除的id字符串
+				for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+					if (i != array.length - 1) {
+						ids += array[i].tzId + ",";
+					} else {
+						ids += array[i].tzId;
+					}
+				}
+				if (ids != "") {
+						/*$.messager.confirm('提示', '是否要停止选中定点?', function(r) {
+							if (r) {
+								$.post("turnOffTzddlog", {
+									ids : ids
+								// 传向后台的参数,用,分隔
+										}, function() { // 前台没有返回json,里面就没有data
+											$('#tzddlog').datagrid('reload');
+											 $.messager.show({
+								                    title: '系统提示',
+								                    msg: '操作完成!'
+								                });	
+										});
+							}
+						});*/
+					$.messager.prompt('提示', '是否要停止选中定点？', function(r) {
+						if(r == ""){
+							$.messager.alert("提示","请输入停止原因");
+						} 
+						if(r) {
+							$.post("turnOffTzddlog", {
+								ids : ids,
+								remark:r
+							// 传向后台的参数,用,分隔
+									}, function() { // 前台没有返回json,里面就没有data
+										$('#tzddlog').datagrid('reload');
+										 $.messager.show({
+							                    title: '系统提示',
+							                    msg: '操作完成!'
+							                });	
+									});
+						}
+					});
+				} else {
+					$.messager.alert("提示", "请先选择要停止的定点！", "error");
+				}
+			}
+	
+			// 批量删除定点
+			function delTzddlog() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取删除选中项数组
+				var ids = "";// 要删除的id字符串
+				for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+					if (i != array.length - 1) {
+						ids += array[i].tzId + ",";
+					} else {
+						ids += array[i].tzId;
+					}
+				}
+				if (ids != "") {
+						$.messager.confirm('提示', '是否要删除选中定点?', function(r) {
+							if (r) {
+								$.post("delTzddlog", {
+									ids : ids
+								// 传向后台的参数,用,分隔
+										}, function() { // 前台没有返回json,里面就没有data
+											$('#tzddlog').datagrid('reload');
+											 $.messager.show({
+								                    title: '系统提示',
+								                    msg: '删除完成!'
+								                });	
+										});
+							}
+						});
+				} else {
+					$.messager.alert("提示", "请先选择要停止的定点！", "error");
+				}
+			}
+	
+			//处理内容超长字段 add by fd 0516 现在加载方式不能通用有问题，待处理
+			function fmtOverlen(value, row, index) {
+			 return '<span title="'+value+'">'+value+'</span>';
+			}
+	
+	
+			// 表格查询
+			function searchTzddlog() {
+				 var cusName=$("input[name='cusName']").val();
+				 var c = encodeURI(encodeURI(cusName));
+				$('#tzddlog').datagrid({
+					url : 'getSearchTzddlog?cusName='+c
+				});
+				
+			/*
+			 * var params = $('#tzddlog').datagrid('options').queryParams; // 先取得 datagrid //
+			 * 的查询参数 var fields = $('#searchFormtz').serializeArray(); // 自动序列化表单元素为JSON对象
+			 * $.each(fields, function(i, field) { params[field.name] = field.value; //
+			 * 设置查询参数 }); $('#tzddlog').datagrid('reload'); // 设置好查询参数 reload
+			 */}
+	
+			// 点击清空按钮出发事件
+			function clearForm() {
+				// $("#searchForm").find("input").val("");// 找到form表单下的所有input标签并清空
+				$('#searchFormtz').form('clear');
+				$('#adtzddInput').val('');
+				// queryForm();
+			}
+			// 添加tzddlog名单
+			function addTzddlog() {
+				var yybms = $("input[name='yybms']").val();
+				$.post("addTzddlog", {
+					yybms : yybms
+				}, function(data) {//前台没有返回json,里面就没有data
+						$('#tzddlog').datagrid( {
+							url : 'getSearchTzddlog'
+						});
+						$("#addTzddlog").find("input").val("");
+						$.messager.alert("系统提示",data.status);
+					});
+			}
+	
+			// 对应停止定点列表，打描注册定点添加到停止列表
+			function corTzddlog() {
+				$.post("correspondTzddlog",null, function(data) {// 前台没有返回json,里面就没有data
+					$('#tzddlog').datagrid( {
+						url : 'getSearchTzddlog'
+					});
+					$.messager.alert("系统提示",data.status);
+				});
+			}
+			// 查询状态为停止定点,并成功的列表
+			function searchIsTzdd() {
+				$('#tzddlog').datagrid( {
+					url : 'searchIsTzdd'
+				});
+			}
+			// 批量开启扫描定点
+			function startScan() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取删除选中项数组
+				var ids = "";// 要删除的id字符串
+				for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+					if (i != array.length - 1) {
+						ids += array[i].tzId + ",";
+					} else {
+						ids += array[i].tzId;
+					}
+				}
+				if (ids != "") {
+						$.messager.confirm('提示', '是否要开启选中定点?', function(r) {
+							if (r) {
+								$.post("startScan", {
+									ids : ids
+								// 传向后台的参数,用,分隔
+										}, function() { // 前台没有返回json,里面就没有data
+											$('#tzddlog').datagrid('reload');
+											 $.messager.show({
+								                    title: '系统提示',
+								                    msg: '操作完成!'
+								                });	
+										});
+							}
+						});
+				} else {
+					$.messager.alert("提示", "请先选择要操作的定点！", "error");
+				}
+			}
+			// 批量停止扫描定点
+			function stopScan() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取删除选中项数组
+				var ids = "";// 要删除的id字符串
+				for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+					if (i != array.length - 1) {
+						ids += array[i].tzId + ",";
+					} else {
+						ids += array[i].tzId;
+					}
+				}
+				if (ids != "") {
+						$.messager.confirm('提示', '是否要停止选中定点?', function(r) {
+							if (r) {
+								$.post("stopScan", {
+									ids : ids
+								// 传向后台的参数,用,分隔
+										}, function() { // 前台没有返回json,里面就没有data
+											$('#tzddlog').datagrid('reload');
+											 $.messager.show({
+								                    title: '系统提示',
+								                    msg: '操作完成!'
+								                });	
+										});
+							}
+						});
+				} else {
+					$.messager.alert("提示", "请先选择要停止的定点！", "error");
+				}
+			}
+			// 查询状态为已停止扫描的定点
+			function searchIsStopScan() {
+				$('#tzddlog').datagrid( {
+					url : 'searchIsStopScan'
+				});
+			}
+			// 批量标记为使用医保进销存软件0是1否
+			function updateIsYbcx() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取删除选中项数组
+				var ids = "";// 要删除的id字符串
+				for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+					if (i != array.length - 1) {
+						ids += array[i].tzId + ",";
+					} else {
+						ids += array[i].tzId;
+					}
+				}
+				if (ids != "") {
+						$.messager.confirm('提示', '是否要标记选中定点?', function(r) {
+							if (r) {
+								$.post("updateIsYbcx", {
+									ids : ids
+								// 传向后台的参数,用,分隔
+										}, function() { // 前台没有返回json,里面就没有data
+											$('#tzddlog').datagrid('reload');
+											 $.messager.show({
+								                    title: '系统提示',
+								                    msg: '操作完成!'
+								                });	
+										});
+							}
+						});
+				} else {
+					$.messager.alert("提示", "请先选择要标记的定点！", "error");
+				}
+			}
+			// 批量标记为使用医保进销存软件0是1否
+			function updateNotYbcx() {
+				var array = $('#tzddlog').datagrid('getSelections');// 获取删除选中项数组
+				var ids = "";// 要删除的id字符串
+				for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+					if (i != array.length - 1) {
+						ids += array[i].tzId + ",";
+					} else {
+						ids += array[i].tzId;
+					}
+				}
+				if (ids != "") {
+						$.messager.confirm('提示', '是否要取消标记选中定点?', function(r) {
+							if (r) {
+								$.post("updateNotYbcx", {
+									ids : ids
+								// 传向后台的参数,用,分隔
+										}, function() { // 前台没有返回json,里面就没有data
+											$('#tzddlog').datagrid('reload');
+											 $.messager.show({
+								                    title: '系统提示',
+								                    msg: '操作完成!'
+								                });	
+										});
+							}
+						});
+				} else {
+					$.messager.alert("提示", "请先选择要标记的定点！", "error");
+				}
+			}
+			// 使用医保进销存软件 0 是
+			function searchIsYbcx() {
+				$('#tzddlog').datagrid( {
+					url : 'searchIsYbcx'
+				});
+			}
+
+			function tzOperate(val, row, index) {
+				if(val=='0'){
+					return '停止定点资格';
+				}
+				else if(val=='1'){
+					return '开启定点资格';
+				}
+				
+			}
+			function tzStatus(val, row, index) {
+				if(val=='0'){
+					return '成功';
+				}
+				else if(val=='1'){
+					return '失败';
+				}else  if(val=='2'){
+					return '错误';
+				}
+			}
+			function tzScan(val, row, index) {
+				if(val=='0'){
+					return '是';
+				}
+				else if(val=='1'){
+					return '否';
+				}else  if(val=='2'){
+					return '错误';
+				}
+			}
+			function tzYbcx(val, row, index) {
+				if(val=='0'){
+					return '是';
+				}
+				else if(val=='1'){
+					return '否';
+				}else  {
+					return '未知';
+				}
+			}
+		</script>
+	</head>
+		<body>
+			<div class="easyui-layout" data-options="fit:'true',">
+					<div class="xqgl">
+						<div class="easyui-panel" title="定点资格操作" data-options="border:true,fit:true" iconCls="icon-zc">
+							<table id="tzddlog"  data-options="checkOnSelect:true,singleSelect:true,fit:true,rownumbers:true,pagination:true" width="95%" cellpadding="2" cellspacing="1" toolbar="#tzddlogtoolbar">
+		                       	<thead>
+		                            <tr>
+		                                <th data-options="field:'sb',checkbox:true"></th>
+		                                <th data-options="field:'tzId',hidden:'true',align:'center'">主键</th>
+		                                <th data-options="field:'tzCusId',hidden:'true',align:'center'">定点id</th>    
+		                                <th data-options="field:'tzCusname',align:'left',width:240">定点名称</th> 
+		                                <th data-options="field:'tzYybm',align:'center',width:60">医院编码</th>
+		                                <th data-options="field:'tzStartdate',align:'center',width:80">起始日期</th>  
+		                                <th data-options="field:'tzOperate',align:'center',width:100,formatter:tzOperate">操作类型</th>  
+		                                <th data-options="field:'tzStatus',align:'center',width:60,formatter:tzStatus">操作结果</th>   
+		                                <th data-options="field:'tzScan',align:'center',width:60,formatter:tzScan">是否扫描</th>   
+		                                <th data-options="field:'tzYbcx',align:'center',width:60,formatter:tzYbcx">医保标志</th>   
+		                                <th data-options="field:'tzNote',align:'left',width:240,formatter:fmtOverlen">备注</th>                            
+		                                <th data-options="field:'tzDate',align:'center'">操作时间</th>  
+		                                <th data-options="field:'remark',align:'left',width:240">停止原因</th> 
+		                            </tr>   
+		                        </thead>
+		                    </table> 
+						</div>
+				<div id="tzddlogtoolbar" style="width:100%;height:60px; padding:2px 0; position:relative;" >
+					<!-- 开关定点资格 -->
+					<a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-zoom',plain:true" onclick="checkTzddlog();" title="检查定点上传数据情况" style="float: left;">检查</a>
+					<a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-accept',plain:true" onclick="startTzddlog();" title="批量开启" style="float: left;">开启</a>
+                    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-node',plain:true" onclick="stopTzddlog();" title="批量停止" style="float: left;">停止</a>
+                    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-inquire',plain:true" onclick="searchIsTzdd();" title="查询已停止定点" style="float: left;">已停</a>                   
+                    <a href="javascript:void(0);" class="datagrid-btn-separator" style="float: left;"></a>
+                    <!-- 添加删除定点 -->
+                    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-news',plain:true" onclick="corTzddlog();" title="对应新注册定点" style="float: left;">新增</a>
+                    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-remove',plain:true" onclick="delTzddlog();" title="批量删除" style="float: left;">删除</a>
+                    <a href="javascript:void(0);" class="datagrid-btn-separator" style="float: left;"></a>
+                    <!-- 开关扫描 -->
+                    <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-stopped',plain:true" onclick="searchIsStopScan();" title="查询已停止扫描的定点" style="float: left;">查询</a>
+					<a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-star',plain:true" onclick="startScan();" title="开启扫描" style="float: left;">开启</a>
+		            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-stop',plain:true" onclick="stopScan();" title="停止扫描" style="float: left;">停止</a>
+		            <a href="javascript:void(0);" class="datagrid-btn-separator" style="float: left;"></a>
+		            <!-- 开关医保标记 -->   
+		            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-search',plain:true" onclick="searchIsYbcx();" title="查询使用医保程序的定点" style="float: left;">查询</a>
+		            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-sign',plain:true" onclick="updateIsYbcx();" title="医保程序标记" style="float: left;">标记</a>
+		            <a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-nosign',plain:true" onclick="updateNotYbcx();" title="取消医保标记" style="float: left;">取消</a>
+					
+					<div class="jx-right" style="float:left;">
+						<div class="bar-box5">
+						<form id="searchFormtz" onkeydown="if(event.keyCode==13){ searchTzddlog();}">
+								<input id="searchname" name="cusName" style="width:180px;height:26px;" class="easyui-searchbox input" AUTOCOMPLETE="off"
+									data-options="searcher:searchTzddlog,prompt:'请输入名称或者医院编码',"></input>
+									<input id="cusFlag" cusFlag="" style="visibility: hidden" />
+							<div class="bar-box5-xx">
+								<a href="javascript:" class="clear" onClick="clearForm()">
+									<img style="margin-top:2px;" class="cl-xx-child" src="images/xx.png"/>
+								</a>
+							</div>
+							</form>
+						</div>
+					</div>
+					<div class="jx-right2" style="float:left;width:220px">       
+						<input id="adtzddInput" name="yybms" type="text" style="margin-top:2px;float:left;" placeholder="添加医院编码"/>
+						<a href="javascript:void(0)" class="easyui-linkbutton" data-options="iconCls:'icon-addd'" style="float:right;" onclick="addTzddlog();">添加</a>
+					</div>  
+				</div>	
+            </div>
+       </div>	
+
+
+</body>
+</html>

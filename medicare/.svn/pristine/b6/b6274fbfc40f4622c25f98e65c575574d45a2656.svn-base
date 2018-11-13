@@ -1,0 +1,54 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>参保用户表</title>
+
+		<c:set value="${pageContext.request.contextPath}" var="path"
+			scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/hcusers/hcusers.js"></script>
+
+	</head>
+
+	<body>
+		<!-- datagrid表格开始 -->
+		<table id="hcusers">
+			<thead>
+				<tr>
+					<th data-options="field:'sb',checkbox:true"></th>
+					<th field="hcuId" align="center">
+						<!-- hidden=true 隐藏列 -->
+						编号
+					</th>
+					<th field="hcuIdnum" align="center" editor="{type:'text'}">
+						身份证号
+					</th>
+					<th field="hcuHcnum" align="center" editor="{type:'text'}">
+						医保卡号
+					</th>
+					<th field="hcuName" align="center" editor="{type:'text'}">
+						姓名
+					</th>
+					<th field="hcuAddress" align="center" editor="{type:'text'}">
+						住址
+					</th>
+					<th field="hcuSex" align="center" editor="{type:'numberbox'}">
+						性别
+					</th>
+					<th field="hcuRemark" align="center" editor="{type:'text'}">
+						备注说明
+					</th>
+
+				</tr>
+			</thead>
+		</table>
+
+		<!-- datagrid表格结束 -->
+	</body>
+</html>

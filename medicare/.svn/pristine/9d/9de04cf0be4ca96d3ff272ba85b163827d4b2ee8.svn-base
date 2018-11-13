@@ -1,0 +1,15 @@
+package yibao.yiwei.temp;
+
+import java.text.ParseException;
+
+import javax.swing.JOptionPane;
+
+
+public class Temp {
+
+	public static void main(String[] args) throws ParseException {
+		JOptionPane.showMessageDialog(null, "alert", "alert",
+				JOptionPane.ERROR_MESSAGE);
+	}
+
+}

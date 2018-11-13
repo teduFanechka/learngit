@@ -1,0 +1,128 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<html>
+	<head>
+		<title>客户管理</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script type="text/javascript">
+			$(function(){
+			    datagrid2("errorlog", "getErrorlog"); 	
+			});
+			
+			//数据检索
+			function findUser(){ 
+				var params = $('#errorlog').datagrid('options').queryParams; //先取得 datagrid 的查询参数  
+				var fields =$('#errorForm').serializeArray(); //自动序列化表单元素为JSON对象  
+				$.each( fields, function(i, field){
+					params[field.name] = field.value; //设置查询参数  
+				});   
+				$('#errorlog').datagrid('reload'); //设置好查询参数 reload 
+			} 
+
+			//清空
+			function clearForm() {
+			    $("#searchname").textbox('setValue','');
+			}
+
+			//删除角色
+			function deleteErr() {
+			    var array = $('#errorlog').datagrid('getSelections');
+			    var ids = "";
+			    for (var i = 0; i < array.length; i++) {
+			    	if (i != array.length - 1) {
+			            ids += array[i].errId + ",";
+			        } else {
+			            ids += array[i].errId;
+			        }
+			    }
+			    if (array != "") {
+			        $.messager.confirm('系统提示', '是否要删除选中日志?', function(r) {
+			            if (r) {
+			                $.post("delErr", {ids: ids}, function(data) { 
+			                	$('#errorlog').datagrid('reload');
+			                    $.messager.show({
+			                        title: '系统提示',
+			                        msg: data.status
+			                    });
+			                });
+			            }
+			        });
+			    } else {
+			        $.messager.alert("系统提示", "请选择要删除的日志！", "warning");
+			    }
+			}
+
+			//查看文件内容
+			function fileContent(){
+				var array = $('#errorlog').datagrid('getSelections'); // 获取选中项数组
+				var len = array.length;
+			    if (len > 1) {
+			    	$.messager.alert('系统提示','只能选择一个文件查看','warning');
+			    } else if (array.length < 1) {
+			        $.messager.alert('系统提示','请选择需要查看的文件','warning');
+			    } else{
+					var path = array[0].errFilepath;
+					var encrypt = 0;
+					$.post("fileContent",{path:path,fileName:'',encrypt:encrypt}, function(data) {
+						$('#uplcontent').dialog('open');
+						$("#upltable").empty();
+						$.each(data, function (i, item) {
+							$("#upltable").append("<tr><td>"+item+"</td></tr>");
+						});
+					});
+		        }
+			}
+		</script>
+	</head>
+	
+	<body>
+		<div class="easyui-layout" data-options="fit:'true',">
+			<div class="easyui-panel" title="解析日志" data-options="border:true,fit:true" iconcls="icon-zc">
+				<table id="errorlog" data-options="checkOnSelect:true,singleSelect:false,fit:true,rownumbers:true,pagination:true" cellpadding="2" cellspacing="1" toolbar="#toolbar"  fitColumns="true">
+					<thead>   
+                           <tr> 
+                               <th data-options="field:'sb',checkbox:true"></th>
+                               <th data-options="field:'errId',hidden:true">错误ID</th>
+                               <th data-options="field:'cusId',hidden:true">定点ID</th>
+                               <th data-options="field:'errAddtime',halign:'center',align:'center'">日志时间</th>
+                               <th data-options="field:'cusName',halign:'center',align:'left'">定点名称</th> 
+                               <th data-options="field:'errType',halign:'center',align:'left'">日志类型</th>
+                               <th data-options="field:'errFilepath',halign:'center',align:'left'">文件名称</th>
+                               <th data-options="field:'errFileflag',halign:'center',align:'left',formatter:fmtUpFileflag">文件类型</th>
+                               <th data-options="field:'errLog',halign:'center',align:'left'">日志内容</th> 
+                           </tr>   
+                       </thead>
+				</table>
+			</div>
+			<div id="toolbar" style="width: 100%; height: 25px; padding: 2px 0;">
+				<div class="barbox1-1">
+					<form id="errorForm" onkeydown="if (event.keyCode == 13) {queryForm();}">
+						<div style="float:left;margin:0 2px;">
+							<input id="searchname" name="cusName" class="easyui-searchbox" style="width: 160px; line-height: 24px;" data-options="searcher:findUser,prompt:'请输入查询条件',"></input>
+						</div>
+						<div style="float:left;margin:0 2px;">
+							<a href="#" class="clear" onClick="clearForm()"><img style="margin-top: 2px;" class="cl-xx-child" src="images/xx.png" /></a>
+						</div>
+					</form>
+					<a href="#" class="easyui-linkbutton" onclick="fileContent();" iconCls="icon-ok" style="padding: 0 10px; margin: 0 2px;">查看文件内容</a>
+					<a href="javascript:void(0)" class="easyui-linkbutton" onclick="deleteErr()" data-options="iconCls:'icon-remove',plain:true" style="float: left;" >删除</a>
+				</div>
+			</div>
+			<div id="uplcontent" class="easyui-dialog" title="查看文件内容" style="width: 1280px; height:720px;" data-options="buttons:'#uplcontent_btn',closed:true,modal:true">
+				<table class="ew_table" style="height: auto;">
+					<tbody id="upltable" align="left"></tbody>
+				</table>
+			</div>
+			<div id="uplcontent_btn">
+				<a href="javascript:void(0)" onclick="javascript: $('#uplcontent').dialog('close');" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">关闭</a>
+			</div>
+		</div>
+	</body>
+</html>

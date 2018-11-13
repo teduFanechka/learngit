@@ -1,0 +1,130 @@
+function getSaleslist(){  
+    var yybm = $("#yybm").searchbox("getValue");
+	var begin_time = $("#begindt").datebox("getValue");  
+	var end_time = $("#enddt").datebox("getValue");
+
+    if(yybm == ''){
+    	$.messager.alert("提示", "请输入要查询单位的医院编码！","warning");
+    	$('#yybm').next('span').find('input').focus();
+    	return;
+    }else{
+        var ahref = 'getAllSales?flag=1&dwcode=' + yybm; 
+    }
+    ahref = ahref + '&bgdt=' + begin_time + '&eddt=' + end_time; 
+    
+    $('#salesquery').datagrid({url:ahref,
+    	 onLoadSuccess:function(data){
+    		if(data.cus){
+    			$('#cusid').val(data.cus.cusId); 
+    			$('#cusname').text(data.cus.cusName);
+    			$('#cusflag').text(data.cus.cusFlag);
+    			$('#cuscontact').text(data.cus.cusContact);
+    			$('#cusphone').text(data.cus.cusPhone);
+    			$('#cusaddr').text(data.cus.cusAddr);
+    			$('#cusdareway').text(data.cus.cusDareway);
+    		}
+	        if(data.total == 0){
+	            var body = $(this).data().datagrid.dc.body2;
+	            body.find('table tbody').append('<tr><td width="'+body.width()+'" style="height: 25px; text-align: center;" colspan="16">没有查询到满足条件的数据</td></tr>');
+	        }else{
+	        	getDruganalyze();
+	        }
+	    }
+    });     
+}
+
+function exportStatistics(){
+	var yybm = $("#yybm").searchbox("getValue");
+	var begin_time = $("#begindt").datebox("getValue");  
+	var end_time = $("#enddt").datebox("getValue");
+
+    if(yybm == ''){
+    	$.messager.alert("提示", "请输入要查询单位的医院编码！","warning");
+    	$('#yybm').next('span').find('input').focus();
+    	return;
+    }else{
+        var ahref = 'expStatistics?flag=1&dwcode=' + yybm; 
+    }
+    ahref = ahref + '&bgdt=' + begin_time + '&eddt=' + end_time; 
+	
+    window.location.href = ahref;
+}
+
+function setDtPickerVal(){
+	//设置时间  
+	$("#begindt").datebox("setValue", begin_time);  
+	$("#enddt").datebox("setValue", end_time);
+}
+
+function fmtDrugName(val, row, index) {
+	var drugCode=row.drugcode;
+	var drugName=row.drugname;
+    return '<a href="javascript:void(0);" aurl="toSaleslist?dc='+drugCode+'" onclick="showlist(this);" name="'+drugName+'">'+row.drugname+'</a>';
+}
+
+//添加新选项卡显示销售记录
+function showlist(obj){
+	var ahref = $(obj).attr('aurl');
+	var cusId=$('#cusid').val();
+	var begin_time = $("#begindt").datebox("getValue");  
+	var end_time = $("#enddt").datebox("getValue");
+	ahref = ahref + '&cus='+cusId + '&bgdt=' + begin_time + '&eddt=' + end_time;
+	var title = obj.name + ' - 销售记录';;
+	window.parent.addTab(title, ahref);//调用父类方法添加选项卡
+}
+
+function fmtDrugopt(val, row, index) {
+	var drugCode=row.drugcode;
+	var drugName=row.drugname;
+    return '<a href="javascript:void(0);" aurl="toStockanalyze?dc='+drugCode+'" onclick="showall(this);" name="'+drugName+'">库存分析</a>';
+}
+
+//添加新选项卡显示出入库综合信息
+function showall(obj){
+	var ahref = $(obj).attr('aurl');
+	var cusId=$('#cusid').val();
+	//var cusName=$('#cusname').val();
+	var begin_time = $("#begindt").datebox("getValue");  
+	var end_time = $("#enddt").datebox("getValue");
+	ahref = ahref + '&cus='+cusId + '&bgdt=' + begin_time + '&eddt=' + end_time;
+	var title = obj.name + ' - 库存分析';
+	window.parent.addTab(title, ahref);//调用父类方法添加选项卡
+}
+
+function fmtRMKLoading(val, row, index) {
+	return "<img id='loading_"+row.drugcode+"' src='/images/loading.gif' alt='0' />";
+}
+
+function getDruganalyze() {
+	var rows = $('#salesquery').getData();
+	for(var i=0; i<rows.length; i++){
+	    var row = rows[i]
+	    
+	}
+}
+
+$(function() {
+	setDtPickerVal();
+	$('#yybm').next('span').find('input').focus();
+	$('#begindt2').datebox({
+		onSelect: function(date){
+			//	选中时间/起始时间
+			var full = date.getFullYear();
+			var month = date.getMonth()+1;
+			var day = date.getDate();
+			var minDate = date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate();
+			if(day <= 31){
+				$('#enddt').datebox('setValue',time(0));  
+			}
+			function time(number){
+			    var date=new Date(minDate);
+			    var strDate=date.getFullYear()+"-";  
+			    if(number==0){ 
+				    strDate+=date.getMonth()+2+"-";  
+				    strDate+=number;  
+			    }
+			    return strDate;  
+			}  
+		}
+	});
+});

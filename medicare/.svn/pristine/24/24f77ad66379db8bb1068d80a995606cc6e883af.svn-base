@@ -1,0 +1,178 @@
+package yibao.yiwei.controller.count;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.controller.system.AuthPassport;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.ITimerTask;
+
+/**
+ * 手动解析文件
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class FileParseController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	@Autowired
+	private ITimerTask timerTask;
+	
+	/**
+	 * 转到数据解析
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toManualParse")
+	public String toManualParse() {
+		return "/uploadfilewarning/manualParse";
+	}
+	
+	/**
+	 * 数据解析
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/getSearchCustomer")
+	public Map<String, Object> getSearchCustomer(HttpServletRequest request, HttpServletResponse response) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		List<Customer> list = new ArrayList<Customer>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusName = request.getParameter("cusName") != null ? request.getParameter("cusName").trim() : "";// 按定点名称查询
+		String hql = "from Customer c where c.cusStatus=1";//cusStatus=2是连锁分店，不上传文件
+		String countHql = "select count(*) from Customer c where c.cusStatus=1";
+		if (!cusName.equals("")) {
+			hql+=" and c.cusName like '%" + cusName + "%' or c.cusDareway='" + cusName + "' or c.cusPcode like '%" + cusName + "%'";
+			countHql+= " and c.cusName like '%" + cusName + "%' or c.cusDareway='" + cusName + "' or c.cusPcode like '%" + cusName + "%'";
+		}
+		hql+=" order by c.cusRegdate desc";
+		list = baseService.findByPage(hql, rows, page);
+		int count = baseService.findCount(countHql);
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+
+	}
+
+	/**
+	 * 解析文件
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/batchParse")
+	public Map batchParse(final HttpServletRequest request, HttpServletResponse response) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		try{
+			if (null != request.getParameter("num")) {//解析全部
+				map.put("status", "开始解析全部...");
+				ScheduledExecutorService pool = Executors.newScheduledThreadPool(20);//最多支持20个线程同时运行
+				for(int i = 0; i < 20; i++){//创建20个循环任务线程，如果大于20个，则需要20个线程执行完成后再进行其他的
+					pool.scheduleWithFixedDelay(new TimerTask(){
+						public void run() {
+			            	try {
+			            		int sec = (int)(Math.random()*10+1);
+			            		Thread.sleep(sec*1000);//每个任务开始时，先延时1-20秒，减少解析同一个文件的可能
+			            		int rownum = (int)(Math.random()*100+1);
+				            	String sql = "select * from (select * from TBL_UPLOADFILE where IS_HANDLE=0 order by up_id desc) where rownum <=?0";
+								List<Uploadfile> list = baseService.findEntitySql(sql,Uploadfile.class,rownum);
+								if(list.size()>0){
+									timerTask.analysis(list.get(list.size()-1));//倒数获取,由于倒数是随机的，可以减少解析同一个文件的可能
+								}
+			            	} catch (Exception e) {
+			    				Errorlog errorlog = new Errorlog();
+			    				errorlog.setErrAddtime(new Date());
+			    				errorlog.setErrLog(e.toString());
+			    				errorlog.setErrType("task-run异常");//这里抛出异常，可能是字段长度超过数据库字段长度ORA-12899
+			    				baseService.save(errorlog);
+							}
+						}
+					}, 0, 1, TimeUnit.SECONDS);//0秒后开始执行，任务结束时间+1秒，循环执行
+				}
+			}
+			else {//解析选中
+				map.put("status", "解析选中已完成");
+				String ids = request.getParameter("ids");
+				String idsArr[] = ids.split(",");
+				for (String cusId : idsArr) {
+					try {
+						String hql = "from Uploadfile where cusId=?0 and isHandle=0";
+						List<Uploadfile> list = baseService.find(hql, cusId);
+						for(int i = 0; i < list.size(); i++){
+							try {
+								timerTask.analysis(list.get(i));
+							} catch (Exception e) {
+								
+							}
+						}
+					} catch (Exception e) {
+						Errorlog errorlog = new Errorlog();
+	    				errorlog.setErrAddtime(new Date());
+	    				errorlog.setErrLog(e.toString());
+	    				errorlog.setErrType("解析选中异常");
+	    				baseService.save(errorlog);
+					}
+				}
+			}
+		} catch (Exception e) {
+			map.put("status", "解析异常");
+		}
+		return map;
+	}
+
+	/**
+	 * 统计
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/couUploadfile")
+	public Map couUploadfile(){
+		Map<String, Object> map = new HashMap<String, Object>();
+		try{
+			map.put("status", "开始统计...");
+			ScheduledExecutorService pool = Executors.newScheduledThreadPool(5);
+			pool.scheduleAtFixedRate(new TimerTask(){
+				public void run() {
+					try {
+						timerTask.count();
+					} catch (Exception e) {
+						Errorlog errorlog = new Errorlog();
+	    				errorlog.setErrAddtime(new Date());
+	    				errorlog.setErrLog(e.toString());
+	    				errorlog.setErrType("task统计异常");
+	    				baseService.save(errorlog);
+					}
+				}
+			}, 0, 1, TimeUnit.DAYS);//0秒后开始执行，任务开始时间+1天，循环执行
+		} catch (Exception e) {
+			map.put("status", "统计异常");
+		}
+		return map;
+	}
+}

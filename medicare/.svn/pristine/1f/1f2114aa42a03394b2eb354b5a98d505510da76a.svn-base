@@ -1,0 +1,150 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>客户管理</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<link rel="stylesheet" type="text/css" href="${path}/css/mystyle.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script type="text/javascript">
+		
+			$(function() {
+		        $(".tabb").tabs({
+	                fit: true,
+	                border: false,
+	                selected: 0,
+		        });
+
+		        datagrid2("manualparse", "getSearchCustomer");
+			})
+			//搜索
+			function findUser() {
+		        var params = $('#manualparse').datagrid('options').queryParams; // 先取得 datagrid的查询参数
+		        var fields = $('#manualPForm').serializeArray(); // 自动序列化表单元素为JSON对象
+		        $.each(fields,
+		        function(i, field) {
+		                params[field.name] = field.value; // 设置查询参数
+		        });
+		        $('#manualparse').datagrid('reload'); // 设置好查询参数 reload
+			}
+			//根据值判断图片
+			function fmtStatus(value, row, index) {
+				if (row.cusStatus == 1) { // 这里是判断哪些行
+					return '<a href="#"></a><img src="images/accept.png" title="正常"   alt="正常" />';
+				} else {
+					return '<a href="#"></a><img src="images/delete.png" title="已删除" alt="已删除" />';
+				}
+			}
+			// 手动解析
+			function addMpa() {
+			        var array = $('#manualparse').datagrid('getSelections'); // 获取删除选中项数组
+			        var ids = ""; // 要删除的id字符串
+			        for (var i = 0; i < array.length; i++) { // 组成一个字符串，ID主键之间用逗号隔开
+		                if (i != array.length - 1) {
+		                	ids += array[i].cusId + ",";
+		                } else {
+		                	ids += array[i].cusId;
+		                }
+			        }
+			        if (array != "") {
+		                $.messager.confirm('提示', '是否要解析选中定点?',
+		                function(r) {
+	                        if (r) {
+                                $.post("batchParse", {
+                                	ids: ids
+                                },
+                                function(data) { // 前台没有返回json,里面就没有data
+                                	$.messager.alert('操作提示', data.status, 'info')
+                                });
+	                        }
+		                });
+			        } else {
+		                $.messager.alert("提示", "请先选择要解析的定点！", "info");
+			        }
+			}
+			// 解析全部数据
+			function editMpa() {
+			    $.messager.confirm('提示', '是否要解析全部定点上传数据?',
+			    function(r) {
+			        if (r) {
+			            $.post("batchParse?num=1",
+			            function(data) { // 前台没有返回json,里面就没有data
+			             	$.messager.alert('操作提示', data.status, 'info')
+			            });
+			        }
+			    });
+			}
+			//手动预警
+			function ediCou() {
+			    $.messager.confirm('提示', '是否要开始手动预警?',
+			    function(r) {
+			        if (r) {
+			            $.post("couUploadfile",
+			            function(data) { // 前台没有返回json,里面就没有data
+			            	 $.messager.alert('操作提示', data.status, 'info')
+			            });
+			        }
+			    });
+			}
+		
+			//删除解析成功的文件
+			function delFile() {
+			    $.messager.confirm('提示', '是否删除解析成功的文件?',
+			    function(r) {
+			        if (r) {
+			            $.post("deleteFile",
+			            function(data) { // 前台没有返回json,里面就没有data
+			                    $.messager.alert('操作提示', data.status, 'info')
+			            });
+			        }
+			    });
+			}
+		</script>
+	</head>
+	<body>
+		<div class="easyui-layout" data-options="fit:'true',">
+			<div class="xqgl">
+				<div class="easyui-panel" title="数据解析" data-options="border:true,fit:true" iconCls="icon-zc">
+					<table id="manualparse" data-options="checkOnSelect:true,fit:true,rownumbers:true,pagination:true" width="95%" cellpadding="2" cellspacing="1" toolbar="#manualPtoolbar">
+						<thead>
+							<tr>
+								<th data-options="field:'sb',checkbox:true"></th>
+								<th field="cusId" hidden=true align="center">客户ID</th>
+								<th field="cusParentid" hidden=true align="center" editor="{type:'text'}">客户上级ID</th>
+								<th field="cusBranchcode" hidden=true align="center" editor="{type:'text'}">分店编码</th>
+								<th field="cusRegip" hidden=true align="center" editor="{type:'text'}">注册ip</th>
+								<th field="cusFlag" hidden=true align="center" editor="{type:'text'}">客户标识</th>
+								<th field="cusUniqure" hidden=true align="center" editor="{type:'text'}">唯一标识</th>
+								<th data-options="field:'cusName',align:'left',width:280">客户名称</th>
+								<th data-options="field:'cusAddr',align:'left',width:280">联系地址</th>
+								<th data-options="field:'cusContact',align:'center',width:80">联系人</th>
+								<th data-options="field:'cusPhone',halign:'center',align:'left',width:160">联系电话</th>
+								<th data-options="field:'cusDareway',align:'center',width:60">医院编码</th>
+								<th data-options="field:'cusRegdate',align:'center',width:80" editor="{type:'datetimebox'}">注册日期</th>
+								<th data-options="field:'cusStatus',align:'center',width:60,formatter:fmtStatus">状态</th>
+							</tr>
+						</thead>
+					</table>
+				</div>
+				
+				<div id="manualPtoolbar" style="width: 100%; height: 25px; padding: 2px 0;">
+					<div style="width:200px; height:25px; float:left; margin:0 4px">
+						<form id="manualPForm" onkeydown="if(event.keyCode==13){ queryForm();}">
+							<input id="searchname" name="cusName" class="easyui-searchbox" style="width: 200px; line-height: 25px;" data-options="height:24,searcher:findUser,prompt:'请输入查询条件',"></input>
+							<input id="cusFlag" cusFlag="${cusFlag }" style="visibility: hidden" />
+							<div id="mm" style="width: 120px"></div>
+						</form>
+					</div>
+					
+					<a href="javascript:void(0)" onclick="addMpa(this);" class="easyui-linkbutton" data-options="iconCls:'icon-ok',plain:true" style="float: left;">解析选中</a>
+					<a href="javascript:void(0)" onclick="editMpa(this);" class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true" style="float: left;">解析全部</a>
+					<a href="javascript:void(0)" onclick="ediCou(this);" class="easyui-linkbutton" data-options="iconCls:'icon-edit',plain:true" style="float: left;">手动预警</a>
+				</div>
+	</body>
+</html>

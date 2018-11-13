@@ -1,0 +1,17 @@
+package yibao.yiwei.service;
+
+public interface IHcusersManager {
+
+	/**
+	 * 
+	 * @param hcuHcnum 医保卡号
+	 * @param hcuName 姓名
+	 * @param hcuSex 性别
+	 * @param hcuIdnum 身份证号
+	 * @param session 
+	 * @param count 
+	 * @return 主键:hcuId
+	 */
+	public String addHcusers(String hcuHcnum, String hcuName, String hcuSex, String hcuIdnum, int count);
+
+}

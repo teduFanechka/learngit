@@ -1,0 +1,358 @@
+package yibao.yiwei.utils.timer;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.springframework.stereotype.Component;
+
+import yibao.yiwei.entity.Abc;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.ICheckdetailManager;
+import yibao.yiwei.service.ICheckresultManager;
+import yibao.yiwei.service.IClinicrecordsManager;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.service.IDeliveryitemManager;
+import yibao.yiwei.service.IDepartmentManager;
+import yibao.yiwei.service.IDischargedManager;
+import yibao.yiwei.service.IDischargediagManager;
+import yibao.yiwei.service.IDoctororderManager;
+import yibao.yiwei.service.IDrugcatalogManager;
+import yibao.yiwei.service.IEmployeeManager;
+import yibao.yiwei.service.IHospitalizedManager;
+import yibao.yiwei.service.IItemstockManager;
+import yibao.yiwei.service.IMedrecordsManager;
+import yibao.yiwei.service.IOperationManager;
+import yibao.yiwei.service.IOrderperformManager;
+import yibao.yiwei.service.IPrescribeManager;
+import yibao.yiwei.service.ISalesitemManager;
+import yibao.yiwei.service.ISupplierManager;
+import yibao.yiwei.service.IUploadfileManager;
+import yibao.yiwei.service.IWarehouseManager;
+import yibao.yiwei.service.IWarehouseitemManager;
+import yibao.yiwei.utils.RC2Coder;
+import yibao.yiwei.utils.SpringContextUtils;
+
+@SuppressWarnings("unchecked")
+@Component
+@DisallowConcurrentExecution//防止并发执行同一个job
+public class AnalysisTimerTask implements Job, Runnable {
+	
+	public IBaseService baseService = (IBaseService) SpringContextUtils.getBean("baseService");
+	
+	public IDrugcatalogManager drugcatalogManager = (IDrugcatalogManager) SpringContextUtils.getBean("drugcatalogManager");
+	
+	public IUploadfileManager uploadfileManager = (IUploadfileManager) SpringContextUtils.getBean("uploadfileManager");
+	
+	public ISupplierManager supplierManager = (ISupplierManager) SpringContextUtils.getBean("supplierManager");
+	
+	public IEmployeeManager employeeManager = (IEmployeeManager) SpringContextUtils.getBean("employeeManager");
+	
+	public IWarehouseitemManager warehouseitemManager = (IWarehouseitemManager) SpringContextUtils.getBean("warehouseitemManager");
+	
+	public ISalesitemManager salesitemManager = (ISalesitemManager) SpringContextUtils.getBean("salesitemManager");
+	
+	public IPrescribeManager prescribeManager = (IPrescribeManager) SpringContextUtils.getBean("prescribeManager");
+	
+	public IDeliveryitemManager deliveryitemManager = (IDeliveryitemManager) SpringContextUtils.getBean("deliveryitemManager");
+	
+	public ICustomerManager customerManager = (ICustomerManager) SpringContextUtils.getBean("customerManager");
+	
+	public IHospitalizedManager hospitalizedManager = (IHospitalizedManager) SpringContextUtils.getBean("hospitalizedManager");
+	
+	public IDischargedManager dischargedManager = (IDischargedManager) SpringContextUtils.getBean("dischargedManager");
+	
+	public IDoctororderManager doctororderManager = (IDoctororderManager) SpringContextUtils.getBean("doctororderManager");
+	
+	public IClinicrecordsManager clinicrecordsManager = (IClinicrecordsManager) SpringContextUtils.getBean("clinicrecordsManager");
+	
+	public IWarehouseManager warehouseManager = (IWarehouseManager) SpringContextUtils.getBean("warehouseManager");
+	
+	public IDepartmentManager departmentManager = (IDepartmentManager) SpringContextUtils.getBean("departmentManager");
+	
+	public IItemstockManager itemstockManager = (IItemstockManager) SpringContextUtils.getBean("itemstockManager");
+	
+	public IOrderperformManager orderperformManager = (IOrderperformManager) SpringContextUtils.getBean("orderperformManager");
+	
+	public IMedrecordsManager medrecordsManager = (IMedrecordsManager) SpringContextUtils.getBean("medrecordsManager");
+	
+	public IDischargediagManager dischargediagManager = (IDischargediagManager) SpringContextUtils.getBean("dischargediagManager");
+	
+	public IOperationManager operationManager = (IOperationManager) SpringContextUtils.getBean("operationManager");
+	
+	public ICheckresultManager checkresultManager = (ICheckresultManager) SpringContextUtils.getBean("checkresultManager");
+	
+	public ICheckdetailManager checkdetailManager = (ICheckdetailManager) SpringContextUtils.getBean("checkdetailManager");
+	
+	private Uploadfile uploadfile;
+
+	private final Log log = LogFactory.getLog(AnalysisTimerTask.class);
+	
+	public AnalysisTimerTask() {//启用execute
+		super();
+	}
+	
+	public AnalysisTimerTask(Uploadfile uploadfile) {
+		super();
+		this.uploadfile = uploadfile;
+	}
+	
+	public AnalysisTimerTask(String str) {
+
+	}
+
+	/**
+	 * 定时任务方法
+	 */
+	@Override
+	public void execute(JobExecutionContext arg0) throws JobExecutionException {
+		//使job对象可以通过注解实现依赖注入，必须使用spring的@Autowired，不能使用java的@Resource
+		//weblogic下无效，所以换了另一种注入方法，通过实现ApplicationContextAware接口
+		//SpringBeanAutowiringSupport.processInjectionBasedOnCurrentContext(this);
+		Abc abc;
+		try {
+			log.info("-----------定时解析任务开始------------");
+			abc = new Abc();
+			abc.setaDate(new Date());
+			abc.setaClass("定时解析任务开始");
+			baseService.save(abc);
+			String sql = "select u.* from TBL_UPLOADFILE SAMPLE(1) u where IS_HANDLE=0";//随机查询百分之一的记录
+			List<Uploadfile> list = baseService.findSql2(sql,"u",Uploadfile.class);
+			int poolNum = list.size() > 20 ? 20 : list.size();
+			if(poolNum > 0) {
+				ExecutorService pool = Executors.newFixedThreadPool(poolNum);
+				for(int i = 0; i < poolNum; i++){
+					log.info("线程："+i+"执行");
+					sql = "update Uploadfile u set u.isHandle=-1 where u.upId=?0";
+					baseService.updateOrDelete(sql, list.get(i).getUpId());
+					pool.submit(new AnalysisTimerTask(list.get(i)));
+				}
+				pool.shutdown();//结束线程池
+			}
+		} catch (Exception e) {
+			log.info("-----------定时解析任务异常------------"+e.getMessage());
+			abc = new Abc();
+			abc.setaDate(new Date());
+			abc.setaClass("定时解析任务异常");
+			abc.setaInfo(e.getMessage());
+			baseService.save(abc);
+		}
+	}
+	
+	/**
+	 * 自动解析调用线程
+	 */
+	@Override
+	public void run() {
+		Uploadfile uploadfile = this.uploadfile;
+		boolean b = false;
+		Abc abc;
+		try {
+			String path = uploadfile.getUpFilepath();
+			if(null == path || null == uploadfile.getCusId()){
+				return;
+			}
+			String encfile;// 定义文件路径名称
+			if(System.getProperty("os.name").indexOf("Windows") != -1){//Windows
+				encfile = "D:" + path;
+			} else {//Linux
+				encfile = path;
+			}
+			Customer customer = customerManager.getCustomer(uploadfile.getCusId());
+			if (null == customer) {
+				uploadfileManager.updateHandle(b, uploadfile.getUpId());//如果根据cusId查不到customer,更新文件解析状态isHandle=1 ,设置isCompress=5,继续下一条
+				return;
+			}
+			if (uploadfile.getIsEncrypt() == 1) {//加密
+				String mingStr = path.split("MI")[0];// 截取文件相对路径Mi文件夹前面的部分
+				RC2Coder rc = null;
+				rc = new RC2Coder("12345678");
+				String pathDe;// 定义解密文件明文路径
+				if (System.getProperty("os.name").indexOf("Windows") != -1) {
+					pathDe = "D:" + mingStr + "Ming";
+				} else {
+					pathDe = mingStr + "Ming";
+				}
+				File file = new File(pathDe);
+				if (!file.exists() && !file.isDirectory()) {
+					file.mkdirs();
+				}
+				String desfile = file + "/De" + uploadfile.getFilename();// 定义明文 文件路径及名称:路径+自定义+密文文件名称
+				rc.decrypt(encfile, desfile);
+				b = addToData(uploadfile.getUpFileflag(), desfile, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), customer.getCusName(), customer.getCusFlag());
+			} else  {//不加密
+				b = addToData(uploadfile.getUpFileflag(), encfile, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), customer.getCusName(), customer.getCusFlag());
+			}
+			uploadfileManager.updateHandle(b, uploadfile.getUpId());
+			if(!b){
+				log.info("解析失败的文件="+encfile);
+			}
+		} catch (Exception e) {
+			int a = uploadfileManager.updateHandle(b, uploadfile.getUpId());
+			abc = new Abc();
+			abc.setaDate(new Date());
+			abc.setaClass("解析线程run异常,"+a);
+			abc.setaInfo(e.getMessage());
+			baseService.save(abc);
+		}
+	}
+	
+	/**
+	 * 手动解析方法
+	 * @param list
+	 * @return
+	 * @throws Exception
+	 */
+	public int loopList(List list) {
+		int count = 0;//定义统计解析错误条数
+		boolean b = false;//定义解析返回值
+		Abc abc;
+		for (int i = 0; i < list.size(); i++) {
+			Uploadfile uploadfile = (Uploadfile) list.get(i);//获取单条上传文件
+			try {
+				String path = uploadfile.getUpFilepath();//获取文件相对路径
+				if(null == path || null == uploadfile.getCusId()){
+					continue;
+				}
+				String encfile;// 定义文件路径名称
+				if(System.getProperty("os.name").indexOf("Windows") != -1){//Windows
+					encfile = "D:" + path;
+				} else {//Linux
+					encfile = path;
+				}
+				Customer customer = customerManager.getCustomer(uploadfile.getCusId());
+				if (null == customer) {
+					uploadfileManager.updateHandle(b, uploadfile.getUpId());//如果根据cusId查不到customer,更新文件解析状态isHandle=1 ,设置isCompress=5,继续下一条
+					continue;
+				}
+				if (uploadfile.getIsEncrypt() == 1) {//加密
+					String mingStr = path.split("MI")[0];// 截取文件相对路径Mi文件夹前面的部分
+					RC2Coder rc = new RC2Coder("12345678");
+					String pathDe;// 定义解密文件明文路径
+					if (System.getProperty("os.name").indexOf("Windows") != -1) {
+						pathDe = "D:" + mingStr + "Ming";
+					} else {
+						pathDe = mingStr + "Ming";
+					}
+					File fd = new File(pathDe);
+					if (!fd.exists() && !fd.isDirectory()) {
+						fd.mkdirs();
+					}
+					// 定义明文 文件路径及名称:路径+自定义+密文文件名称
+					String desfile = fd + "/De" + uploadfile.getFilename();
+					rc.decrypt(encfile, desfile);
+					b = addToData(uploadfile.getUpFileflag(), desfile, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), customer.getCusName(), customer.getCusFlag());
+				} else  {//不加密
+					b = addToData(uploadfile.getUpFileflag(), encfile, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), customer.getCusName(), customer.getCusFlag());
+				}
+				uploadfileManager.updateHandle(b, uploadfile.getUpId());// 根据upId更新文件解析状态isHandle ,,如果b=false,设置isCompress=5
+				if(!b){//如果b=false,统计解析错误条数
+					count++;
+					log.info("解析失败的文件="+encfile);
+				}
+			} catch (Exception e) {
+				int a = uploadfileManager.updateHandle(b, uploadfile.getUpId());
+				abc = new Abc();
+				abc.setaDate(new Date());
+				abc.setaClass("loopList异常，"+a);
+				abc.setaInfo(e.getMessage());
+				baseService.save(abc);
+			}
+		}
+		return count;
+	}
+
+	/**
+	 * 文件解析后添加数据
+	 * @param upFileflag
+	 * @param path
+	 * @param cusId
+	 * @param upCollectdate
+	 * @param upId
+	 * @param cusName
+	 * @param cusFlag
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public boolean addToData(String upFileflag, String path, String cusId, Date upCollectdate, int upId, String cusName, String cusFlag) throws IOException, ParseException {
+		if (upFileflag.equals("102") || upFileflag.equals("302") || upFileflag.equals("303") || upFileflag.equals("202")) {// 项目编码
+			return drugcatalogManager.addDrugcatalogs(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("103") || upFileflag.equals("304") || upFileflag.equals("203")) {// 供应商
+			return supplierManager.addSuppliers(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("104") || upFileflag.equals("305") || upFileflag.equals("204")) {// 人员
+			return employeeManager.addEmployees(path, cusId,cusName, upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("106") || upFileflag.equals("307") || upFileflag.equals("206")) {// 入库
+			return warehouseitemManager.addWarehouseitems(path, cusId,cusName, upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("108") || upFileflag.equals("317") || upFileflag.equals("208")) {// 销售
+			return salesitemManager.addSalesitems(path, cusId,cusName, upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("110") || upFileflag.equals("210")) {// 处方
+			return prescribeManager.addPrescribes(path, cusId,cusName, upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("112") || upFileflag.equals("316") || upFileflag.equals("212")) {// 出库
+			return deliveryitemManager.addDeliveryitems(path, cusId,cusName, upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("113") || upFileflag.equals("101")) {// 分店
+			return customerManager.addCustomers(path, cusId, upCollectdate, upId, cusName);
+		} 
+		else if (upFileflag.equals("308")) {// 住院
+			return hospitalizedManager.addHospitalized(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("309")) {// 出院
+			return dischargedManager.addDischarged(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("310")) {// 医嘱
+			return doctororderManager.addDoctororder(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("313")) {// 诊断
+			return clinicrecordsManager.addClinicrecords(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("314") || upFileflag.equals("114") || upFileflag.equals("214")) {// 库房
+			return warehouseManager.addWarehouse(path, cusId,cusName, upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("315") || upFileflag.equals("115") || upFileflag.equals("215")) {// 科室
+			return departmentManager.addDepartment(path, cusId, cusName,upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("318") || upFileflag.equals("116") || upFileflag.equals("216")) {// 库存
+			return itemstockManager.addItemstock(path, cusId,cusName, upCollectdate, upId, cusFlag);
+		} 
+		else if (upFileflag.equals("319") || upFileflag.equals("320")) {// 医嘱执行
+			return orderperformManager.addOrderperform(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("321")) {// 检查
+			return checkresultManager.addCheckresult(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("322")) {// 检查明细
+			return checkdetailManager.addCheckdetail(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("325")) {// 病案首页(概要)
+			return medrecordsManager.addMedrecords(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("326")) {// 病案首页:出院诊断
+			return dischargediagManager.addDischargediag(path, cusId,cusName, upCollectdate, upId);
+		} 
+		else if (upFileflag.equals("327")) {// 病案首页:手术操作
+			return operationManager.addOperation(path, cusId, cusName,upCollectdate, upId);
+		} 
+		else {
+			return false;
+		}
+	}
+}

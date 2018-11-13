@@ -1,0 +1,160 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * Drugswarehouse entity. 药品入库记录表
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_DRUGSWAREHOUSE", schema = "YIWEI")
+public class Drugswarehouse implements java.io.Serializable {
+
+	// Fields
+
+	private String dwId;//入库ID
+	private String cusId;//客户ID
+	private String cusParentid;//客户上级ID 总店、单体0
+	private String dwNo;//入库单号
+	private Date dwDatetime;//入库时间
+	private String dwExaminer;//检验员
+	private Date dwExamdate;//检验日期
+	private String dwAuditor;//审核员
+	private Date dwAuditdate;//审核日期
+	private Double dwAmount;//入库单合计
+	private Date dwCreatetime;//创建日期
+
+	// Constructors
+
+	/** default constructor */
+	public Drugswarehouse() {
+	}
+
+	/** full constructor */
+	public Drugswarehouse(String cusId, String cusParentid, String dwNo,
+			Date dwDatetime, String dwExaminer, Date dwExamdate,
+			String dwAuditor, Date dwAuditdate, Double dwAmount,
+			Date dwCreatetime) {
+		this.cusId = cusId;
+		this.cusParentid = cusParentid;
+		this.dwNo = dwNo;
+		this.dwDatetime = dwDatetime;
+		this.dwExaminer = dwExaminer;
+		this.dwExamdate = dwExamdate;
+		this.dwAuditor = dwAuditor;
+		this.dwAuditdate = dwAuditdate;
+		this.dwAmount = dwAmount;
+		this.dwCreatetime = dwCreatetime;
+	}
+
+	// Property accessors
+	@GenericGenerator(name = "Drugswarehouse_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Drugswarehouse_id")
+	@Column(name = "DW_ID", unique = true, nullable = false, length = 32)
+	public String getDwId() {
+		return this.dwId;
+	}
+
+	public void setDwId(String dwId) {
+		this.dwId = dwId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_PARENTID", length = 32)
+	public String getCusParentid() {
+		return this.cusParentid;
+	}
+
+	public void setCusParentid(String cusParentid) {
+		this.cusParentid = cusParentid;
+	}
+
+	@Column(name = "DW_NO", length = 32)
+	public String getDwNo() {
+		return this.dwNo;
+	}
+
+	public void setDwNo(String dwNo) {
+		this.dwNo = dwNo;
+	}
+
+	@Column(name = "DW_DATETIME", length = 7)
+	public Date getDwDatetime() {
+		return this.dwDatetime;
+	}
+
+	public void setDwDatetime(Date dwDatetime) {
+		this.dwDatetime = dwDatetime;
+	}
+
+	@Column(name = "DW_EXAMINER", length = 16)
+	public String getDwExaminer() {
+		return this.dwExaminer;
+	}
+
+	public void setDwExaminer(String dwExaminer) {
+		this.dwExaminer = dwExaminer;
+	}
+
+	@Column(name = "DW_EXAMDATE", length = 7)
+	public Date getDwExamdate() {
+		return this.dwExamdate;
+	}
+
+	public void setDwExamdate(Date dwExamdate) {
+		this.dwExamdate = dwExamdate;
+	}
+
+	@Column(name = "DW_AUDITOR", length = 16)
+	public String getDwAuditor() {
+		return this.dwAuditor;
+	}
+
+	public void setDwAuditor(String dwAuditor) {
+		this.dwAuditor = dwAuditor;
+	}
+
+	@Column(name = "DW_AUDITDATE", length = 7)
+	public Date getDwAuditdate() {
+		return this.dwAuditdate;
+	}
+
+	public void setDwAuditdate(Date dwAuditdate) {
+		this.dwAuditdate = dwAuditdate;
+	}
+
+	@Column(name = "DW_AMOUNT", precision = 20)
+	public Double getDwAmount() {
+		return this.dwAmount;
+	}
+
+	public void setDwAmount(Double dwAmount) {
+		this.dwAmount = dwAmount;
+	}
+
+	@Column(name = "DW_CREATETIME", length = 7)
+	public Date getDwCreatetime() {
+		return this.dwCreatetime;
+	}
+
+	public void setDwCreatetime(Date dwCreatetime) {
+		this.dwCreatetime = dwCreatetime;
+	}
+
+}

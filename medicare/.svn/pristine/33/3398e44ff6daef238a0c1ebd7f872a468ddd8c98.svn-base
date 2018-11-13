@@ -1,0 +1,55 @@
+package yibao.yiwei.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 临时信息表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "drug", schema = "YIWEI")
+public class Drug implements java.io.Serializable {
+
+	private String dId;
+	private String dCode;
+	private String dName;
+	
+	@GenericGenerator(name = "drug_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "drug_id")
+	@Column(name = "d_id", unique = true, nullable = false, length = 32)
+	public String getdId() {
+		return dId;
+	}
+
+	public void setdId(String dId) {
+		this.dId = dId;
+	}
+
+	@Column(name = "d_code", length = 2000)
+	public String getdCode() {
+		return dCode;
+	}
+
+	public void setdCode(String dCode) {
+		this.dCode = dCode;
+	}
+
+	@Column(name = "d_name", length = 2000)
+	public String getdName() {
+		return dName;
+	}
+
+	public void setdName(String dName) {
+		this.dName = dName;
+	}
+	
+}

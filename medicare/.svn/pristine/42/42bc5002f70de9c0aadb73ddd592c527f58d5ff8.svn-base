@@ -1,0 +1,299 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>医护人员信息表</title>
+
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script type="text/javascript">
+			$(function() {
+				var cusId=$("#employee").attr("name");
+				var url = 'getAllEmployee?cusId='+cusId;
+				datagrid('employee', '医护人员', 'emId', url, 'emId', 'desc');
+			});
+
+			function formatOperSex(val, row, index) {
+				if (val == '1') {
+					return '男';
+				} else if (val == '2') {
+					return '女';
+				} else if (val == '男' || val == '女') {
+					return val;
+				} else {
+					return '未做说明 ';
+				}
+			}
+
+			function formatOperTitlecode(val, row, index) {
+				if (val == '1') {
+					return '正高';
+				} else if (val == '2') {
+					return '副高';
+				} else if (val == '3') {
+					return '中级';
+				} else if (val == '4') {
+					return '师级/助理';
+				} else if (val == '5') {
+					return '士级';
+				} else if (val == '6') {
+					return '待聘';
+				}  else {
+					return '未做说明';
+				}
+			}
+
+			function formatOperJobcode(val, row, index) {
+				if (val == '231') {
+					return '主任医师';
+				} else if (val == '232') {
+					return '副主任医师';
+				} else if (val == '233') {
+					return '主治医师';
+				} else if (val == '234') {
+					return '医师';
+				} else if (val == '235') {
+					return '医士';
+				} else if (val == '241') {
+					return '主任药师';
+				} else if (val == '242') {
+					return '副主任药师';
+				} else if (val == '243') {
+					return '主管药师';
+				} else if (val == '244') {
+					return '药师';
+				} else if (val == '245') {
+					return '荮士';
+				} else if (val == '251') {
+					return '主任护师';
+				} else if (val == '252') {
+					return '副主任护师';
+				} else if (val == '253') {
+					return '主管护师';
+				} else if (val == '254') {
+					return '护师';
+				}  else if (val == '255') {
+					return '护士';
+				}  else if (val == '261') {
+					return '主任技师';
+				}  else if (val == '262') {
+					return '副主任技师';
+				}  else if (val == '263') {
+					return '主管技师';
+				}  else if (val == '264') {
+					return '技师';
+				}  else if (val == '265') {
+					return '技士';
+				}  else {
+					return '未知';
+				}
+			}
+
+			function formatOperClassifycode(val, row, index) {
+				if (val == '1') {
+					return '临床';
+				} else if (val == '2') {
+					return '中医';
+				} else if (val == '3') {
+					return '民族医';
+				} else if (val == '4') {
+					return '中西医结合';
+				} else if (val == '5') {
+					return '口腔';
+				}  else if (val == '5') {
+					return '公共卫生';
+				}  else {
+					return '未知';
+				}
+			}
+
+			function formatOperScopecode(val, row, index) {
+				if (val == '001') {    
+					return   '内科';   
+				} else if (val == '002') {    
+					return   '外科';   
+				} else if (val == '003') {    
+					return   '妇产科';
+				} else if (val == '004') {
+					return   '儿科';   
+				} else if (val == '005') {    
+					return   '眼耳鼻咽喉科';   
+				} else if (val == '006') {    
+					return   '皮肤病与性病';   
+				} else if (val == '007') {    
+					return   '精神卫生';   
+				} else if (val == '008') {    
+					return   '职业病';   
+				} else if (val == '009') {    
+					return   '医学影像和放射治疗';   
+				} else if (val == '010') {    
+					return   '医学检验与病理';   
+				} else if (val == '011') {    
+					return   '全科医学';   
+				} else if (val == '012') {    
+					return   '急救医学';   
+				} else if (val == '013') {    
+					return   '康复医学';   
+				} else if (val == '014') {    
+					return   '预防保健';   
+				} else if (val == '015') {    
+					return   '特种医学与军事医学';   
+				} else if (val == '016') {    
+					return   '计划生育技术服务';   
+				} else if (val == '017') {    
+					return   '中医专业';   
+				} else if (val == '018') {    
+					return   '中西医结合专业';   
+				} else if (val == '019') {    
+					return   '蒙医专业';   
+				} else if (val == '020') {    
+					return   '藏医专业';   
+				} else if (val == '021') {    
+					return   '维医专业';   
+				} else if (val == '022') {    
+					return   '傣医专业';   
+				} else if (val == '023') {    
+					return   '口腔专业';  
+				} else if (val == '024') {    
+					return   '公共卫生类别专业';   
+				} else if (val == '025') {    
+					return   '省级以上卫生行政部门规定的其他专业';   
+				} else {
+					return '未做说明';			
+				}
+			}
+
+			function formatOperIsnot(val, row, index) {
+				if (val == '0') {
+					return '否';
+				} else if (val == '1') {
+					return '是';
+				} else {
+					return '是';
+				}
+			}
+
+			function formatOperStatus(val, row, index) {
+				if (val == '0') {
+					return '无效';
+				} else if (val == '1') {
+					return '有效';
+				} else {
+					return '有效';
+				}
+			}
+		</script>
+	</head>
+
+	<body>
+		<!-- datagrid表格开始 -->
+		<table id="employee" name="${cusId }">
+			<thead>
+				<tr>
+					<%--<th data-options="field:'sb',checkbox:true"></th>
+					--%><th field="emId" align="center" hidden=true>
+						<!-- hidden=true 隐藏列 -->
+					</th>
+					<th field="cusId" align="center" hidden=true>
+						客户ID
+					</th>
+					<th field="cusParentid" align="center" hidden=true>
+						客户上级ID
+					</th>
+					<th field="emCode" align="center">
+						人员编码
+					</th>
+					<th field="emName" align="center">
+						人员姓名
+					</th>
+					<th
+						data-options="field:'emSex',align:'center',formatter:formatOperSex">
+						性别
+					</th>
+					<th field="emIdnum" hidden=true align="center">
+						身份证号
+					</th>
+					<th field="emTitlename"  hidden=true  align="center">
+						职称
+					</th>
+					<th field="emQualification" hidden=true align="center">
+						从业资格
+					</th>
+					<th field="emPhone" hidden=true align="center">
+						联系电话
+					</th>
+					<th field="emAnnex" hidden=true align="center">
+						附件信息
+					</th>
+
+					<th field="acCode" hidden=true align="center">
+						统筹区编码
+					</th>
+					<th field="acName" hidden=true align="center">
+						统筹区名称
+					</th>
+
+					<th
+						data-options="field:'emTitlecode',hidden:true,align:'center',formatter:formatOperTitlecode">
+						职称编码
+					</th>
+					<th
+						data-options="field:'emJobcode',hidden:true,align:'center',formatter:formatOperJobcode">
+						职务编码
+					</th>
+					<th field="emJobname" hidden=true  align="center">
+						职务名称
+					</th>
+					<th field="emCertified" hidden=true  align="center">
+						医师资格证编号
+					</th>
+					<th field="emLicence" hidden=true  align="center">
+						医师执业证编号
+					</th>
+					<th
+						data-options="field:'emClassifycode',hidden:true,align:'center',formatter:formatOperClassifycode">
+						执业类别编码
+					</th>
+					<th field="emClassifyname"  hidden=true align="center">
+						执业类别名称
+					</th>
+					<th	data-options="field:'emScopecode',hidden:true,align:'center',formatter:formatOperScopecode">
+						执业范围编码
+					</th>
+					<th field="emScopename"  hidden=true align="center">
+						执业范围名称
+					</th>
+					<th field="deptCode" align="center">
+						科室编码
+					</th>
+					<th field="deptName" align="center">
+						科室名称
+					</th>
+					<th	data-options="field:'emIsexpert',hidden:true,align:'center',formatter:formatOperIsnot">
+						是否专家
+					</th>
+					<th	data-options="field:'emStatus',align:'center',formatter:formatOperStatus">
+						状态
+					</th>
+					<th field="emRemark"  hidden=true align="center">
+						备注
+					</th>
+					<th field="emPicktime" hidden=true align="center">
+						采集时间
+					</th>
+					<th field="emAddtime" hidden=true align="center">
+						创建时间
+					</th>
+				</tr>
+			</thead>
+		</table>
+
+		<!-- datagrid表格结束 -->
+	</body>
+</html>

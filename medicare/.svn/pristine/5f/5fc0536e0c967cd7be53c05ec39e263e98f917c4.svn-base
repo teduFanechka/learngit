@@ -1,0 +1,80 @@
+package yibao.yiwei.controller.system;
+
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.Privilege;
+import yibao.yiwei.service.IBaseService;
+
+@SuppressWarnings("unchecked")
+@Controller
+public class PrivilegeController {
+
+	@Autowired
+	private IBaseService baseService;
+	
+	@AuthPassport
+	@RequestMapping("/toPrivilege")
+	public String toPrivilege(HttpServletRequest request) {
+		String hql = "from Privilege where priParent='0' order by priOrder";
+		List list = baseService.find(hql);
+		request.setAttribute("list", list);
+		return "/system/privilege";
+	}
+	
+	@RequestMapping("/privilegeList")
+	@ResponseBody
+	public List privilegeList(){
+		String hql = "from Privilege where priParent =?0 order by priOrder";
+		List<Privilege> list = baseService.find(hql,"0");
+		List<Privilege> list2 =new ArrayList();
+		Privilege privilege;
+		for(int i = 0; i < list.size(); i++){
+			privilege = list.get(i);
+			list2 = baseService.find(hql,privilege.getPriId());
+			privilege.setChildren(list2);
+		}
+		return list;
+	}
+	
+	@ResponseBody
+	@RequestMapping("/addOrUpdatePrivilege")
+	public Map addOrUpdatePrivilege(Privilege privilege, HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String status;
+		if (privilege.getPriId().equals("")) {
+			status = "添加完成";
+			baseService.save(privilege);
+		} else {
+			baseService.update(privilege);
+			status = "更新完成";
+
+		}
+		map.put("status", status);
+		return map;
+	}
+	
+	@ResponseBody
+	@RequestMapping("/delPrivilege")
+	public void delPrivilege(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");
+		String arr[] = ids.split(",");
+		String hql = "delete PrivilegeRole where priId=?0";
+		for (int i = 0; i < arr.length; i++) {
+			String priId = arr[i];
+			baseService.updateOrDelete("delete Privilege where priId=?0", priId);
+			baseService.updateOrDelete(hql, priId);
+		}
+	}
+}

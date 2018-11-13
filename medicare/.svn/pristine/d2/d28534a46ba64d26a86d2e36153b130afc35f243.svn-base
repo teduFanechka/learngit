@@ -1,0 +1,247 @@
+package yibao.yiwei.service.impl;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.entity.Abc;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.ICheckdetailManager;
+import yibao.yiwei.service.ICheckresultManager;
+import yibao.yiwei.service.IClinicrecordsManager;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.service.IDeliveryitemManager;
+import yibao.yiwei.service.IDepartmentManager;
+import yibao.yiwei.service.IDischargedManager;
+import yibao.yiwei.service.IDischargediagManager;
+import yibao.yiwei.service.IDoctororderManager;
+import yibao.yiwei.service.IDrugcatalogManager;
+import yibao.yiwei.service.IEmployeeManager;
+import yibao.yiwei.service.IHospitalizedManager;
+import yibao.yiwei.service.IItemstockManager;
+import yibao.yiwei.service.IMedrecordsManager;
+import yibao.yiwei.service.IOperationManager;
+import yibao.yiwei.service.IOrderperformManager;
+import yibao.yiwei.service.IPrescribeManager;
+import yibao.yiwei.service.ISalesitemManager;
+import yibao.yiwei.service.ISupplierManager;
+import yibao.yiwei.service.ITimerTask;
+import yibao.yiwei.service.IUploadfileManager;
+import yibao.yiwei.service.IWarehouseManager;
+import yibao.yiwei.service.IWarehouseitemManager;
+import yibao.yiwei.utils.RC2Coder;
+
+@Service
+@Transactional
+public class TimerTask implements ITimerTask {
+
+	@Autowired
+	private IBaseService baseService;
+	@Autowired
+	private IDrugcatalogManager drugcatalogManager;
+	@Autowired
+	private IUploadfileManager uploadfileManager;
+	@Autowired
+	private ISupplierManager supplierManager;
+	@Autowired
+	private IEmployeeManager employeeManager;
+	@Autowired
+	private IWarehouseitemManager warehouseitemManager;
+	@Autowired
+	private ISalesitemManager salesitemManager;
+	@Autowired
+	private IPrescribeManager prescribeManager;
+	@Autowired
+	private IDeliveryitemManager deliveryitemManager;
+	@Autowired
+	private ICustomerManager customerManager;
+	@Autowired
+	private IHospitalizedManager hospitalizedManager;
+	@Autowired
+	private IDischargedManager dischargedManager;
+	@Autowired
+	private IDoctororderManager doctororderManager;
+	@Autowired
+	private IClinicrecordsManager clinicrecordsManager;
+	@Autowired
+	private IWarehouseManager warehouseManager;
+	@Autowired
+	private IDepartmentManager departmentManager;
+	@Autowired
+	private IItemstockManager itemstockManager;
+	@Autowired
+	private IOrderperformManager orderperformManager;
+	@Autowired
+	private IMedrecordsManager medrecordsManager;
+	@Autowired
+	private IDischargediagManager dischargediagManager;
+	@Autowired
+	private IOperationManager operationManager;
+	@Autowired
+	private ICheckresultManager checkresultManager;
+	@Autowired
+	private ICheckdetailManager checkdetailManager;
+	
+	/**
+	 * 解析
+	 * @param list
+	 */
+	public void analysis(List list) {
+		if(list.size()>0){
+			Uploadfile uploadfile = (Uploadfile) list.get(list.size()-1);
+			boolean b = false;
+			Errorlog errorlog;
+			try {
+				String sql = "update Uploadfile set isHandle=-1 where upId=?0";//临时改变状态，防止其他线程再查询到该条记录
+				baseService.updateOrDelete(sql, uploadfile.getUpId());
+				//淘汰文件路径和cusId为空的文件
+				if(null == uploadfile.getUpFilepath() || null == uploadfile.getCusId()){
+					sql = "update Uploadfile u set u.isHandle=1, u.upName=?0 where u.upId=?1";
+					baseService.updateOrDelete(sql, "文件路径或cusId为空", uploadfile.getUpId());
+					return;
+				}
+				//淘汰cusId未注册的文件
+				sql = "from Customer where (cusStatus=1 or cusStatus=2) and cusId=?0";
+				Customer customer = (Customer)baseService.findUnique(sql, uploadfile.getCusId());
+				if(null == customer){
+					sql = "update Uploadfile u set u.isHandle=1, u.upName=?0 where u.upId=?1";
+					baseService.updateOrDelete(sql, "cusId未注册", uploadfile.getUpId());
+					return;
+				}
+				//淘汰同一客户已经解析过的相同文件名的文件
+				sql = "select count(upId) from Uploadfile where cusId=?0 and filename=?1 and isHandle=1";
+				int num = baseService.findCount(sql,uploadfile.getCusId(),uploadfile.getFilename());
+				if(num > 0){
+					sql = "update Uploadfile u set u.isHandle=1, u.upName=?0 where u.upId=?1";
+					baseService.updateOrDelete(sql, "已解析"+num+"次", uploadfile.getUpId());
+					return;
+				}
+				//判断Windows、Linux
+				String filePath;
+				if(System.getProperty("os.name").indexOf("Windows") != -1){//Windows
+					filePath = "D:" + uploadfile.getUpFilepath();
+				} else {//Linux
+					filePath = uploadfile.getUpFilepath();
+				}
+				//加密文件解密
+				if (uploadfile.getIsEncrypt() == 1) {//加密
+					File file = new File(filePath.split("MI")[0] + "Ming");//截取MI前面的字符串
+					if (!file.exists() && !file.isDirectory()) {
+						file.mkdirs();
+					}
+					String newPath = file + "/De" + uploadfile.getFilename();//解密文件路径：原路径+/De+加密文件名
+					RC2Coder rc = new RC2Coder("12345678");
+					rc.decrypt(filePath, newPath);//新路径生成解密文件
+					addToData(uploadfile.getUpFileflag(), newPath, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), uploadfile.getCusName(), customer.getCusFlag());
+				} else  {//不加密
+					addToData(uploadfile.getUpFileflag(), filePath, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), uploadfile.getCusName(), customer.getCusFlag());
+				}
+			} catch (Exception e) {
+				uploadfileManager.updateHandle(b, uploadfile.getUpId());
+			}
+		}
+	}
+		
+		
+	
+	/**
+	 * 文件解析后添加数据
+	 * @param upFileflag
+	 * @param path
+	 * @param cusId
+	 * @param upCollectdate
+	 * @param upId
+	 * @param cusName
+	 * @param cusFlag
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public boolean addToData(String upFileflag, String path, String cusId, Date upCollectdate, int upId, String cusName, String cusFlag) throws IOException, ParseException {
+		try {
+			if (upFileflag.equals("102") || upFileflag.equals("302") || upFileflag.equals("303") || upFileflag.equals("202")) {// 项目编码
+				return drugcatalogManager.addDrugcatalogs(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("103") || upFileflag.equals("304") || upFileflag.equals("203")) {// 供应商
+				return supplierManager.addSuppliers(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("104") || upFileflag.equals("305") || upFileflag.equals("204")) {// 人员
+				return employeeManager.addEmployees(path, cusId,cusName, upCollectdate, upId, cusFlag);
+			} 
+			else if (upFileflag.equals("106") || upFileflag.equals("307") || upFileflag.equals("206")) {// 入库
+				return warehouseitemManager.addWarehouseitems(path, cusId,cusName, upCollectdate, upId, cusFlag);
+			} 
+			else if (upFileflag.equals("112") || upFileflag.equals("316") || upFileflag.equals("212")) {// 出库
+				return deliveryitemManager.addDeliveryitems(path, cusId,cusName, upCollectdate, upId, cusFlag);
+			} 
+			else if (upFileflag.equals("318") || upFileflag.equals("116") || upFileflag.equals("216")) {// 库存
+				return itemstockManager.addItemstock(path, cusId,cusName, upCollectdate, upId, cusFlag);
+			} 
+			else if (upFileflag.equals("108") || upFileflag.equals("317") || upFileflag.equals("208")) {// 销售
+				return salesitemManager.addSalesitems(path, cusId,cusName, upCollectdate, upId, cusFlag);
+			} 
+			else if (upFileflag.equals("314") || upFileflag.equals("114") || upFileflag.equals("214")) {// 库房
+				return warehouseManager.addWarehouse(path, cusId,cusName, upCollectdate, upId, cusFlag);
+			} 
+			else if (upFileflag.equals("110") || upFileflag.equals("210")) {// 处方
+				return prescribeManager.addPrescribes(path, cusId,cusName, upCollectdate, upId, cusFlag);
+			} 
+			/*else if (upFileflag.equals("113") || upFileflag.equals("101")) {// 分店
+				return customerManager.addCustomers(path, cusId, upCollectdate, upId, cusName);
+			} */
+			else if (upFileflag.equals("308")) {// 住院
+				return hospitalizedManager.addHospitalized(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("309")) {// 出院
+				return dischargedManager.addDischarged(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("310")) {// 医嘱
+				return doctororderManager.addDoctororder(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("319") || upFileflag.equals("320")) {// 医嘱执行
+				return orderperformManager.addOrderperform(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("313")) {// 诊断
+				return clinicrecordsManager.addClinicrecords(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("315") || upFileflag.equals("115") || upFileflag.equals("215")) {// 科室
+				return departmentManager.addDepartment(path, cusId, cusName,upCollectdate, upId, cusFlag);
+			} 
+			else if (upFileflag.equals("325")) {// 病案首页(概要)
+				return medrecordsManager.addMedrecords(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("326")) {// 病案首页:出院诊断
+				return dischargediagManager.addDischargediag(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("327")) {// 病案首页:手术操作
+				return operationManager.addOperation(path, cusId, cusName,upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("321")) {// 检查
+				return checkresultManager.addCheckresult(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else if (upFileflag.equals("322")) {// 检查明细
+				return checkdetailManager.addCheckdetail(path, cusId,cusName, upCollectdate, upId);
+			} 
+			else {
+				return false;
+			}
+		} catch (Exception e) {
+			uploadfileManager.updateHandle(false, upId);
+			Abc abc = new Abc();
+			abc.setaDate(new Date());
+			abc.setaWrong("文件解析异常，文件类型="+upFileflag + "，"+e.getMessage());
+			baseService.save(abc);
+			return false;
+		}
+	}
+
+}

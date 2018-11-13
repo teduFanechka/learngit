@@ -1,0 +1,267 @@
+package yibao.yiwei.controller.system;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.Customer;
+import yibao.yiwei.service.IBaseService;
+
+/**
+ * 删除重复数据
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class DeleteController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	/**
+	 * 转到删除数据页面
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/toDelete")
+	public String toDelete(HttpServletRequest request) {
+		return "/system/delete";
+	}
+	
+	/**
+	 * 删除已注销sql
+	 * @param type
+	 * @return
+	 */
+	public String getCancleSql(String type){
+		String sql;
+		if(type.equals("drugcatalog")){//项目编码
+			sql = "delete from tbl_drugcatalog where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("supplier")){//供应商/生产商信息
+			sql = "delete from TBL_SUPPLIER where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("employee")){//医护人员信息
+			sql = "delete from TBL_EMPLOYEE where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("warehouseitem")){//入库信息
+			sql = "delete from TBL_WAREHOUSEITEM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("deliveryitem")){//出库信息
+			sql = "delete from TBL_DELIVERYITEM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("itemstock")){//库存信息
+			sql = "delete from TBL_ITEMSTOCK where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("salesitem")){//销售信息
+			sql = "delete from TBL_SALESITEM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("warehouse")){//库房信息
+			sql = "delete from TBL_WAREHOUSE where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("prescribe")){//处方信息
+			sql = "delete from TBL_PRESCRIBE where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("hospitalized")){//住院记录
+			sql = "delete from TBL_HOSPITALIZED where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("discharged")){//出院记录
+			sql = "delete from TBL_DISCHARGED where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("doctororder")){//医嘱信息
+			sql = "delete from TBL_DOCTORORDER where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("orderperform")){//医嘱执行记录
+			sql = "delete from TBL_ORDERPERFORM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("department")){//科室信息
+			sql = "delete from TBL_DEPARTMENT where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("clinicrecords")){//诊断记录
+			sql = "delete from TBL_CLINICRECORDS where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("medrecords")){//病案首页(概要)
+			sql = "delete from TBL_MEDRECORDS where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("dischargediag")){//病案首页(出院诊断)
+			sql = "delete from TBL_DISCHARGEDIAG where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("operation")){//病案首页(手术操作)
+			sql = "delete from TBL_OPERATION where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("checkresult")){//检查、检验结果
+			sql = "delete from TBL_CHECKRESULT where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("checkdetail")){//检查、检验结果详细
+			sql = "delete from TBL_CHECKDETAIL where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else {
+			sql = "";
+		}
+		return sql;
+	}
+	
+	/**
+	 * 删除已注销客户数据
+	 * @param type
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/deleteCancle")
+	public Map deleteCancle(String type,String name){
+		Map<String, Object> map = new HashMap<String, Object>();
+		try{
+			baseService.updateOrDeleteSql(getCancleSql(type));
+			map.put("info", name+"已注销定点数据删除成功");
+		} catch (Exception e) {
+			map.put("info", name+"已注销定点数据删除失败："+e.getMessage());
+		}
+		return map;
+	}
+	
+	/**
+	 * 删除重复数据sql
+	 * @param type
+	 * @return
+	 */
+	public String getRepeatSql(String type){
+		String sql;
+		if(type.equals("drugcatalog")){//项目编码
+			sql = "delete from tbl_drugcatalog where cus_id=?0 and DC_ID not in" +
+			"(select max(DC_ID) from tbl_drugcatalog where cus_id=?1 group by dc_Code,DC_COMMERCIAL,DC_PICKTIME)";
+		} else if (type.equals("supplier")){//供应商/生产商信息
+			sql = "delete from TBL_SUPPLIER where cus_id=?0 and SP_ID not in" +
+			"(select max(SP_ID) from TBL_SUPPLIER where cus_id=?1 group by SP_CODE,SP_NAME)";
+		} else if (type.equals("employee")){//医护人员信息
+			sql = "delete from TBL_EMPLOYEE where cus_id=?0 and EM_ID not in" +
+			"(select max(EM_ID) from TBL_EMPLOYEE where cus_id=?1 group by EM_CODE,EM_NAME)";
+		} else if (type.equals("warehouseitem")){//入库信息
+			sql = "delete from TBL_WAREHOUSEITEM where cus_id=?0 and WI_ID not in" +
+			"(select max(WI_ID) from TBL_WAREHOUSEITEM where cus_id=?1 group by WI_CODE,DRUG_CODE,DRUG_NUM,DRUG_BATCHNO,WI_WHCODE)";
+		} else if (type.equals("deliveryitem")){//出库信息
+			sql = "delete from TBL_DELIVERYITEM where cus_id=?0 and DI_ID not in" +
+			"(select max(DI_ID) from TBL_DELIVERYITEM where cus_id=?1 group by DI_NO,DRUG_CODE,DRUG_NUM,DRUG_BATCHNO,DI_WHCODE)";
+		} else if (type.equals("itemstock")){//库存信息
+			sql = "delete from TBL_ITEMSTOCK where cus_id=?0 and IS_ID not in" +
+			"(select max(IS_ID) from TBL_ITEMSTOCK where cus_id=?1 group by ITEM_CODE,ITEM_BATCHNO,ITEM_WHCODE,ITEM_PICKTIME)";
+		} else if (type.equals("salesitem")){//销售信息
+			sql = "delete from TBL_SALESITEM where cus_id=?0 and SI_ID not in" +
+			"(select max(SI_ID) from TBL_SALESITEM where cus_id=?1 group by SO_NO,DRUG_CODE,DRUG_SALESPRICE,DRUG_BATCHNO,SO_PAYTYPE,SI_SETTLEMENTNAME)";
+		} else if (type.equals("warehouse")){//库房信息
+			sql = "delete from TBL_WAREHOUSE where cus_id=?0 and WH_ID not in" +
+			"(select max(WH_ID) from TBL_WAREHOUSE where cus_id=?1 group by WH_CODE,WH_MANCODE)";
+		} else if (type.equals("prescribe")){//处方信息
+			sql = "delete from TBL_PRESCRIBE where cus_id=?0 and RP_ID not in" +
+			"(select max(RP_ID) from TBL_PRESCRIBE where cus_id=?1 group by RP_NO,RP_ITEMCODE,RP_ITEMBATCHNO,RP_ITEMPRICE)";
+		} else if (type.equals("hospitalized")){//住院记录
+			sql = "delete from TBL_HOSPITALIZED where cus_id=?0 and HOSP_ID not in" +
+			"(select max(HOSP_ID) from TBL_HOSPITALIZED where cus_id=?1 group by HOSP_NO,HOSP_INTIME,HOSP_BEDNO)";
+		} else if (type.equals("discharged")){//出院记录
+			sql = "delete from TBL_DISCHARGED where cus_id=?0 and DC_ID not in" +
+			"(select max(DC_ID) from TBL_DISCHARGED where cus_id=?1 group by HOSP_NO,DC_INDATE,DC_OUTDATE)";
+		} else if (type.equals("doctororder")){//医嘱信息
+			sql = "delete from TBL_DOCTORORDER where cus_id=?0 and DO_ID not in" +
+			"(select max(DO_ID) from TBL_DOCTORORDER where cus_id=?1 group by HOSP_NO,DO_NO)";
+		} else if (type.equals("orderperform")){//医嘱执行记录
+			sql = "delete from TBL_ORDERPERFORM where cus_id=?0 and DO_ID not in" +
+			"(select max(DO_ID) from TBL_ORDERPERFORM where cus_id=?1 group by HOSP_NO,DO_NO,DO_PERFORMTIME)";
+		} else if (type.equals("department")){//科室信息
+			sql = "delete from TBL_DEPARTMENT where cus_id=?0 and DEPT_ID not in" +
+			"(select max(DEPT_ID) from TBL_DEPARTMENT where cus_id=?1 group by DEPT_CODE)";
+		} else if (type.equals("clinicrecords")){//诊断记录
+			sql = "delete from TBL_CLINICRECORDS where cus_id=?0 and DIAG_ID not in" +
+			"(select max(DIAG_ID) from TBL_CLINICRECORDS where cus_id=?1 group by DIAG_NO,DIAG_DOCTOR,DIAG_ICDNAME)";
+		} else if (type.equals("medrecords")){//病案首页(概要)
+			sql = "delete from TBL_MEDRECORDS where cus_id=?0 and MER_ID not in" +
+			"(select max(MER_ID) from TBL_MEDRECORDS where cus_id=?1 group by MER_HOSPNO,MER_INTIME,MER_OUTTIME,MER_CLINICDIAG,MER_CLINICDIAGCODE)";
+		} else if (type.equals("dischargediag")){//病案首页(出院诊断)
+			sql = "delete from TBL_DISCHARGEDIAG where cus_id=?0 and DD_ID not in" +
+		    "(select max(DD_ID) from TBL_DISCHARGEDIAG where cus_id=?1 group by DD_HOSPNO,DD_DISDIAG,DD_DISEASECODE)";
+		} else if (type.equals("operation")){//病案首页(手术操作)
+			sql = "delete from TBL_OPERATION where cus_id=?0 and OP_ID not in" +
+			"(select max(OP_ID) from TBL_OPERATION where cus_id=?1 group by OP_CODE,OP_HOSPNO)";
+		} else if (type.equals("checkresult")){//检查、检验结果
+			sql = "delete from TBL_CHECKRESULT where cus_id=?0 and CR_ID not in" +
+			"(select max(CR_ID) from TBL_CHECKRESULT where cus_id=?1 group by CR_CHECKNO,CR_HOSPNO,CR_ITEMCODE,CR_BED,CR_SENDDOC)";
+		} else if (type.equals("checkdetail")){//检查、检验结果详细
+			sql = "delete from TBL_CHECKDETAIL where cus_id=?0 and CT_ID not in" +
+			"(select max(CT_ID) from TBL_CHECKDETAIL where cus_id=?1 group by CT_CHECKNO,CT_HOSPNO,CT_ITEMCODE)";
+		} else {
+			sql = "";
+		}
+		return sql;
+	}
+	
+	/**
+	 * 删除重复数据
+	 * @param type
+	 * @param cusId
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/deleteRepeat")
+	public Map deleteRepeat(String type,String cusId,String name){
+		Map<String, Object> map = new HashMap<String, Object>();
+		try{
+			if(null != cusId && !cusId.equals("")){//单个定点删除
+				Customer customer = (Customer)baseService.get(Customer.class, cusId);
+				if(null != customer && customer.getCusFlag().equals("102") && (type.equals("drugcatalog") || type.equals("supplier"))){
+					if (null != customer.getCusParentid() && customer.getCusParentid().length() > 1) {
+						cusId = customer.getCusParentid();
+					}
+				}
+				baseService.updateOrDeleteSql(getRepeatSql(type),cusId,cusId);
+				map.put("info", customer.getCusName()+"-"+name+"重复数据删除成功");
+			} else {//循环定点删除
+				String sql = "from Customer";
+				List<Customer> list = baseService.find(sql);
+				Customer customer;
+				for (int i=0;i<list.size();i++){
+					try{
+						customer = list.get(i);
+						System.out.println(name+"-"+i+"-"+customer.getCusName());
+						baseService.updateOrDeleteSql(getRepeatSql(type),customer.getCusId(),customer.getCusId());
+					} catch (Exception e) {
+						System.out.println("循环删除重复数据失败："+e.getMessage());
+					}
+				}
+				map.put("info", name+"重复数据删除成功");
+			}
+		}
+		catch (Exception e) {
+			System.out.println("重复数据删除失败："+e.getMessage());
+			map.put("info", "重复数据删除失败："+e.getMessage());
+		}
+		return map;
+	}
+	
+	/**
+	 * 实时查询定点
+	 * @param str
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping(value="getCusName")
+	public Map getCusName(String str){
+		if(null != str){
+			str = str.trim();
+		}
+		String hql = "from Customer where cusName like '%"+str+"%' or cusDareway like '%"+str+"%' or cusId = '"+str+"'";
+		List<Customer> list = baseService.find(hql);
+		List list2 = new ArrayList();
+		Map<String, Object> map;
+		Customer customer;
+		for(int i = 0; i < list.size(); i++){
+			customer = list.get(i);
+			map = new HashMap<String, Object>();
+			map.put("id", customer.getCusId());
+			map.put("text", customer.getCusName()+customer.getCusDareway());
+			list2.add(map);
+		}
+		Map<String, Object> map2 = new HashMap<String, Object>();
+		map2.put("rows", list2);
+		return map2;
+	}
+	
+	/**
+	 * 测试方法
+	 * @throws Exception 
+	 */
+	@RequestMapping("/test")
+	public String test() throws Exception{
+		String hql = "from Customer where cusId=?0 and cusStatus=1";
+		Customer customer = (Customer)baseService.findUnique(hql, "aa");
+		System.out.println(customer);
+		return "/system/test";
+	}
+	
+}

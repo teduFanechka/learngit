@@ -1,0 +1,96 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 药品入库详细统计表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "COU_WAREHOUSEITEM", schema = "YIWEI")
+public class CouWarehouseitem implements java.io.Serializable {
+
+	private String cwiId; // 主键
+	private String cusId; // 客户id
+	private String cusName; // 客户名称 未使用字段
+	private int cwiTotal; // 按药品编码分组统计当天上传 药品种类
+	private int cwiTotalnum;// 当天上传总条数 未应用字段
+	private Date cwiCreatetime; // 未使用字段
+	private Date cwiUploadtime; // 文件采集时间
+
+	@GenericGenerator(name = "CouWarehouseitem_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "CouWarehouseitem_id")
+	@Column(name = "CWI_ID", unique = true, nullable = false, length = 32)
+	public String getCwiId() {
+		return this.cwiId;
+	}
+
+	public void setCwiId(String cwiId) {
+		this.cwiId = cwiId;
+	}
+
+	@Column(name = "CUS_ID", length = 64)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_NAME", length = 108)
+	public String getCusName() {
+		return this.cusName;
+	}
+
+	public void setCusName(String cusName) {
+		this.cusName = cusName;
+	}
+
+	@Column(name = "CWI_TOTAL", precision = 22, scale = 0)
+	public int getCwiTotal() {
+		return this.cwiTotal;
+	}
+
+	public void setCwiTotal(int cwiTotal) {
+		this.cwiTotal = cwiTotal;
+	}
+
+	@Column(name = "CWI_TOTALNUM", precision = 22, scale = 0)
+	public int getCwiTotalnum() {
+		return this.cwiTotalnum;
+	}
+
+	public void setCwiTotalnum(int cwiTotalnum) {
+		this.cwiTotalnum = cwiTotalnum;
+	}
+
+	@Column(name = "CWI_CREATETIME", length = 7)
+	public Date getCwiCreatetime() {
+		return this.cwiCreatetime;
+	}
+
+	public void setCwiCreatetime(Date cwiCreatetime) {
+		this.cwiCreatetime = cwiCreatetime;
+	}
+
+	@Column(name = "CWI_UPLOADTIME", length = 7)
+	public Date getCwiUploadtime() {
+		return this.cwiUploadtime;
+	}
+
+	public void setCwiUploadtime(Date cwiUploadtime) {
+		this.cwiUploadtime = cwiUploadtime;
+	}
+
+}

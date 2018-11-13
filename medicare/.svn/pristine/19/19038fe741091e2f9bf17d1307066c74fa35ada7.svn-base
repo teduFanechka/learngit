@@ -1,0 +1,479 @@
+package yibao.yiwei.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.commons.CommonsMultipartFile;
+
+import yibao.yiwei.controller.system.AuthPassport;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.IUploadfileManager;
+import yibao.yiwei.utils.JsonDateValueProcessor;
+
+/**
+ * 文件上传日志表控制器
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("all")
+@Controller
+public class UploadfileController {
+	
+	@Autowired
+	private IUploadfileManager uploadfileManager;
+
+	@Autowired
+	private IBaseService baseService;
+	
+	private static Logger log = Logger.getLogger(DrugcatalogController.class);
+	public static String sep = System.getProperty("file.separator");
+	boolean b = true;
+	// 定义文件上传类型为txt文本
+	private static final HashMap<String, String> TypeMap = new HashMap<String, String>();
+
+	static {
+		TypeMap.put("image", "gif,jpg,jpeg,png,bmp");
+		TypeMap.put("flash", "swf,flv");
+		TypeMap.put("media", "swf,flv,mp3,wav,wma,wmv,mid,avi,mpg,asf,rm,rmvb");
+		TypeMap.put("file", "txt");
+		// TypeMap.put("file",
+		// "doc,docx,xls,xlsx,ppt,pptx,htm,html,txt,dwg,pdf");
+	}
+	
+	/**
+	 * 转到上传日志
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toUploadfile")
+	public String toUploadfile(HttpServletRequest request) {
+		return "/uploadfile/uploadfile";
+	}
+
+	/**
+	 * 上传日志
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws Exception
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllUploadfile")
+	public Map<String, Object> getAllUploadfile(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		Map<String, Object> map = new HashMap<String, Object>();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String rows = request.getParameter("rows");
+		String page = request.getParameter("page");
+		String cusName = request.getParameter("cusName") != null ? request.getParameter("cusName").trim() : "";
+		String upFileflag = request.getParameter("upFileflag") != null ? request.getParameter("upFileflag").trim() : "";
+		String sql = "from Uploadfile u where cusId in (select cusId from Customer where (cusStatus=1 or cusStatus=2)";
+		String countSql = "select count(upId) from Uploadfile where cusId in (select cusId from Customer where (cusStatus=1 or cusStatus=2)";
+		if (cusName.equals("") && upFileflag.equals("")) {
+			sql+=")";
+			countSql+=")";
+		}
+		if (!cusName.equals("") && upFileflag.equals("")) {
+			try{
+				String cusDareway = Integer.parseInt(cusName) + "";
+				sql+= " and cusDareway = '"+cusDareway+"')";
+				countSql+=" and cusDareway = '"+cusDareway+"')";
+			} catch (Exception e) {
+				sql+= ") and cusName like '%" + cusName + "%'";
+				countSql+=") and cusName like '%" + cusName + "%'";
+			}
+		}
+		if (cusName.equals("") && !upFileflag.equals("")) {
+			sql+= ") and upFileflag in("+upFileflag+")";
+			countSql+=") and upFileflag in ("+upFileflag+")";
+		}
+		if (!cusName.equals("") && !upFileflag.equals("")) {
+			try{
+				String cusDareway = Integer.parseInt(cusName) + "";
+				sql+= " and cusDareway = '"+cusDareway+"') and upFileflag in("+upFileflag+")";
+				countSql+=" and cusDareway = '"+cusDareway+"') and upFileflag in("+upFileflag+")";
+			} catch (Exception e) {
+				sql+= ") and cusName like '%" + cusName + "%' and upFileflag in("+upFileflag+")";
+				countSql+=") and cusName like '%" + cusName + "%' and upFileflag in("+upFileflag+")";
+			}
+		}
+		sql+= " order by u.upId desc";
+		List list = baseService.findByPage(sql, rows, page);
+		int total = baseService.findCount(countSql);
+		map.put("total", total);
+		map.put("rows", list);
+		return map;
+	}
+
+	/**
+	 * 新增或修改表格数据
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws ParseException
+	 */
+	@ResponseBody
+	@RequestMapping("/addOrUpdateUploadfile")
+	public Map<String, Object> addOrUpdateUploadfile(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		Uploadfile uploadfile = new Uploadfile();
+		String upId = request.getParameter("upId");
+		String status;
+		String upName=request.getParameter("upname");
+		String cusId = request.getParameter("cusId");
+		String upFileflag = request.getParameter("upFileflag");
+		String upFilepath = request.getParameter("upFilepath");
+		String filename = request.getParameter("filename");
+		String size = request.getParameter("filesize");
+		String handle = request.getParameter("isHandle");
+		String encrypt = request.getParameter("isEncrypt");
+		String compress = request.getParameter("isCompress");
+		String upCollectiondate1 = request.getParameter("upCollectiondate");
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String upDate1 = request.getParameter("upDate");
+		String count = request.getParameter("upCount");
+		int filesize;
+		int isEncrypt;
+		int isCompress;
+		int isHandle;
+		int upCount;
+		// 总条数 默认为0
+		if (count == null || count.equals("")) {
+			upCount = 0;
+		} else {
+			upCount = Integer.parseInt(count);
+		}
+		// 是否解压 默认为0
+		if (compress == null || compress.equals("")) {
+			isCompress = 0;
+		} else {
+			isCompress = Integer.parseInt(compress);
+		}
+		// 是否加密 默认为1
+		if (encrypt == null || encrypt.equals("")) {
+			isEncrypt = 1;
+		} else {
+			isEncrypt = Integer.parseInt(encrypt);
+		}
+		// 是否处理 默认为0
+		if (handle == null || handle.equals("")) {
+			isHandle = 0;
+		} else {
+			isHandle = Integer.parseInt(handle);
+		}
+		// 文件大小 默认为0
+		if (size == null || size.equals("")) {
+			filesize = 0;
+		} else {
+			filesize = Integer.parseInt(size);
+		}
+
+		if (upDate1.equals("")) {
+			uploadfile.setUpDate(null);
+		} else {
+			Date upDate = df.parse(upDate1);
+			uploadfile.setUpDate(upDate);
+		}
+
+		if (upCollectiondate1.equals("")) {
+			uploadfile.setUpCollectiondate(null);
+		} else {
+			Date upCollectiondate = df.parse(upCollectiondate1);
+			uploadfile.setUpCollectiondate(upCollectiondate);
+		}
+		uploadfile.setCusId(cusId);
+		uploadfile.setUpName(upName);
+		uploadfile.setFilesize(filesize);
+		uploadfile.setUpFileflag(upFileflag);
+		uploadfile.setUpFilepath(upFilepath);
+		uploadfile.setFilename(filename);
+		uploadfile.setIsEncrypt(isEncrypt);
+		uploadfile.setIsCompress(isCompress);
+		uploadfile.setIsHandle(isHandle);
+		uploadfile.setUpCount(upCount);
+		if (upId == null || upId.equals("")) {
+			baseService.save(uploadfile);
+			status = "添加完成";
+		} else {
+			int id = Integer.parseInt(upId);
+			uploadfile.setUpId(id);
+			baseService.update(uploadfile);
+			status = "更新完成";
+		}
+		map.put("status", status);
+		return map;
+	}
+
+	// 转化为Json格式 ,将有Date 格式的list 转为json 可识别格式"2014-01-12 12:20:10"
+	public void toBeJson(List<Uploadfile> list, int total, HttpServletResponse response) throws IOException {
+		/*
+		 * JSONArray jo = JSONArray.fromObject(list,
+		 * jsonConfig);只将list(包含Date类型)转换为json时用
+		 */
+		// 调用工具类 list(含有java.util.Date)转换成json
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		// System.out.println("json:" + json.toString());
+		// json.accumulate("rows", list);// row是代表显示的页的数据 无Date字段时用
+		response.setCharacterEncoding("utf-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+
+	/**
+	 * 批量删除信息
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("/delUploadfile")
+	public void delUploadfile(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			baseService.updateOrDelete("delete Uploadfile where upId=?0", arr[i]);// 根据ID主键进行删除操作
+		}
+	}
+
+	/**
+	 * 根据hql语句获取未解密文件路径集合,未应用
+	 * @return
+	 */
+	@RequestMapping("/path")
+	public List<Uploadfile> getFilePaths() {
+		String sql = "select u.upFilepath from Uploadfile as u where u.isEncrypt=0";
+		List<Uploadfile> list = baseService.find(sql);
+		return list;
+	}
+
+	/**
+	 * 根据id更新文件解析状态status,未应用
+	 * @param request
+	 * @param id
+	 */
+	public void updateHandle(HttpServletRequest request,Integer id) {
+		uploadfileManager.updateHandle(true, id);
+	}
+
+	/**
+	 * @param file
+	 * @param request
+	 * @param response
+	 * 说明 :1.保存加密文件 2.保存上传药品目录相关数据至数据库表:tbl_uploadlog 3.启动定时任务,判断tbl_uploadlog isHandle 如果为真则解密文件并解析内容保存至数据表medicinelist
+	 * @throws ParseException
+	 */
+	@RequestMapping("/medicare/service/fileupload")
+	public void fileupload(@RequestParam("file") CommonsMultipartFile file, HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		log.info("file name is :" + file.getOriginalFilename());
+		Uploadfile uploadfile = new Uploadfile();
+		String cusId = request.getParameter("cusId");
+		cusId = cusId == null ? "" : cusId;
+		if (cusId.equals("")){
+			backInfo(response, -1, "没有定点注册信息");
+			return;
+		}
+		String hql = "from Customer c where c.cusId=?0 and c.cusStatus=1";
+		List<Customer> list = baseService.find(hql, cusId);
+		
+		if (list.size() <= 0) {
+			backInfo(response, -1, "注册信息不存在或未经审批,请联系市医保处信息科18253329695");
+			return;
+		}
+		
+		String appVer = request.getParameter("ver");
+		String uniCode = request.getParameter("uni");
+		
+		System.out.println("ver:" + appVer);
+		System.out.println("uni:" + uniCode);
+		
+		// System.out.println(cusId + ":" + list.size());
+		if ((!file.isEmpty()) && (list.size() > 0)) {
+			// 调用方法,根据cusId,目录类型 创建密文文件夹路径
+			// 定义文件夹路径
+			String uploadPath = getDirectory(cusId, "MI");
+			// System.out.println(uploadPath);
+			String errmsg;// 返回的提示信息
+			int errcode;// 0 成功 1 未知来源 2 文件大小超过限制
+			// 文件上传大小
+			long fileSize = 20 * 1024 * 1024;
+
+			if (file.getSize() > fileSize) {
+				errcode = 2;
+				errmsg = "文件大小超过限制";
+				backInfo(response, errcode, errmsg);
+				return;
+			}
+			String OriginalFilename = file.getOriginalFilename();
+			String fileSuffix = OriginalFilename.substring(OriginalFilename.lastIndexOf(".") + 1).toLowerCase();
+			// 文件格式错误
+			if (!Arrays.asList(TypeMap.get("file").split(",")).contains(fileSuffix)) {
+				log.error("文件格式错误!");
+				backInfo(response, 3, "文件格式错误");
+				return;
+			}
+			// 文件不能为空
+			if (!ServletFileUpload.isMultipartContent(request)) {
+				backInfo(response, 4, "文件不能为空");
+				return;
+			}
+			// 检查上传文件的目录
+			File uploadDir = new File(uploadPath);
+			if (!uploadDir.isDirectory()) {
+				if (!uploadDir.mkdir()) {
+					backInfo(response, 5, "上传目录不存在");
+					return;
+				}
+			}
+			// 是否有上传的权限
+			if (!uploadDir.canWrite()) {
+				backInfo(response, 6, "无权限");
+				return;
+			}
+			// 新文件名
+			String filename = "";
+			// 获取当前日期yyyyMMdd 作为文件名前缀
+			// String nowtime = Utils.getCurrentTimeAsNumber();
+			String upFileflag = request.getParameter("filetag");
+			filename = upFileflag + OriginalFilename;// 文件名称=文件标识+原始上传文件名
+			// newname += new Date().getTime() + "." + fileSuffix;
+			// 保存文件
+			File saveFile = new File(uploadPath, filename);
+			try {
+				errcode = 0;
+				errmsg = "上传成功";
+				file.transferTo(saveFile);
+				backInfo(response, errcode, errmsg);
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
+				backInfo(response, 1, "未知来源");
+				return;
+			}
+			/**
+			 * 保存上传药品目录 数据至数据库表:medicineListUploadAdd clientid 商户端id
+			 * uploadaddress 上传地址 filetpye 文件类型 filesize 上传文件大小 upFileflag 文件类型
+			 * status 状态
+			 */
+			uploadfile.setCusId(cusId);
+			uploadfile.setFilesize((int) (file.getSize()));
+			uploadfile.setUpFileflag(upFileflag);
+			String isEncrypt = request.getParameter("isencrypt");
+			if (isEncrypt == null) {
+				uploadfile.setIsEncrypt(1); // 默认为1
+			} else {
+				uploadfile.setIsEncrypt(Integer.parseInt(isEncrypt));
+			}
+			uploadfile.setIsHandle(0);
+			// 截取相对路径 /var/uploaddir/ D:\\var\\uploaddir\\
+
+			String tem;
+			if (uploadPath.startsWith("D:")) {// windowns 目录
+				String[] arr = uploadPath.split("D:");
+				uploadfile.setUpFilepath(arr[1] + sep + filename);
+				tem = arr[1] + sep + filename;
+			} else {
+				uploadfile.setUpFilepath(uploadPath + sep + filename);
+				tem = uploadPath + sep + filename;
+			}
+			uploadfile.setFilename(filename);
+			// Timestamp upDate = new Timestamp(System.currentTimeMillis());
+			Date upDate = new Date();
+			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			String upCollectiondate1 = request.getParameter("upCollectdate");
+			Date upCollectiondate;
+			if (upCollectiondate1 == null || upCollectiondate1.equalsIgnoreCase("null")) {// 如果没有解析日期
+				String todayStr = df.format(upDate);
+				upCollectiondate = df.parse(todayStr);
+			} else {
+				if (upCollectiondate1.trim().length() == 10) {
+					df = new SimpleDateFormat("yyyy-MM-dd");
+				} else {
+					df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				}
+
+				upCollectiondate = df.parse(upCollectiondate1);
+
+			}
+			// System.out.println(cusId + ":" + df.format(upCollectiondate)+
+			// " path:" + tem);
+
+			uploadfile.setUpDate(upDate);
+			uploadfile.setUpCollectiondate(upCollectiondate);
+			uploadfile.setUpCount(0);
+			Customer customer = list.get(0);
+			uploadfile.setCusName(customer.getCusName());
+			baseService.save(uploadfile);
+		} else {
+			backInfo(response, -1, "上传文件不能为空");
+			return;
+		}
+	}
+	
+	// 返回json信息
+	private void backInfo(HttpServletResponse response, int errcode, String errmsg) {
+		String json = "{ \"errcode\": " + errcode + ",\"errmsg\": \"" + errmsg + "\" }";
+		try {
+			response.setContentType("text/html;charset=utf-8");
+			response.getWriter().write(json);
+		} catch (IOException e) {
+			log.error(e.getMessage(), e);
+		}
+	}
+	
+
+	// 根据客记端 ID,明文/密文 类型来创建目录
+	public static String getDirectory(String id, String dirType) {
+		// 创建年,月,日目录
+		Calendar now = Calendar.getInstance();
+		int year = now.get(Calendar.YEAR);
+		int month = now.get(Calendar.MONTH) + 1;
+		int day = now.get(Calendar.DAY_OF_MONTH);
+
+		/*
+		 * File file = new File("D:/upload/药店Root/" + id + "/" + year + "/" +
+		 * month + "/" + day + "/" + dirType);
+		 */
+
+		File file;
+		String osName = System.getProperty("os.name");// Windows XP
+
+		if (osName.toLowerCase().indexOf("windows") > -1) {
+			file = new File("D:/var/uploaddir/" + id + sep + year + sep + month + sep + day + sep + dirType + sep);
+		} else {
+			file = new File("/var/uploaddir/" + id + sep + year + sep + month + sep + day + sep + dirType + sep);
+		}
+
+		// 如果药店Root 目录不存在就创建
+		boolean b = false;
+		if (!file.exists() && !file.isDirectory()) {
+			b = file.mkdirs();
+		}
+		// System.out.println(dirType +"getDirectory::::::"+ file.getPath());
+		return file.getPath();
+
+	}
+}

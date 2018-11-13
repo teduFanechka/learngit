@@ -1,0 +1,28 @@
+package yibao.yiwei.controller.system;
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.system.ManareaRelate;
+import yibao.yiwei.service.IBaseService;
+
+@SuppressWarnings("unchecked")
+@Controller
+public class OrganizationController {
+	
+	@Autowired
+	private IBaseService baseService;
+
+	// 测试添加主体
+	@RequestMapping("/toManreaa")
+	public void test() {
+		ManareaRelate manareaRelate = new ManareaRelate();
+		manareaRelate.setAcAreacode("123");
+		manareaRelate.setMuUserid("456");
+		baseService.save(manareaRelate);
+		System.out.println("success");
+	}
+
+}

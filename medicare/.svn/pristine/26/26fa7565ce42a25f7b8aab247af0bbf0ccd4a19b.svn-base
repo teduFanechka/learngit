@@ -1,0 +1,126 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 药品销售记录表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_SALESORDER", schema = "YIWEI")
+public class Salesorder implements java.io.Serializable {
+
+	private String soId;// 记录ID
+	private String cusId;// 客户id
+	private String cusParentid;// 客户上级id
+	private String soNo;// 销售单号
+	private String soSalespsncode;// 销售员编码
+	private String soSalespsnname;// 销售员姓名
+	private int soPaytype;// 结算方式
+	private Date soDatetime;// 销售日期
+	private Date soCreatedatetime;// 创建日期
+	private Double soAmount;// 合计金额
+
+	@GenericGenerator(name = "Salesorder_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Salesorder_id")
+	@Column(name = "SO_ID", unique = true, nullable = false, length = 32)
+	public String getSoId() {
+		return this.soId;
+	}
+
+	public void setSoId(String soId) {
+		this.soId = soId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_PARENTID", length = 32)
+	public String getCusParentid() {
+		return this.cusParentid;
+	}
+
+	public void setCusParentid(String cusParentid) {
+		this.cusParentid = cusParentid;
+	}
+
+	@Column(name = "SO_NO", length = 32)
+	public String getSoNo() {
+		return this.soNo;
+	}
+
+	public void setSoNo(String soNo) {
+		this.soNo = soNo;
+	}
+
+	@Column(name = "SO_DATETIME", length = 7)
+	public Date getSoDatetime() {
+		return this.soDatetime;
+	}
+
+	public void setSoDatetime(Date soDatetime) {
+		this.soDatetime = soDatetime;
+	}
+
+	@Column(name = "SO_SALESPSNCODE", length = 16)
+	public String getSoSalespsncode() {
+		return this.soSalespsncode;
+	}
+
+	public void setSoSalespsncode(String soSalespsncode) {
+		this.soSalespsncode = soSalespsncode;
+	}
+
+	@Column(name = "SO_SALESPSNNAME", length = 16)
+	public String getSoSalespsnname() {
+		return this.soSalespsnname;
+	}
+
+	public void setSoSalespsnname(String soSalespsnname) {
+		this.soSalespsnname = soSalespsnname;
+	}
+
+	@Column(name = "SO_PAYTYPE", precision = 22, scale = 0)
+	public int getSoPaytype() {
+		return this.soPaytype;
+	}
+
+	public void setSoPaytype(int soPaytype) {
+		this.soPaytype = soPaytype;
+	}
+
+	@Column(name = "SO_AMOUNT", precision = 20, scale = 0)
+	public Double getSoAmount() {
+		return soAmount;
+	}
+
+	public void setSoAmount(Double soAmount) {
+		this.soAmount = soAmount;
+	}
+
+	@Column(name = "SO_CREATEDATETIME", length = 7)
+	public Date getSoCreatedatetime() {
+		return this.soCreatedatetime;
+	}
+
+	public void setSoCreatedatetime(Date soCreatedatetime) {
+		this.soCreatedatetime = soCreatedatetime;
+	}
+
+}

@@ -1,0 +1,623 @@
+package yibao.yiwei.controller.system;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.entity.system.CusareaRelate;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.ChineseCharToEn;
+import yibao.yiwei.utils.ProjectConstant;
+
+/**
+ * 定点信息
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class CustomerController {
+
+	@Autowired
+	private IBaseService baseService;
+
+	/**
+	 * 转到定点信息
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toCustomer")
+	public String toCustomer() {
+		return "/customer/customer";
+	}
+	
+	/**
+	 * 定点信息
+	 * @param request
+	 * @param cusFlag
+	 * @param cusName
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllCustomer")
+	public Map<String, Object> getAllCustomer(HttpServletRequest request,String cusFlag,String cusName) {
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String countHql = "select count(cusId) from Customer where cusStatus!=-1 ";//除已注销
+		String hql = "from Customer where cusStatus!=-1 ";
+		if (null != cusFlag && !cusFlag.equals("")) {
+			cusFlag = cusFlag.trim();
+			countHql+= " and cusFlag=" + cusFlag;
+			hql+= " and cusFlag=" + cusFlag;
+		}
+		if (null != cusName && !cusName.equals("")) {
+			cusName = cusName.trim();
+			countHql+= " and (cusName like '%" + cusName + "%' or cusDareway='" + cusName + "' or cusId='" + cusName + "')";
+			hql+= " and (cusName like '%" + cusName + "%' or cusDareway='" + cusName + "' or cusId='" + cusName + "')";
+		}
+		hql+= " order by cusRegdate desc nulls last";
+		int count = baseService.findCount(countHql);
+		List list = baseService.findByPage(hql, rows, page);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+	
+	/**
+	 * 修改定点
+	 * @param customer
+	 * @param request
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("updateCCC")
+	public Map updateCCC(Customer customer, HttpServletRequest request) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		baseService.update(customer);
+		map.put("status", "修改成功");
+		return map;
+	}
+	
+	/**
+	 * 定点信息页面通过状态
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("/updateStatusBatch")
+	public void updateStatusBatch(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");
+		String arr[] = ids.split(",");
+		for (int i = 0; i < arr.length; i++) {
+			String hql = "from Customer where cusId=?0";
+			Customer customer = (Customer)baseService.findUnique(hql, arr[i]);
+			if(customer.getCusFlag().equals("102")){//连锁
+				hql = "update Customer c set c.cusStatus=2 where c.cusId=?0";
+			} else {//非连锁
+				hql = "update Customer c set c.cusStatus=1 where c.cusId=?0";
+			}
+			baseService.updateOrDelete(hql, arr[i]);
+		}
+	}
+	
+	/**
+	 * 定点信息页面注销
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("/delCustomer")
+	public void delCustomer(HttpServletRequest request, HttpServletResponse response) {
+		String ids = request.getParameter("ids");
+		String arr[] = ids.split(",");
+		for (int i = 0; i < arr.length; i++) {
+			String cusId = arr[i];
+			String hql = "update Customer c set c.cusStatus=-1,c.cusName=c.cusName||'-注销状态',c.cusUniqure=c.cusUniqure||'-注销状态' where c.cusId=?0";
+			baseService.updateOrDelete(hql,  cusId);
+			//注销连锁分店cusStatus=2
+			hql = "update Customer c set c.cusStatus=-1,c.cusName=c.cusName||'-注销状态',c.cusUniqure=c.cusUniqure||'-注销状态' where c.cusParentid=?0 and c.cusStatus=2";
+			baseService.updateOrDelete(hql,  cusId);
+			//删除CusareaRelate区划关联
+			hql = "delete CusareaRelate c where c.cusId=?0 ";
+			baseService.updateOrDelete(hql, cusId);
+		}
+	}
+	
+	/**
+	 * 转到综合查询
+	 * @param cusFlag
+	 * @param areacode
+	 * @param request
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping("/toAreaCustomer")
+	public String toAreaCustomer(String cusFlag, String areacode, HttpServletRequest request) {
+		request.setAttribute("cusFlag", cusFlag);
+		request.setAttribute("areacode", areacode);
+		return "/customer/areacustomer";
+	}
+	
+	
+	@RequestMapping("/toTest")
+	public String toTest() {
+		return "/customer/test";
+	}
+	
+	
+	/**
+	 * 综合查询（显示受区划权限控制）注册审核通过的、有区划的
+	 * @param cusFlag
+	 * @param areacode
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllAreaCustomer")
+	public Map getAllAreaCustomer(String cusFlag, String areacode,String cusName, HttpServletRequest request) throws UnsupportedEncodingException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		List list = new ArrayList();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		int count = 0;
+		String countHql = "select count(cusId) from Customer where cusId  in (select cusId from CusareaRelate where acAreacode in("+areacode+")) and (cusStatus=1 or cusStatus=2)";
+		String hql = "from Customer where cusId  in (select cusId from CusareaRelate where acAreacode in("+areacode+")) and (cusStatus=1 or cusStatus=2)";
+		if (null != cusFlag && !cusFlag.equals("")) {
+			countHql+= " and cusFlag=" + cusFlag;
+			hql+= " and cusFlag=" + cusFlag;
+		}
+		if (null != cusName && !cusName.equals("")) {
+			cusName = cusName.trim();
+			countHql+= " and (cusName like '%" + cusName + "%' or cusDareway='" + cusName + "')";
+			hql+= " and (cusName like '%" + cusName + "%' or cusDareway='" + cusName + "')";
+		}
+		hql+= " order by cusRegdate desc";
+		count = baseService.findCount(countHql);
+		list = baseService.findByPage(hql, rows, page);
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+	
+	/**
+	 * 通过综合查询页面转到定点统计页面
+	 * @param cusFlag
+	 * @param cusId
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	@RequestMapping("/getCustomerById")
+	public String getCustomerById(String cusFlag, String cusId, HttpServletRequest request) throws UnsupportedEncodingException {
+		String hql = "select cusName,cusId from Customer where cusId=?0";
+		List list = baseService.find(hql,cusId);
+		request.setAttribute("list", list);
+		request.setAttribute("cusFlag", cusFlag);
+		return "/customer/listcustomer";
+	}
+	
+	/**
+	 * 定点统计页面查询定点信息
+	 * @param cusId
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping("/getCustomerInfo")
+	public String getCustomerInfo(String cusId, HttpServletRequest request, HttpServletResponse response) {
+		Customer customer = (Customer) baseService.get(Customer.class, cusId);
+		String type = ProjectConstant.getFileFlag(customer.getCusFlag());// 根据101获取"单体药店"
+		request.setAttribute("c", customer);
+		request.setAttribute("cusFlag", type);
+		return "/customer/customerinfo";
+	}
+	
+	/**
+	 * 测试更新地址
+	 */
+	@RequestMapping("/ewupdate/service/testconn")
+	@ResponseBody
+	public void testConn(){
+		System.out.println("测试更新地址");
+	}
+	
+	/**
+	 * 测试上传地址
+	 */
+	@RequestMapping("/medicare/service/testconn")
+	@ResponseBody
+	public void testConn2(){
+		System.out.println("测试上传地址");
+	}
+	
+	/**
+	 * 药店注册
+	 * @param customer
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping("/medicare/service/register")
+	@ResponseBody
+	public Map addCustomer(Customer customer, HttpServletRequest request, HttpServletResponse response) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String errmsg = "";//错误信息
+		int errcode = 0;//0成功，1失败
+		int count = 0;//计数
+		String hql = "";
+		
+		if(!customer.getCusFlag().equals("102") && customer.getCusDareway().equals("")){//连锁药店可以没有医院编码
+			map.put("errmsg", "医院编码不能为空");
+			map.put("errcode", 1);
+			return map;
+		}
+		
+		if (customer.getCusFlag().equals("102")){//连锁药店注册
+			hql = "select count(cusId) from Customer where (cusStatus = 1 or cusStatus=2) and cusName=?0";
+			count = baseService.findCount(hql, customer.getCusName());
+		}else{//非连锁药店注册
+			hql = "select count(cusId) from Customer where (cusStatus = 1 or cusStatus=2) and cusDareway=?0";
+			count = baseService.findCount(hql, customer.getCusDareway());
+		}
+		
+		String cusid = "";
+		if (count > 0) {//已经注册
+			List<Customer> list;
+			if (customer.getCusFlag().equals("102")){//查询连锁药店已经注册的信息
+				hql = "from Customer where (cusStatus = 1 or cusStatus=2) and cusName=?0";
+				list = (List<Customer>) baseService.find(hql, customer.getCusName());
+			}else{
+				hql = "from Customer where (cusStatus = 1 or cusStatus=2) and cusDareway=?0";
+				list = (List<Customer>) baseService.find(hql, customer.getCusDareway());
+			}
+			if(list.size()>0){
+				Customer cus = list.get(0);
+				cus.setCusName(customer.getCusName());
+				cus.setCusRegdate(new Date());
+				cus.setCusUniqure(customer.getCusUniqure());
+				cus.setCusAddr(customer.getCusAddr());
+				cus.setCusPhone(customer.getCusPhone());
+				cus.setCusContact(customer.getCusContact());
+				cus.setCusRemark(customer.getCusRemark());
+				baseService.update(cus);
+				cusid = cus.getCusId();
+				errmsg  = "注册信息已更新";
+				errcode = 0;
+			}
+		} else {//没有注册
+			String cusname = customer.getCusName() != null ? customer.getCusName().trim() : "";
+			String cusAddr = customer.getCusAddr() != null ? customer.getCusAddr() : "";
+			customer.setCusRegdate(new Date());
+			ChineseCharToEn ctn = new ChineseCharToEn();//获取客户拼音简码
+			customer.setCusPcode(ctn.getAllFirstLetter(cusname));
+			baseService.save(customer);
+			cusid = customer.getCusId();
+			
+			String areacode;//区划编码
+			if (cusname.contains("张店") || cusAddr.contains("张店")) {
+				areacode = "370303";
+			} else if (cusname.contains("淄川") || cusAddr.contains("淄川")) {
+				areacode = "370302";
+			} else if (cusname.contains("桓台") || cusAddr.contains("桓台")) {
+				areacode = "370321";
+			} else if (cusname.contains("临淄") || cusAddr.contains("临淄")) {
+				areacode = "370305";
+			} else if (cusname.contains("高青") || cusAddr.contains("高青")) {
+				areacode = "370322";
+			} else if (cusname.contains("周村") || cusAddr.contains("周村")) {
+				areacode = "370306";
+			} else if (cusname.contains("博山") || cusAddr.contains("博山")) {
+				areacode = "370304";
+			} else if (cusname.contains("沂源") || cusAddr.contains("沂源")) {
+				areacode = "370323";
+			} else if (cusname.contains("市直") || cusAddr.contains("市直")) {
+				areacode = "370300";
+			} else {
+				areacode = "370303";
+			}
+			
+			hql = "delete from CusareaRelate where cusId=?0";
+			baseService.updateOrDelete(hql, cusid);
+			CusareaRelate cusareaRelate = new CusareaRelate();
+			cusareaRelate.setAcAreacode(areacode);
+			cusareaRelate.setCusId(cusid);
+			baseService.save(cusareaRelate);
+			errmsg = "注册成功";
+			errcode = 0;
+		}
+		
+		map.put("id", cusid);
+		map.put("errmsg", errmsg);
+		map.put("errcode", errcode);
+		
+		return map;
+	}
+	
+	/**
+	 * 添加
+	 * @return
+	 */
+	@RequestMapping("/toAddCustomer")
+	public String toAddCustomer() {
+		return "/customer/addCustomer";
+	}
+
+	/**
+	 * 请求单体药店视图-进销存数据模块
+	 * 
+	 * @param request
+	 * @param session
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	@RequestMapping("/getCustomerList")
+	public String getCustomerList(HttpServletRequest request, HttpSession session) throws UnsupportedEncodingException {
+		String cusName = request.getParameter("cusName")!=null ? request.getParameter("cusName").trim() : "";// 查询参数
+		cusName = URLDecoder.decode(cusName, "UTF-8");
+		String cusFlag = request.getParameter("cusFlag") != null ? request.getParameter("cusFlag") : "";// 定点标识
+		List list = new ArrayList();
+		String hql = "";
+		String acAreacode = (String) session.getAttribute("acAreacode");
+		hql = "select c.cusName,c.cusId  from Customer c  where  c.cusId  in(select a.cusId from CusareaRelate a where a.acAreacode in("+ acAreacode+ ")) and c.cusFlag=?0 and (c.cusStatus=1 or c.cusStatus=2)";
+		if (!cusName.equals("")) {
+			hql += " and (c.cusName like '%" + cusName + "%' or c.cusDareway='" + cusName + "')";
+		} 
+		hql += " order by c.cusRegdate desc nulls last,c.cusId";
+		list = baseService.find(hql, cusFlag);
+		request.setAttribute("list", list);//往前台传customer的name和id
+		request.setAttribute("cusFlag", cusFlag);
+		return "/customer/listcustomer";
+	}
+	
+	// 返回json信息
+	public void backInfo(HttpServletResponse response, int errcode, String errmsg, String id) {
+		String json = "";
+		json = "{ \"errcode\": " + errcode + ",\"errmsg\": \"" + errmsg + "\",\"id\": \"" + id + "\" }";
+		try {
+			response.setContentType("text/html;charset=utf-8");
+			response.getWriter().write(json);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 获取
+	@RequestMapping("/getCustomer")
+	public String getCustomer(String id, HttpServletRequest request) {
+		// customer = customerManager.getCustomer(id);
+		Customer customer = (Customer) baseService.get(Customer.class, id);
+		request.setAttribute("c", customer);
+		return "/customer/editCustomer";
+	}
+
+	// 更新
+	@RequestMapping("/updateCustomer")
+	public String updateCustomer(Customer customer) {
+		baseService.update(customer);
+		return "redirect:/getAllCustomer";
+	}
+
+	// 新增或修改表格数据
+	@RequestMapping("/addOrUpdateCustomer ")
+	public void addOrUpdateCustomer(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		Customer customer = new Customer();
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String cusId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {
+			// 获取jsonArray第一个json对象 jsonObject
+			JSONObject jo = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jo.size() > 0) {
+				// 解析jo 并获取实体字段值
+				String cusParentid = jo.getString("cusParentid");
+				String cusBranchcode = jo.getString("cusBranchcode");
+				String cusName = jo.getString("cusName");
+				String cusRegip = jo.getString("cusRegip");
+				String cusPhone = jo.getString("cusPhone");
+				String cusContact = jo.getString("cusContact");
+				String cusAddr = jo.getString("cusAddr");
+				String cusFlag = jo.getString("cusFlag");
+				String cusUniqure = jo.getString("cusUniqure");
+				String cusDareway = jo.getString("cusDareway");
+				String cusRemark = jo.getString("cusRemark");
+				String cusStatus = jo.getString("cusStatus");
+				if (cusStatus.equals("")) {
+					customer.setCusStatus(0);
+				} else {
+					customer.setCusStatus(Integer.parseInt(cusStatus));
+				}
+				String cusRegdate1 = jo.getString("cusRegdate");
+				DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				if (cusRegdate1.equals("")) {
+					customer.setCusRegdate(null);
+				} else {
+					Date cusRegdate = df.parse(cusRegdate1);
+					customer.setCusRegdate(cusRegdate);
+				}
+				customer.setCusParentid(cusParentid);
+				customer.setCusAddr(cusAddr);
+				customer.setCusBranchcode(cusBranchcode);
+				customer.setCusContact(cusContact);
+				customer.setCusDareway(cusDareway);
+				customer.setCusFlag(cusFlag);
+				customer.setCusName(cusName);
+				customer.setCusPhone(cusPhone);
+				customer.setCusRegip(cusRegip);
+				customer.setCusRemark(cusRemark);
+				customer.setCusUniqure(cusUniqure);
+				// 如果等于14 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jo.size() == 14) {
+					// 获取id主键
+					cusId = jo.getString("cusId");
+					customer.setCusId(cusId);
+					baseService.update(customer);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(customer);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	// 审批用户状态状态 0待审 1已审 2通过 3未通过 9已删除 需要有response,前台ajax自动判断返回值类型为xml 不然出现 404错误
+	@RequestMapping("/updateCusStatus")
+	public String updateCusStatus(String cusId, String cusStatus, HttpServletResponse response) {
+		Customer customer = new Customer();
+		customer.setCusId(cusId);
+		customer.setCusStatus(Integer.parseInt(cusStatus));
+		baseService.update(customer);
+		return null;
+	}
+
+	// 分页显示所有客户 page方式
+	@RequestMapping("/getAllCustomer1")
+	public String getAllCustomer1(HttpServletRequest request) {
+		Page page;
+		String hql = "from Customer c order by c.cusRegdate desc";
+		String countHql = "select count(*) from Customer";
+		String url = request.getRequestURI();
+		String pagenum = request.getParameter("pagenum");
+		if (pagenum == null) {
+			page = baseService.queryForPage(countHql,hql, url, 1);
+		} else {
+			page = baseService.queryForPage(countHql,hql, url, Integer.parseInt(pagenum));
+		}
+		request.setAttribute("page", page);
+		return "/customer/customerManager";
+	}
+
+	// 分页获取条件查询 page方式
+	public String getConditionCustomerPage(HttpServletRequest request) {
+		Page page;
+		String cusFlag = request.getParameter("cusFlag");
+		String hql = "from Customer c where c.cusFlag=?0";
+		String countHql = "select count(c.id) from Customer c where c.cusFlag=?0";
+		String url = request.getRequestURI();
+		String currentPage = request.getParameter("pagenum");
+		if (currentPage == null) {
+			page = baseService.queryForPage(countHql, hql, url, 1, cusFlag);
+		} else {
+			page = baseService.queryForPage(countHql, hql, url, Integer.parseInt(currentPage), cusFlag);
+		}
+		request.setAttribute("page", page);
+		return "/customer/customerPage";
+	}
+
+	// 测试jsp页面
+	@RequestMapping("/dotest")
+	@ResponseBody
+	public Map<String, Object> dotest() {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String cusId = "2223";
+		String couhql = "select count(c.cusId) from Customer c where c.cusId=?0 and c.cusStatus=1";
+		int count = baseService.findCount(couhql, cusId);
+		// System.out.println("统计count:"+count);
+
+		String hql = "from Customer c where c.cusId=?0 and c.cusStatus=1";
+		List list = baseService.find(hql, cusId);
+		if (list == null) {
+			System.out.println("list is null:");
+		}
+		// System.out.println("实体list大小:"+list.size());
+
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+
+	/**
+	 * 原生sql查询例子
+	 * 
+	 * @param request
+	 * @return json
+	 */
+	// @ResponseBody
+	// @RequestMapping("/getSqlAreaCustomer")
+	public Map getSqlAreaCustomer(HttpServletRequest request) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		List list = new ArrayList();// 返回的结果集无论有没有条件查询
+		// query.setFirstResult((currentPage - 1) *
+		// pageSize).setMaxResults(pageSize).list();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusName = request.getParameter("cusName");// 按定点名称查询
+		int count = 0;
+		if (cusName == null) {
+			cusName = "";
+		}
+		if (cusName.equals("")) {
+			// 使用左外连接查询主表所有未关联(条件是关联表中没有主表的主键)
+			String sql = "select count(c.cus_id) from tbl_customer c left join sys_cusarea_relate a on c.cus_id = a.cus_id where a.ac_areacode is null and c.cus_status>-1";
+			count = baseService.findCountSql(sql);
+			sql = "select c.* from tbl_customer c left join sys_cusarea_relate a on c.cus_id = a.cus_id where a.ac_areacode is null and c.cus_status>-1";
+			// 查询出来的list分页: 是个Object数组 顺序为表的原始顺序从0开始代替字段名显示
+			list = baseService.findByPageSql(sql, rows, page);
+		}
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+
+	/**
+	 * 批量添加定点简码 customer.jsp
+	 * 
+	 * @return json
+	 */
+	@ResponseBody
+	@RequestMapping("/getPcode")
+	public Map getPcode() {
+		Map<String, Object> map = new HashMap<String, Object>();
+		String hql = "from Customer c where (c.cusStatus>-1 and cusStatus<3) and c.cusPcode is  null";
+		List<Customer> list = baseService.find(hql);
+		int count = 0;
+		if (list.size() > 0) {
+			for (int i = 0; i < list.size(); i++) {
+				String cusName = list.get(i).getCusName();
+				String id = list.get(i).getCusId();
+				ChineseCharToEn cte = new ChineseCharToEn();
+				String pcode = cte.getAllFirstLetter(cusName);
+				hql = "update Customer c set c.cusPcode=?0 where c.cusId=?1";
+				baseService.updateOrDelete(hql, pcode, id);
+				count++;
+			}
+			map.put("status", "添加定点简码:" + count + "条");
+		} else {
+			map.put("status", "所有定点已经生成简码!");
+		}
+		return map;
+	}
+}

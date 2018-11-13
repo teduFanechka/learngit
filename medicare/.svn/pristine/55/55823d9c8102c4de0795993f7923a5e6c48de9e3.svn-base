@@ -1,0 +1,382 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+import yibao.yiwei.utils.JacksonDateSerializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+/**
+ * Salesitem entity. *药品销售详细表*
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_SALESITEM", schema = "YIWEI")
+public class Salesitem implements java.io.Serializable {
+
+	// Fields
+
+	private String siId;// 记录id
+	private String cusId;// 客户id
+	private String cusParentid;// 客户上级id
+	private String soNo;// 销售单号 1
+	private String drugCode;// 药品编码(本位码)7
+	private Double drugNum;// 销售数量 9
+	private Double drugSalesprice;// 销售价 10
+	private String drugBatchno;// 药品批号 12
+	private String drugMfrs;// 生产商 13
+	private String drugMadein;// 药品产地 14
+	private Date drugMfgdate;// 生产日期 15
+	private Date drugExpdate;// 有效期 16
+	private String drugEid;// 电子监管码 17
+	private Date drugPicktime;// 采集时间 后加的.......
+	private String soSalespsnname;// 患者姓名..2
+	private String soPaytype;// 结算方式.. 18
+	private Date soDatetime;// 销售日期.. 23
+	private Date soCreatedatetime;// 创建日期
+
+	private String cusDareway;// 新增...........医院编码
+	private String siPtssex;// 性别 3
+	private String siPtsage;// 年龄 4
+	private String siPtsidcard;// 身份证号 5
+	private String siPtshealthcard;// 医保卡号 6
+	private String drugName;// 项目名称(药品名称) 8
+	private String drugSpecification;// 规格 11
+	private String siSettlementname;// 结算方式名称19
+	private String siStatus;// 结算状态 20
+	private String siOpcode;// 操作员编码 21
+	private String siOpname;// 操作员名称 22
+	private String siUnit;//单位 24
+
+	// Constructors
+
+
+	/** default constructor */
+	public Salesitem() {
+	}
+
+	/** full constructor */
+	public Salesitem(String cusId, String cusParentid, String soNo,
+			String drugCode, Double drugNum, Double drugSalesprice,
+			String drugBatchno, String drugMfrs, String drugMadein,
+			Date drugMfgdate, Date drugExpdate, String drugEid,
+			String soSalespsnname, Date drugPicktime, String soPaytype,
+			Date soDatetime, Date soCreatedatetime, String cusDareway,
+			String siPtssex, String siPtsage, String siPtsidcard,
+			String siPtshealthcard, String drugName, String drugSpecification,
+			String siSettlementname, String siStatus, String siOpcode,
+			String siOpname,String siUnit) {
+		this.cusId = cusId;
+		this.cusParentid = cusParentid;
+		this.soNo = soNo;
+		this.drugCode = drugCode;
+		this.drugNum = drugNum;
+		this.drugSalesprice = drugSalesprice;
+		this.drugBatchno = drugBatchno;
+		this.drugMfrs = drugMfrs;
+		this.drugMadein = drugMadein;
+		this.drugMfgdate = drugMfgdate;
+		this.drugExpdate = drugExpdate;
+		this.drugEid = drugEid;
+		this.soSalespsnname = soSalespsnname;
+		this.drugPicktime = drugPicktime;
+		this.soPaytype = soPaytype;
+		this.soDatetime = soDatetime;
+		this.soCreatedatetime = soCreatedatetime;
+		this.cusDareway = cusDareway;
+		this.siPtssex = siPtssex;
+		this.siPtsage = siPtsage;
+		this.siPtsidcard = siPtsidcard;
+		this.siPtshealthcard = siPtshealthcard;
+		this.drugName = drugName;
+		this.drugSpecification = drugSpecification;
+		this.siSettlementname = siSettlementname;
+		this.siStatus = siStatus;
+		this.siOpcode = siOpcode;
+		this.siOpname = siOpname;
+		this.siUnit=siUnit;
+	}
+
+	// Property accessors
+	@GenericGenerator(name = "Salesitem_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Salesitem_id")
+	@Column(name = "SI_ID", unique = true, nullable = false, length = 32)
+	public String getSiId() {
+		return this.siId;
+	}
+
+	public void setSiId(String siId) {
+		this.siId = siId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_PARENTID", length = 32)
+	public String getCusParentid() {
+		return this.cusParentid;
+	}
+
+	public void setCusParentid(String cusParentid) {
+		this.cusParentid = cusParentid;
+	}
+
+	@Column(name = "SO_NO", length = 32)
+	public String getSoNo() {
+		return this.soNo;
+	}
+
+	public void setSoNo(String soNo) {
+		this.soNo = soNo;
+	}
+
+	@Column(name = "DRUG_CODE", length = 32)
+	public String getDrugCode() {
+		return this.drugCode;
+	}
+
+	public void setDrugCode(String drugCode) {
+		this.drugCode = drugCode;
+	}
+
+	@Column(name = "DRUG_NUM", precision = 20, scale = 4)
+	public Double getDrugNum() {
+		return this.drugNum;
+	}
+
+	public void setDrugNum(Double drugNum) {
+		this.drugNum = drugNum;
+	}
+
+	@Column(name = "DRUG_SALESPRICE", precision = 20)
+	public Double getDrugSalesprice() {
+		return this.drugSalesprice;
+	}
+
+	public void setDrugSalesprice(Double drugSalesprice) {
+		this.drugSalesprice = drugSalesprice;
+	}
+
+	@Column(name = "DRUG_BATCHNO", length = 32)
+	public String getDrugBatchno() {
+		return this.drugBatchno;
+	}
+
+	public void setDrugBatchno(String drugBatchno) {
+		this.drugBatchno = drugBatchno;
+	}
+
+	@Column(name = "DRUG_MFRS", length = 120)
+	public String getDrugMfrs() {
+		return this.drugMfrs;
+	}
+
+	public void setDrugMfrs(String drugMfrs) {
+		this.drugMfrs = drugMfrs;
+	}
+
+	@Column(name = "DRUG_MADEIN", length = 120)
+	public String getDrugMadein() {
+		return this.drugMadein;
+	}
+
+	public void setDrugMadein(String drugMadein) {
+		this.drugMadein = drugMadein;
+	}
+
+	@Column(name = "DRUG_MFGDATE", length = 7)
+	@JsonSerialize(using = JacksonDateSerializer.class)
+	public Date getDrugMfgdate() {
+		return this.drugMfgdate;
+	}
+
+	public void setDrugMfgdate(Date drugMfgdate) {
+		this.drugMfgdate = drugMfgdate;
+	}
+
+	@Column(name = "DRUG_EXPDATE", length = 7)
+	@JsonSerialize(using = JacksonDateSerializer.class)
+	public Date getDrugExpdate() {
+		return this.drugExpdate;
+	}
+
+	public void setDrugExpdate(Date drugExpdate) {
+		this.drugExpdate = drugExpdate;
+	}
+
+	@Column(name = "DRUG_EID", length = 32)
+	public String getDrugEid() {
+		return this.drugEid;
+	}
+
+	public void setDrugEid(String drugEid) {
+		this.drugEid = drugEid;
+	}
+
+	@Column(name = "SO_SALESPSNNAME", length = 32)
+	public String getSoSalespsnname() {
+		return this.soSalespsnname;
+	}
+
+	public void setSoSalespsnname(String soSalespsnname) {
+		this.soSalespsnname = soSalespsnname;
+	}
+
+	@Column(name = "DRUG_PICKTIME", length = 7)
+	@JsonSerialize(using = JacksonDateSerializer.class)
+	public Date getDrugPicktime() {
+		return this.drugPicktime;
+	}
+
+	public void setDrugPicktime(Date drugPicktime) {
+		this.drugPicktime = drugPicktime;
+	}
+
+	@Column(name = "SO_PAYTYPE", length = 32)
+	public String getSoPaytype() {
+		return this.soPaytype;
+	}
+
+	public void setSoPaytype(String soPaytype) {
+		this.soPaytype = soPaytype;
+	}
+
+	@Column(name = "SO_DATETIME", length = 7)
+	@JsonSerialize(using = JacksonDateSerializer.class)
+	public Date getSoDatetime() {
+		return this.soDatetime;
+	}
+
+	public void setSoDatetime(Date soDatetime) {
+		this.soDatetime = soDatetime;
+	}
+
+	@Column(name = "SO_CREATEDATETIME", length = 7)
+	public Date getSoCreatedatetime() {
+		return this.soCreatedatetime;
+	}
+
+	public void setSoCreatedatetime(Date soCreatedatetime) {
+		this.soCreatedatetime = soCreatedatetime;
+	}
+
+	@Column(name = "CUS_DAREWAY", length = 32)
+	public String getCusDareway() {
+		return this.cusDareway;
+	}
+
+	public void setCusDareway(String cusDareway) {
+		this.cusDareway = cusDareway;
+	}
+
+	@Column(name = "SI_PTSSEX", length = 32)
+	public String getSiPtssex() {
+		return this.siPtssex;
+	}
+
+	public void setSiPtssex(String siPtssex) {
+		this.siPtssex = siPtssex;
+	}
+
+	@Column(name = "SI_PTSAGE", length = 32)
+	public String getSiPtsage() {
+		return this.siPtsage;
+	}
+
+	public void setSiPtsage(String siPtsage) {
+		this.siPtsage = siPtsage;
+	}
+
+	@Column(name = "SI_PTSIDCARD", length = 18)
+	public String getSiPtsidcard() {
+		return this.siPtsidcard;
+	}
+
+	public void setSiPtsidcard(String siPtsidcard) {
+		this.siPtsidcard = siPtsidcard;
+	}
+
+	@Column(name = "SI_PTSHEALTHCARD", length = 32)
+	public String getSiPtshealthcard() {
+		return this.siPtshealthcard;
+	}
+
+	public void setSiPtshealthcard(String siPtshealthcard) {
+		this.siPtshealthcard = siPtshealthcard;
+	}
+
+	@Column(name = "DRUG_NAME", length = 64)
+	public String getDrugName() {
+		return this.drugName;
+	}
+
+	public void setDrugName(String drugName) {
+		this.drugName = drugName;
+	}
+
+	@Column(name = "DRUG_SPECIFICATION", length = 32)
+	public String getDrugSpecification() {
+		return this.drugSpecification;
+	}
+
+	public void setDrugSpecification(String drugSpecification) {
+		this.drugSpecification = drugSpecification;
+	}
+
+	@Column(name = "SI_SETTLEMENTNAME", length = 32)
+	public String getSiSettlementname() {
+		return this.siSettlementname;
+	}
+
+	public void setSiSettlementname(String siSettlementname) {
+		this.siSettlementname = siSettlementname;
+	}
+
+	@Column(name = "SI_STATUS", length = 32)
+	public String getSiStatus() {
+		return this.siStatus;
+	}
+
+	public void setSiStatus(String siStatus) {
+		this.siStatus = siStatus;
+	}
+
+	@Column(name = "SI_OPCODE", length = 32)
+	public String getSiOpcode() {
+		return this.siOpcode;
+	}
+
+	public void setSiOpcode(String siOpcode) {
+		this.siOpcode = siOpcode;
+	}
+
+	@Column(name = "SI_OPNAME", length = 32)
+	public String getSiOpname() {
+		return this.siOpname;
+	}
+
+	public void setSiOpname(String siOpname) {
+		this.siOpname = siOpname;
+	}
+	@Column(name = "SI_UNIT", length = 32)
+	public String getSiUnit() {
+		return siUnit;
+	}
+
+	public void setSiUnit(String siUnit) {
+		this.siUnit = siUnit;
+	}
+}

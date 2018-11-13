@@ -1,0 +1,37 @@
+package yibao.yiwei.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.entity.Updatelog;
+import yibao.yiwei.service.IUpdatelogManager;
+
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class UpdatelogManager<T> implements IUpdatelogManager {
+
+	@Autowired
+	private IBaseDao baseDao;
+
+	// 获取page对象
+	@Override
+	public Page queryForPage(String hql, String url, int pagenum) {
+		// 总记录数 : 如果是条件查询用List<T> find(String hql, Object... params)
+		int allRow = baseDao.findCount("select count(*) from Updatelog");
+		final int currentPage = Page.countCurrentPage(pagenum);// 当前的页码
+		// 把分页信息保存在bean中
+		Page page = new Page(allRow, currentPage);
+		final int pageSize = page.getPageSize();// 每页记录数
+		List<Updatelog> list = baseDao.findByPage(hql, currentPage, pageSize);// 查询出一页的结果集
+		page.setUrl(url);
+		page.setList(list);
+		return page;
+	}
+
+}

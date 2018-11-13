@@ -1,0 +1,221 @@
+$(function() {
+	// var te= $("#tp").text(); 获取元素 文本内容
+	// var ht= $("#tp").html(); 获取元素html 内容
+	/**
+	 * ********医疗付费方式编码表 1-21***********
+	 */
+	var tp = $("#tp").attr("name");
+	var val = "";
+	if (tp == "1") {
+		val = "城镇职工基本医疗保险";
+	} else if (tp == "2") {
+		val = "城镇居民基本医疗保险";
+	} else if (tp == "3") {
+		val = "新型农村合作医疗";
+	} else if (tp == "4") {
+		val = "贫困救助";
+	} else if (tp == "5") {
+		val = "商业医疗保险";
+	} else if (tp == "6") {
+		val = "全公费";
+	} else if (tp == "7") {
+		val = "全自费";
+	} else if (tp == "8") {
+		val = "其他社会保险";
+	} else {
+		val = "其他";
+	}
+	$("#tp").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+	/**
+	 * ********婚姻状态编码表 1-22***********
+	 */
+	var mar = $("#mar").attr("name");
+	if (mar == "1") {
+		val = "未婚";
+	} else if (mar == "2") {
+		val = "已婚";
+	} else if (mar == "3") {
+		val = "丧偶";
+	} else if (mar == "4") {
+		val = "离婚";
+	} else {
+		val = "其他";
+	}
+	$("#mar").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+	/**
+	 * ********入院情况编码表 1-35***********
+	 */
+	var instatus = $("#ins").attr("name");
+	if (instatus == "1") {
+		val = "危";
+	} else if (instatus == "2") {
+		val = "急";
+	} else if (instatus == "3") {
+		val = "一般";
+	} else {
+		val = "其他"
+	}
+	$("#ins").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+	/**
+	 * ********过敏编码表 1-0***********
+	 */
+	var allergic = $("#all").attr("name");
+	if (allergic == "0") {
+		val = "否";
+	} else if (allergic == "1") {
+		val = "是";
+	} else {
+		val = "其他"
+	}
+	$("#all").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+	/**
+	 * ********诊断符合情况编码表 1-34***********
+	 */
+	var clnicout = $("#clnicout").attr("name");
+	if (clnicout == "1") {
+		val = "符合";
+	} else if (clnicout == "2") {
+		val = "不符合";
+	} else if (clnicout == "3") {
+		val = "不肯定"
+	} else {
+		val = "其他";
+	}
+	$("#clnicout").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+	var inout = $("#inout").attr("name");
+	if (inout == "1") {
+		val = "符合";
+	} else if (inout == "2") {
+		val = "不符合";
+	} else if (inout == "3") {
+		val = "不肯定"
+	} else {
+		val = "其他";
+	}
+	$("#inout").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+	var beforafter = $("#beforafter").attr("name");
+	if (beforafter == "1") {
+		val = "符合";
+	} else if (beforafter == "2") {
+		val = "不符合";
+	} else if (beforafter == "3") {
+		val = "不肯定"
+	} else {
+		val = "其他";
+	}
+	$("#beforafter").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+	var clinicpath = $("#clinicpath").attr("name");
+	if (clinicpath == "1") {
+		val = "符合";
+	} else if (clinicpath == "2") {
+		val = "不符合";
+	} else if (clinicpath == "3") {
+		val = "不肯定"
+	} else {
+		val = "其他";
+	}
+	$("#clinicpath").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+	var rediopath = $("#rediopath").attr("name");
+	if (rediopath == "1") {
+		val = "符合";
+	} else if (rediopath == "2") {
+		val = "不符合";
+	} else if (rediopath == "3") {
+		val = "不肯定"
+	} else {
+		val = "其他";
+	}
+	$("#rediopath").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+	/**
+	 * 病案质量编码表 1-24
+	 */
+	var qualty = $("#qualty").attr("name");
+	if (qualty == "1") {
+		val = "甲";
+	} else if (qualty == "2") {
+		val = "乙";
+	} else if (qualty == "3") {
+		val = "丙"
+	} else {
+		val = "其他";
+	}
+	$("#qualty").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+	/**
+	 * ********尸检编码表 1-0***********
+	 */
+	var autopsy = $("#autopsy").attr("name");
+	if (autopsy == "0") {
+		val = "否";
+	} else if (autopsy == "1") {
+		val = "是";
+	} else {
+		val = "未做说明"
+	}
+	$("#autopsy").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+	/**
+	 * ********血型类别编码表 1-26***********
+	 */
+	var bloodtype = $("#tp").attr("bloodtype");
+	if (bloodtype = "1") {
+		val = "A";
+	} else if (bloodtype = "2") {
+		val = "B";
+	} else if (bloodtype = "3") {
+		val = "AB";
+	} else if (bloodtype = "4") {
+		val = "O";
+	} else if (bloodtype = "5") {
+		val = "不详";
+	} else {
+		val = "未查";
+	}
+	$("#bloodtype").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+	/**
+	 * ********rh编码表 1-0***********
+	 */
+	var rh = $("#rh").attr("name");
+	if (rh == "0") {
+		val = "否";
+	} else if (rh == "1") {
+		val = "是";
+	} else {
+		val = "未做说明"
+	}
+	$("#rh").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+	/**
+	 * ********输血品种编码表 1-27**********
+	 */
+	var imr = $("#imt").attr("name");
+	if (imt == "1") {
+		val = "红细胞";
+	} else if (imt == "2") {
+		val = "血小板";
+	} else if (imt == "3") {
+		val = "血浆";
+	} else if (imt == "4") {
+		val = "全血";
+	} else {
+		val = "其他"
+	}
+	$("#imt").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+	/**
+	 * ********输血反应编码表 1-28**********
+	 */
+	var imr = $("#imr").attr("name");
+	if (imr == "0") {
+		val = "无";
+	} else if (imr == "1") {
+		val = "有";
+	} else {
+		val = "未做说明"
+	}
+	$("#imr").html('&nbsp;&nbsp;' + val + '&nbsp;&nbsp;');
+
+});

@@ -1,0 +1,42 @@
+package yibao.yiwei.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Medrecords;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.service.IMedrecordsManager;
+
+/**
+ * 病案首页(概要)
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class MedrecordsManager implements IMedrecordsManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	// page 方式条件查询
+	@Override
+	public Page queryForPage(String countHql, String hql, String url, int pageNum, Object... params) {
+		// 总记录数 : 如果是条件查询用List<T> find(String hql, Object... params)
+		int allRow = baseDao.findCountSql(countHql, params);
+		final int currentPage = Page.countCurrentPage(pageNum);// 当前的页码
+		// 把分页信息保存在bean中
+		Page page = new Page(allRow, currentPage);
+		final int pageSize = page.getPageSize();// 每页记录数
+		List<Medrecords> list = baseDao.findByPage(hql, currentPage, pageSize, params);// 查询出一页的结果集
+		page.setUrl(url);
+		page.setList(list);
+		return page;
+	}
+
+}

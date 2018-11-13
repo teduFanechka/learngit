@@ -1,0 +1,102 @@
+package yibao.yiwei.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import static javax.persistence.GenerationType.SEQUENCE;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+/**
+ * Systypes entity. *基础信息分类表*
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_SYSTYPES", schema = "YIWEI")
+public class Systypes implements java.io.Serializable {
+
+	// Fields
+
+	private int stId;//类型ID
+	private String stParentcode;//上级编码
+	private String stTypecode;//分类编码
+	private String stTypename;//分类名称
+	private String stRemark;//备注说明
+	private int stStatus;//分类状态 0停用 1 正常 9删除(默认值1)
+
+	// Constructors
+
+	/** default constructor */
+	public Systypes() {
+	}
+
+	/** full constructor */
+	public Systypes(String stParentcode, String stTypecode, String stTypename,
+			String stRemark, int stStatus) {
+		this.stParentcode = stParentcode;
+		this.stTypecode = stTypecode;
+		this.stTypename = stTypename;
+		this.stRemark = stRemark;
+		this.stStatus = stStatus;
+	}
+
+	// Property accessors
+	@SequenceGenerator(name="Systypes_id",sequenceName = "SEQ_tbl_systypes")
+	@Id
+	@GeneratedValue(strategy=SEQUENCE, generator = "Systypes_id")
+	@Column(name = "ST_ID", unique = true, nullable = false, precision = 22, scale = 0)
+	public int getStId() {
+		return this.stId;
+	}
+
+	public void setStId(int stId) {
+		this.stId = stId;
+	}
+
+	@Column(name = "ST_PARENTCODE", length = 3)
+	public String getStParentcode() {
+		return this.stParentcode;
+	}
+
+	public void setStParentcode(String stParentcode) {
+		this.stParentcode = stParentcode;
+	}
+
+	@Column(name = "ST_TYPECODE", length = 3)
+	public String getStTypecode() {
+		return this.stTypecode;
+	}
+
+	public void setStTypecode(String stTypecode) {
+		this.stTypecode = stTypecode;
+	}
+
+	@Column(name = "ST_TYPENAME", length = 64)
+	public String getStTypename() {
+		return this.stTypename;
+	}
+
+	public void setStTypename(String stTypename) {
+		this.stTypename = stTypename;
+	}
+
+	@Column(name = "ST_REMARK")
+	public String getStRemark() {
+		return this.stRemark;
+	}
+
+	public void setStRemark(String stRemark) {
+		this.stRemark = stRemark;
+	}
+
+	@Column(name = "ST_STATUS", precision = 22, scale = 0)
+	public int getStStatus() {
+		return this.stStatus;
+	}
+
+	public void setStStatus(int stStatus) {
+		this.stStatus = stStatus;
+	}
+
+}

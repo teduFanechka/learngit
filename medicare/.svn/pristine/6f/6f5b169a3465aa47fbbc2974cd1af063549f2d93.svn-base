@@ -1,0 +1,143 @@
+var cusFlag;
+var drugName;// 查询的药品名称
+var cusNames = [];// 定义药品名称集合
+var totals = [];
+var chart;
+
+// 清空折线图
+function chartClear() {
+	var series = chart.series;
+	while (series.length > 0) {
+		series[0].remove(false);
+	}
+	chart.redraw();
+}
+
+// 创建拆线图
+function createMyChart() {
+	chart = new Highcharts.Chart(
+			{
+				chart : {
+					type : 'bar',
+					// 将报表对象渲染到层上
+					renderTo : 'container'
+				},
+
+				title : {
+					text : drugName + ':使用量统计',
+					x : -20
+				// center
+				},
+				subtitle : {
+					text : '',
+					x : -20
+				},
+				xAxis : {
+					categories : [], // 'Id1', 'Id12', 'Id13'
+					title : {
+						text : '定点名称'
+					}
+				},
+				yAxis : {
+					min : 0,
+					title : {
+						text : '',
+						align : 'high'
+					},
+					labels : {
+						overflow : 'null'
+					}
+				},
+				tooltip : {
+					// 数据提示框(一般为单位)
+				valueSuffix : '条'
+			},
+				plotOptions : {// 柱状图/条形图
+					bar : {
+						color : '#3399FF',// 柱子颜色
+						dataLabels : {
+							enabled : true
+						}
+					}
+				},
+				legend : { // 图例说明是包含图表中数列标志和名称的容器
+					layout : 'vertical', // 垂直 (horizontal水平)
+					align : 'right',
+					verticalAlign : 'top',
+					x : 0,
+					y : 0,
+					floating : true,
+					borderWidth : 1,
+					backgroundColor : ((Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF'),
+					shadow : true
+				},
+				series : [ {
+					name : '使用量',
+					data : []
+				// 107, 31, 635
+				} ],
+				credits : {
+					enabled : false
+				// 禁用版权信息
+				}
+			});
+	chart.showLoading();// 显示加载中...
+}
+
+// 为图表设置值
+function drawMyChart(chartdata, init) {
+	if (typeof chartdata != undefined) {
+		cusNames = chartdata.cusNames;
+		totals = chartdata.totals;
+		avg = chartdata.avg;
+		if (cusNames.length > 0) {
+			chartClear();// 重绘柱形图
+			chart.xAxis[0].setCategories(cusNames, true);
+			// chart.yAxis[0].setTitle( { text : '平均' + avg }, true);
+			var seriedata = {
+				'name' : '使用量',
+				'data' : totals
+			};
+			chart.addSeries(seriedata);
+			document.getElementById("count").innerHTML = "所有药店使用量平均值:</b>"
+					+ avg;
+		}
+	}
+	chart.hideLoading();// 隐藏加载中...
+}
+// 初始化jsp
+$(function() {
+	cusFlag = $("#container").attr("cusFlag");
+	drugName = $("#container").attr("drugName");
+	createMyChart();
+	// 使用JQuery从后台获取JSON格式的数据
+	jQuery.getJSON('getDrugUsedCountChart?drugName=' + drugName, {
+		"cusFlag" : cusFlag
+	}, function(data) {
+		if (data.cusNames.length == 0) {
+			alert("最近一周未查询到数据!");
+		}
+		drawMyChart(data, false);
+	});
+});
+// 查询事件
+function dosubmit() {
+	// 使用JQuery从后台获取JSON格式的数据
+	var firstDate = $("input[name='firstDate']").val();
+	var secondDate = $("input[name='secondDate']").val();
+	if (firstDate == "" || secondDate == "") {
+		return;
+	}
+
+	// 使用JQuery从后台获取JSON格式的数据
+	jQuery.getJSON('getDrugUsedCountChart?drugName=' + drugName, {
+		"cusFlag" : cusFlag,
+		"firstDate" : firstDate,
+		"secondDate" : secondDate
+	}, function(data) {
+		if (data.cusNames.length == 0) {
+			alert("当前时间段未查询到数据!");
+		}
+		drawMyChart(data, true);
+	});
+}

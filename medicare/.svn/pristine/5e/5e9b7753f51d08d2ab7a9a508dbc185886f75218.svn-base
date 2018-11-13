@@ -1,0 +1,120 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Drugswarehouse;
+import yibao.yiwei.service.IDrugswarehouseManager;
+/**
+ * 未应用
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class DrugswarehouseManager implements IDrugswarehouseManager {
+
+	@Autowired
+	private IBaseDao baseDao;
+	
+
+	/**
+	 * 根据上传文件路径批量保存数据
+	 * 
+	 * @return
+	 */
+	@Override
+	public boolean addDrugswarehouses(String path, String cusId, int upId) throws IOException, ParseException {
+		FileReader fr;
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		boolean b = false;// 定义解析是否正常
+		String line = null;
+		Drugswarehouse drugswarehouse;
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				fr = new FileReader(file);
+				bufr = new BufferedReader(fr);
+				while ((line = bufr.readLine()) != null) {
+					String[] name = line.split("##");
+					System.out.println(">>>>>>>>>>>>>>>name.lengh:" + name.length);
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 6) {
+						System.out.println("当前行错误行:" + line);
+						throw new DataException("异常信息:正确字段总数:6,实际解析字段数:" + name.length + ",数据不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						drugswarehouse = new Drugswarehouse();
+						DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						drugswarehouse.setCusId(cusId);
+						drugswarehouse.setCusParentid("0");
+						drugswarehouse.setDwNo(name[0].trim());
+						String dwDatetime = name[1].trim();
+						if (dwDatetime.equals("NULL")) {// 判断dwDatetime时间类型字段是否为NULL
+							drugswarehouse.setDwDatetime(null);
+						} else {
+							drugswarehouse.setDwDatetime(df.parse(dwDatetime));
+						}
+						drugswarehouse.setDwExaminer(name[2].trim());
+						drugswarehouse.setDwExamdate(null);// 时间类型dwExamdate 赋空值
+						drugswarehouse.setDwAuditor(name[3].trim());
+						String dwAuditdate = name[4].trim();// 判断dwAuditdate时间类型字段是否为NULL
+						if (dwAuditdate.equals("NULL")) {
+							drugswarehouse.setDwAuditdate(null);
+						} else {
+							drugswarehouse.setDwAuditdate(df.parse(dwAuditdate));
+						}
+						String dwAmount = name[5].trim();
+						if (dwAmount.equals("NULL")) {// 判断int类型dwAmount 是否为NULL
+							drugswarehouse.setDwAmount(0.0);
+						} else {
+							drugswarehouse.setDwAmount(Double.parseDouble(dwAmount));
+						}
+						drugswarehouse.setDwCreatetime(null);// 时间类型dwCreatetime 赋空值
+						baseDao.save(drugswarehouse);
+						count++;
+					} catch (Exception e) {
+						System.out.println("该行解析错误");
+					}
+				}
+				//update Uploadfile开始
+				//修改当前upId文件上传记录表(Uploadfile)字段:upCount解析文件总条数
+				String upHql = "update Uploadfile u set u.upCount=?0 where u.upId=?1 ";
+				baseDao.updateOrDelete(upHql, count, upId);
+				System.out.println("解析当前*医保入库记录*文件完毕,更新上传记录表统计条数完毕,共: "+ count +" 条");
+				b = true;
+			} else {
+				System.out.println("文件不存在:" + path);
+				return b;
+			}
+		} catch (Exception e) {
+			System.out.println("解析文件错误:" + path + "错误行号:" + (count+1));
+			System.out.println("当前行错误行:" + line);
+			e.printStackTrace();
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+		return b;
+	}
+
+}

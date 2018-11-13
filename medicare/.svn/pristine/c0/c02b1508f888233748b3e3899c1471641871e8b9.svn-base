@@ -1,0 +1,92 @@
+$(function() {
+    $(".tabb").tabs({
+        fit: true,
+        border: false,
+        selected: 0,
+    });
+    $('#areacode').datagrid({
+        pageSize: 20,
+        pageList: [10, 20, 30, 40, 50],
+        url: 'getAllAreacode'
+    });
+
+})
+// 根据状态显示图片
+function areaStatus(value, row, index) {
+    if (row.acStatus == 1) { // 这里是判断哪些行
+        return '<a href="#"></a><img src="images/accept.png"  title="已启用" alt="" />';
+    } else {
+        return '<a href="#"></a><img src="images/delete.png" title="已停用" alt="" />';
+    }
+}
+
+// 增加用户
+function addAreacode() {
+    $('#muUserid').val('');
+    $('#areabtn').dialog('open').dialog('center').dialog('setTitle', '新增辖区');
+    $('#areaform').form('clear'); // 清除表单数据
+    url = 'addOrUpdateAreacode';
+}
+// 编辑用户
+function editAreacode() {
+    var array = $('#areacode').datagrid('getSelections'); // 获取编辑选中项数组
+    var len = array.length;
+    if (len > 1) {
+        $.messager.alert('警告','只能选择一行记录进行修改');  
+    } else if (array.length < 1) {
+        $.messager.alert('警告','请选择需要修改的行'); 
+    } else {
+        var row = $('#areacode').datagrid('getSelected'); // 获取选中的行
+        $('#areabtn').dialog('open').dialog('center').dialog('setTitle', '编辑信息');
+        $('#areaform').form('load', row);
+    }
+}
+// form表单提交保存
+function saveAreacode() {
+    $.ajax({
+        cache: true,
+        type: "POST",
+        url: 'addOrUpdateAreacode',
+        data: $('#areaform').serialize(),
+        async: false,
+        success: function(data) {
+            $.messager.show({
+                title: '系统提示',
+                msg: data.status
+            });
+            $('#areacode').datagrid('reload'); // 刷新
+            $('#areabtn').dialog('close');
+        },
+        error: function(request) {
+            $.messager.alert('警告','操作错误');
+        }
+    });
+}
+// 删除
+function delAreacode() {
+    var array = $('#areacode').datagrid('getSelected'); // 获取删除选中项数组
+    if (array != null && array != "") {
+        $.messager.confirm('提示', '是否要删除选中信息?',
+	    function(r) {
+	            if (r) {
+	                var par=array.acParentcode;
+	                var area=array.acAreacode;
+	                $.post("delAreacode", {
+	                	acAreacode:area,
+	                	acParentcode:par
+	                },
+	                function() { // 前台没有返回json,里面就没有data
+	                    $('#areacode').datagrid({
+	                        url: "getAllAreacode"
+	                    });
+	                    $.messager.show({
+	                        title: '系统提示',
+	                        msg: "删除成功"
+	                    });
+	                });
+	            }
+	        });
+    } else {
+        $.messager.alert("提示", "请先选择要删除的信息！");
+    }
+}

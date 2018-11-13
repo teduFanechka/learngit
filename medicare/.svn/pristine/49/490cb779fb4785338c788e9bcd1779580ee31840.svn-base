@@ -1,0 +1,567 @@
+//加载列表
+function datagrid(id, title, idField, url, sortName, sortOrder){
+	$("#"+id).datagrid( {
+		title : title,
+		iconCls : 'icon-ok',
+		idField : idField,//主键
+		pageSize : 30,//默认选择的分页行数（必须是pageList里面有的）
+		pageList : [20, 30, 50, 100],//可以选择的分页集合
+		nowrap : false,//列内容多时，是否自动折至第二行
+		striped : true,//是否交替显示行背景
+		collapsible : false,//是否显示可折叠按钮
+		url : url,//服务器地址
+		loadMsg : '数据加载中......',
+		singleSelect : true,//是否只能选择单行（导致无法批量删除）
+		fit : true, //datagrid是否自适应宽度
+		fitColumns : true,//是否允许表格自动缩放，以适应父容器，防止水平滚动
+		sortName : sortName,//当数据表格初始化时以哪一列来排序
+		sortOrder : sortOrder,//定义排序顺序，asc正序或者desc倒序
+		remoteSort : true,//是否从服务器对数据进行排序。
+		checkbox : false,
+		pagination : true,//是否显示分页
+		rownumbers : true, //是否显示行号
+		queryParams : {}, //查询条件
+		toolbar : []
+	});
+}
+
+//加载列表（简单参数）
+function datagrid2(id, url) {
+	$("#"+id).datagrid({
+        pageSize: 30,
+        pageList: [20, 30, 50, 100],
+        url: url
+    });
+}
+
+//加载列表（简单参数）
+function datagrid3(id) {
+	$("#"+id).datagrid({
+        pageSize: 30,
+        pageList: [20, 30, 50, 100],
+    });
+}
+
+function formatOperStatus(val, row, index) {
+	if (val == '0') {
+		return '无效';
+	} else if (val == '1') {
+		return '有效';
+	} else {
+		return '有效';
+	}
+}
+
+function formatcrCheckres(val, row, index) {
+	if (val == '1') {
+		return '门诊';
+	} else if (val == '2') {
+		return '住院';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperSex(val, row, index) {
+	if (val == '1') {
+		return '男';
+	} else if (val == '2') {
+		return '女';
+	} else if (val == '男' || val == '女') {
+		return val;
+	} else {
+		return '未做说明 ';
+	}
+}
+
+function formatOperDiType(val,row,index){
+	if (val == '1') {    
+		return   '销售出库';   
+	} else if (val == '2') {    
+		return   '调拨出库';   
+	} else if (val == '3') {    
+		return   '盘亏';   
+	} else if (val == '4') {    
+		return   '拆零';   
+	} else if (val == '9') {    
+		return   '其他';   
+	} else{ 
+		return val;
+	}
+}
+
+function formatOperdcOutype(val, row, index) {
+	if (val == '001') {
+		return '治愈';
+	} else if (val == '002') {
+		return '好转';
+	} else if (val == '003') {
+		return '未愈';
+	} else if (val == '004') {
+		return '恶化';
+	} else if (val == '005') {
+		return '死亡';
+	} else if (val == '006') {
+		return '自动出院';
+	} else if (val == '007') {
+		return '转院治疗';
+	} else if (val == '008') {
+		return '转家庭病床';
+	} else if (val == '009') {
+		return '未治';
+	} else if (val == '010') {
+		return '门诊大病(记账)医疗年度结束';
+	} else if (val == '011') {
+		return '年终出院';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperdoType(val, row, index) {
+	if (val == '001') {
+		return '长期医嘱';
+	} else if (val == '002') {
+		return '临时医嘱';
+	} else if (val == '003') {
+		return '备用医嘱';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperCatcode(val, row, index) {
+	if (val == '1') {
+		return '药品';
+	} else if (val == '2') {
+		return '诊疗项目';
+	} else if (val == '3') {
+		return '医疗服务设施';
+	} else {
+		return '药品';
+	}
+}
+
+function formatOperSettlementcode(val, row, index) {
+	 if (val == '001') {    
+		 return   '甲类药品';   
+	 } else if (val == '002') {    
+		 return   '乙类药品';   
+	 } else if (val == '003') {    
+		 return   '特字药品';   
+	 } else if (val == '004') {    
+		 return   '自费药品';  
+	 } else if (val == '005') {    
+		 return   '一般治疗检查';   
+	 } else if (val == '006') {    
+		 return   '特殊治疗检查';   
+	 } else if (val == '007') {    
+		 return   '自费项目';   
+	 } else if (val == '008') {    
+		 return   '自费';   
+	 } else if (val == '009') {    
+		 return   '参保前费用';   
+	 } else if (val == '010') {    
+		 return   '普通治疗检查';   
+	 } else if (val == '011') {    
+		 return   '服务设施';   
+	 } else if (val == '012') {    
+		 return   '自费服务设施';   
+	 } else if (val == '999') {    
+		 return   '其他';   
+	 } else {	
+		 return val;	
+	 }
+}
+
+function formatOperIsnot(val, row, index) {
+	if (val == '0') {
+		return '否';
+	} else if (val == '1') {
+		return '是';
+	} else {
+		return '是';
+	}
+}
+
+function fmtFlag(value,row,index){
+	if(value==101){
+		return '单体药店';
+	}else if(value==102){
+		return '连锁药店';
+	}else if(value==201){
+		return '门诊';
+	}else if(value==301){
+		return '医院';
+	}
+}
+
+function formatOperTitlecode(val, row, index) {
+	if (val == '1') {
+		return '正高';
+	} else if (val == '2') {
+		return '副高';
+	} else if (val == '3') {
+		return '中级';
+	} else if (val == '4') {
+		return '师级/助理';
+	} else if (val == '5') {
+		return '士级';
+	} else if (val == '6') {
+		return '待聘';
+	}  else {
+		return '未做说明';
+	}
+}
+
+function formatOperJobcode(val, row, index) {
+	if (val == '231') {
+		return '主任医师';
+	} else if (val == '232') {
+		return '副主任医师';
+	} else if (val == '233') {
+		return '主治医师';
+	} else if (val == '234') {
+		return '医师';
+	} else if (val == '235') {
+		return '医士';
+	} else if (val == '241') {
+		return '主任药师';
+	} else if (val == '242') {
+		return '副主任药师';
+	} else if (val == '243') {
+		return '主管药师';
+	} else if (val == '244') {
+		return '药师';
+	} else if (val == '245') {
+		return '荮士';
+	} else if (val == '251') {
+		return '主任护师';
+	} else if (val == '252') {
+		return '副主任护师';
+	} else if (val == '253') {
+		return '主管护师';
+	} else if (val == '254') {
+		return '护师';
+	}  else if (val == '255') {
+		return '护士';
+	}  else if (val == '261') {
+		return '主任技师';
+	}  else if (val == '262') {
+		return '副主任技师';
+	}  else if (val == '263') {
+		return '主管技师';
+	}  else if (val == '264') {
+		return '技师';
+	}  else if (val == '265') {
+		return '技士';
+	}  else {
+		return '未知';
+	}
+}
+
+function formatOperClassifycode(val, row, index) {
+	if (val == '1') {
+		return '临床';
+	} else if (val == '2') {
+		return '中医';
+	} else if (val == '3') {
+		return '民族医';
+	} else if (val == '4') {
+		return '中西医结合';
+	} else if (val == '5') {
+		return '口腔';
+	}  else if (val == '5') {
+		return '公共卫生';
+	}  else {
+		return '未知';
+	}
+}
+
+function formatOperScopecode(val, row, index) {
+	if (val == '001') {    
+		return   '内科';   
+	} else if (val == '002') {    
+		return   '外科';   
+	} else if (val == '003') {    
+		return   '妇产科';
+	} else if (val == '004') {
+		return   '儿科';   
+	} else if (val == '005') {    
+		return   '眼耳鼻咽喉科';   
+	} else if (val == '006') {    
+		return   '皮肤病与性病';   
+	} else if (val == '007') {    
+		return   '精神卫生';   
+	} else if (val == '008') {    
+		return   '职业病';   
+	} else if (val == '009') {    
+		return   '医学影像和放射治疗';   
+	} else if (val == '010') {    
+		return   '医学检验与病理';   
+	} else if (val == '011') {    
+		return   '全科医学';   
+	} else if (val == '012') {    
+		return   '急救医学';   
+	} else if (val == '013') {    
+		return   '康复医学';   
+	} else if (val == '014') {    
+		return   '预防保健';   
+	} else if (val == '015') {    
+		return   '特种医学与军事医学';   
+	} else if (val == '016') {    
+		return   '计划生育技术服务';   
+	} else if (val == '017') {    
+		return   '中医专业';   
+	} else if (val == '018') {    
+		return   '中西医结合专业';   
+	} else if (val == '019') {    
+		return   '蒙医专业';   
+	} else if (val == '020') {    
+		return   '藏医专业';   
+	} else if (val == '021') {    
+		return   '维医专业';   
+	} else if (val == '022') {    
+		return   '傣医专业';   
+	} else if (val == '023') {    
+		return   '口腔专业';  
+	} else if (val == '024') {    
+		return   '公共卫生类别专业';   
+	} else if (val == '025') {    
+		return   '省级以上卫生行政部门规定的其他专业';   
+	} else {
+		return '未做说明';			
+	}
+}
+
+function formatOperdiagType(val, row, index) {
+	if (val == '001') {
+		return '新发生';
+	} else if (val == '002') {
+		return '自急诊转入';
+	} else if (val == '003') {
+		return '自门诊大病转入';
+	} else if (val == '004') {
+		return '自门诊特殊转入';
+	} else if (val == '005') {
+		return '自家庭病床转入';
+	} else if (val == '006') {
+		return '自住院转入';
+	} else if (val == '007') {
+		return '康复住院';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperdoctorType(val, row, index) {
+	if (val == '001') {
+		return '本地定点医院就医';
+	} else if (val == '002') {
+		return '异地安置';
+	} else if (val == '003') {
+		return '长期驻外';
+	} else if (val == '004') {
+		return '准假外出';
+	} else if (val == '005') {
+		return '异地转诊转院';
+	} else if (val == '006') {
+		return '非定点急诊';
+	} else if (val == '007') {
+		return '异地安置的异地转院';
+	} else if (val == '008') {
+		return '长驻外地的异地转院';
+	} else if (val == '009') {
+		return '累加';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperhospType(val, row, index) {
+	if (val == '001') {
+		return '住院';
+	} else if (val == '002') {
+		return '家庭病床';
+	} else if (val == '003') {
+		return '急诊转院';
+	} else if (val == '004') {
+		return '门诊慢性病';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperhospWay(val, row, index) {
+	if (val == '001') {
+		return '门诊';
+	} else if (val == '002') {
+		return '急诊';
+	} else if (val == '003') {
+		return '转入';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperPaytype(val, row, index) {
+	if (val == '1') {
+		return '医保';
+	} else if (val == '2') {
+		return '银联'; 
+	} else if (val == '3') {
+		return '现金';
+	} else if (val == '4') {
+		return '转账汇款';
+	} else if (val == '5') {
+		return '积分/优惠券';
+	} else if (val == '9') {
+		return '其他';
+	}else {
+		return '';
+	}
+}
+
+function formatOpersiStatus(val, row, index) {
+	if (val == '0') {
+		return '未结算';
+	} else if (val == '1') {
+		return '已结算';
+	} else if (val == '2') {
+		return '已撤销';
+	} else {
+		return '其它';
+	}
+}
+
+function formatOperSpCat(val, row, index) {
+	if (val == '1') {
+		return '生产商';
+	} else if (val == '2') {
+		return '供应商';
+	} else if (val == '9') {
+		return '其它';
+	} else {
+		return '供应商';
+	}
+}
+
+function formatOperWiType(val,row,index){
+	 if (val == '0') {    
+		 return   '期初库存';   
+	 } else if (val == '1') {    
+		 return   '采购入库';   
+	 } else if (val == '2') {    
+		 return   '调拨入库';  
+	 } else if (val == '3') {    
+		 return   '退货入库';   
+	 } else if (val == '4') {    
+		 return   '盘盈';   
+	 } else if (val == '5') {    
+		 return   '拆零';   
+	 } else if (val == '9') {    
+		 return   '其它';   
+	 } else {	 
+		 return '未做说明';	
+	 }
+
+}
+
+function tzOperate(val, row, index) {
+	if(val=='0'){
+		return '停止定点资格';
+	}
+	else if(val=='1'){
+		return '开启定点资格';
+	}
+	
+}
+
+function tzStatus(val, row, index) {
+	if(val=='0'){
+		return '成功';
+	}
+	else if(val=='1'){
+		return '失败';
+	}else if(val=='2'){
+		return '错误';
+	}
+}
+
+function tzScan(val, row, index) {
+	if(val=='0'){
+		return '是';
+	}
+	else if(val=='1'){
+		return '否';
+	}else  if(val=='2'){
+		return '错误';
+	}
+}
+
+function tzYbcx(val, row, index) {
+	if(val=='0'){
+		return '是';
+	}
+	else if(val=='1'){
+		return '否';
+	}else  {
+		return '未知';
+	}
+}
+
+function fmtNull(val, row, index) {
+	if(val=='NULL'){
+		return '';
+	} else  {
+		return val;
+	}
+}
+
+function fmtUpFileflag(val, row, index) {
+	if(val=='102' || val=='202' || val=='302' || val=='303'){
+		return '项目编码';
+	} else if(val=='103' || val=='203' || val=='304'){
+		return '供应商/生产商';
+	} else if(val=='104' || val=='204' || val=='305'){
+		return '医护人员';
+	} else if(val=='106' || val=='206' || val=='307'){
+		return '入库信息';
+	} else if(val=='112' || val=='212' || val=='316'){
+		return '出库信息';
+	} else if(val=='116' || val=='216' || val=='318'){
+		return '库存信息';
+	} else if(val=='108' || val=='208' || val=='317'){
+		return '销售信息';
+	} else if(val=='114' || val=='214' || val=='314'){
+		return '库房信息';
+	} else if(val=='110' || val=='210'){
+		return '处方信息';
+	} else if(val=='101' || val=='113' || val=='201' || val=='213' || val=='301'){
+		return '分店信息';
+	} else if(val=='308'){
+		return '住院信息';
+	} else if(val=='309'){
+		return '出院信息';
+	} else if(val=='310'){
+		return '医嘱信息';
+	} else if(val=='319' || val=='320'){
+		return '医嘱执行记录';
+	} else if(val=='313'){
+		return '诊断记录';
+	} else if(val=='115' || val=='215' || val=='315'){
+		return '科室信息';
+	} else if(val=='325'){
+		return '病案首页(概要)';
+	} else if(val=='326'){
+		return '病案首页(出院诊断)';
+	} else if(val=='327'){
+		return '病案首页(手术操作)';
+	} else if(val=='321'){
+		return '检查检验信息';
+	} else if(val=='322'){
+		return '检查检验详细';
+	} else {
+		return val;
+	}
+}

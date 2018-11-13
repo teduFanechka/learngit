@@ -1,0 +1,410 @@
+package yibao.yiwei.service.impl;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.entity.count.CouUploadfileByDate;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.entity.system.Tzddlog;
+import yibao.yiwei.service.IAddFileData;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.ICheckdetailManager;
+import yibao.yiwei.service.ICheckresultManager;
+import yibao.yiwei.service.IClinicrecordsManager;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.service.IDeliveryitemManager;
+import yibao.yiwei.service.IDepartmentManager;
+import yibao.yiwei.service.IDischargedManager;
+import yibao.yiwei.service.IDischargediagManager;
+import yibao.yiwei.service.IDoctororderManager;
+import yibao.yiwei.service.IDrugcatalogManager;
+import yibao.yiwei.service.IEmployeeManager;
+import yibao.yiwei.service.IHospitalizedManager;
+import yibao.yiwei.service.IItemstockManager;
+import yibao.yiwei.service.IMedrecordsManager;
+import yibao.yiwei.service.IOperationManager;
+import yibao.yiwei.service.IOrderperformManager;
+import yibao.yiwei.service.IPrescribeManager;
+import yibao.yiwei.service.ISalesitemManager;
+import yibao.yiwei.service.ISupplierManager;
+import yibao.yiwei.service.ITimerTask;
+import yibao.yiwei.service.IWarehouseManager;
+import yibao.yiwei.service.IWarehouseitemManager;
+import yibao.yiwei.utils.RC2Coder;
+import yibao.yiwei.utils.Utils;
+import yibao.yiwei.webservice.DarewayWebServiceClient;
+
+@SuppressWarnings("all")
+@Service
+@Transactional
+public class TimerTask implements ITimerTask {
+
+	@Autowired
+	private IBaseService baseService;
+	@Autowired
+	private IAddFileData addFileData;
+	@Autowired
+	private ISupplierManager supplierManager;
+	@Autowired
+	private IEmployeeManager employeeManager;
+	@Autowired
+	private IWarehouseitemManager warehouseitemManager;
+	@Autowired
+	private ISalesitemManager salesitemManager;
+	@Autowired
+	private IPrescribeManager prescribeManager;
+	@Autowired
+	private IDeliveryitemManager deliveryitemManager;
+	@Autowired
+	private ICustomerManager customerManager;
+	@Autowired
+	private IHospitalizedManager hospitalizedManager;
+	@Autowired
+	private IDischargedManager dischargedManager;
+	@Autowired
+	private IDoctororderManager doctororderManager;
+	@Autowired
+	private IClinicrecordsManager clinicrecordsManager;
+	@Autowired
+	private IWarehouseManager warehouseManager;
+	@Autowired
+	private IDepartmentManager departmentManager;
+	@Autowired
+	private IItemstockManager itemstockManager;
+	@Autowired
+	private IOrderperformManager orderperformManager;
+	@Autowired
+	private IMedrecordsManager medrecordsManager;
+	@Autowired
+	private IDischargediagManager dischargediagManager;
+	@Autowired
+	private IOperationManager operationManager;
+	@Autowired
+	private ICheckresultManager checkresultManager;
+	@Autowired
+	private ICheckdetailManager checkdetailManager;
+	
+	/**
+	 * 解析
+	 */
+	@Override
+	public void analysis(Uploadfile uploadfile) {
+		String sql = "update Uploadfile set isHandle=-1 where upId=?0";//临时改变状态，防止其他线程再查询到该条记录
+		baseService.updateOrDelete(sql, uploadfile.getUpId());
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		Errorlog errorlog;
+		try {
+			//淘汰文件路径和cusId为空的文件
+			if(null == uploadfile.getUpFilepath() || null == uploadfile.getCusId()){
+				baseService.updateOrDelete(qsql, 0,"<font color='red'>文件路径或cusId为空</font>", uploadfile.getUpId());
+				return;
+			}
+			//淘汰cusId未注册的文件
+			sql = "from Customer where (cusStatus=1 or cusStatus=2) and cusId=?0";
+			Customer customer = (Customer)baseService.findUnique(sql, uploadfile.getCusId());
+			if(null == customer){
+				baseService.updateOrDelete(qsql,0,"<font color='red'>cusId未注册</font>", uploadfile.getUpId());
+				return;
+			}
+			//淘汰同一客户已经解析过的相同文件名的文件
+			sql = "select count(upId) from Uploadfile where cusId=?0 and filename=?1 and isHandle=1";
+			int num = baseService.findCount(sql,uploadfile.getCusId(),uploadfile.getFilename());
+			if(num > 0){
+				baseService.updateOrDelete(qsql,0,"<font color='blue'>该文件已解析"+num+"次，本次忽略</font>", uploadfile.getUpId());
+				return;
+			}
+			//判断Windows、Linux
+			String filePath;
+			if(System.getProperty("os.name").indexOf("Windows") != -1){//Windows
+				filePath = "D:" + uploadfile.getUpFilepath();
+			} else {//Linux
+				filePath = uploadfile.getUpFilepath();
+			}
+			//加密文件解密
+			if (uploadfile.getIsEncrypt() == 1) {//加密
+				File file = new File(filePath.split("MI")[0] + "Ming");//截取MI前面的字符串
+				if (!file.exists() && !file.isDirectory()) {
+					file.mkdirs();
+				}
+				String newPath = file + "/De" + uploadfile.getFilename();//解密文件路径：原路径+/De+加密文件名
+				RC2Coder rc = new RC2Coder("12345678");
+				rc.decrypt(filePath, newPath);//新路径生成解密文件
+				addToData(uploadfile.getUpFileflag(), newPath, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), uploadfile.getCusName(), customer.getCusFlag(),uploadfile.getFilename());
+			} else  {//不加密
+				addToData(uploadfile.getUpFileflag(), filePath, uploadfile.getCusId(), uploadfile.getUpCollectiondate(), uploadfile.getUpId(), uploadfile.getCusName(), customer.getCusFlag(),uploadfile.getFilename());
+			}
+		} catch (Exception e) {
+			baseService.updateOrDelete(qsql,0,"<font color='red'>analysis异常</font>", uploadfile.getUpId());
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(uploadfile.getCusId());
+			errorlog.setCusName(uploadfile.getCusName());
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag(uploadfile.getUpFileflag());
+			errorlog.setErrFilepath(uploadfile.getFilename());
+			errorlog.setErrLog(log);
+			errorlog.setErrType("analysis异常");
+			baseService.save(errorlog);
+		}
+	}
+		
+	/**
+	 * 添加解析数据
+	 * @param upFileflag
+	 * @param path
+	 * @param cusId
+	 * @param upCollectdate
+	 * @param upId
+	 * @param cusName
+	 * @param cusFlag
+	 * @param fileName
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public void addToData(String upFileflag, String path, String cusId, Date upCollectdate, int upId, String cusName, String cusFlag,String fileName) throws IOException, ParseException {
+		try {
+			if (upFileflag.equals("102") || upFileflag.equals("302") || upFileflag.equals("303") || upFileflag.equals("202")) {//项目编码
+				addFileData.addDrugcatalog(path, cusId,cusName, upCollectdate,upId,fileName);
+			} 
+			else if (upFileflag.equals("103") || upFileflag.equals("304") || upFileflag.equals("203")) {//供应商/生产商信息
+				addFileData.addSuppliers(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("104") || upFileflag.equals("305") || upFileflag.equals("204")) {//医护人员信息
+				employeeManager.addEmployees(path, cusId,cusName, upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("106") || upFileflag.equals("307") || upFileflag.equals("206")) {//入库信息
+				warehouseitemManager.addWarehouseitems(path, cusId,cusName, upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("112") || upFileflag.equals("316") || upFileflag.equals("212")) {//出库信息
+				deliveryitemManager.addDeliveryitems(path, cusId,cusName, upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("318") || upFileflag.equals("116") || upFileflag.equals("216")) {//库存信息
+				itemstockManager.addItemstock(path, cusId,cusName, upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("108") || upFileflag.equals("317") || upFileflag.equals("208")) {//销售信息
+				salesitemManager.addSalesitems(path, cusId,cusName, upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("314") || upFileflag.equals("114") || upFileflag.equals("214")) {//库房信息
+				warehouseManager.addWarehouse(path, cusId,cusName, upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("110") || upFileflag.equals("210")) {//处方信息
+				prescribeManager.addPrescribes(path, cusId,cusName, upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("113") || upFileflag.equals("101")) {//分店信息
+				customerManager.addCustomers(path, cusId,cusName,upCollectdate, upId, fileName);
+			}
+			else if (upFileflag.equals("308")) {//住院记录
+				hospitalizedManager.addHospitalized(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("309")) {//出院记录
+				dischargedManager.addDischarged(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("310")) {//医嘱信息
+				doctororderManager.addDoctororder(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("319") || upFileflag.equals("320")) {//医嘱执行记录
+				orderperformManager.addOrderperform(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("315") || upFileflag.equals("115") || upFileflag.equals("215")) {//科室信息
+				departmentManager.addDepartment(path, cusId, cusName,upCollectdate, upId, cusFlag,fileName);
+			} 
+			else if (upFileflag.equals("313")) {//诊断记录
+				clinicrecordsManager.addClinicrecords(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("325")) {//病案首页(概要)
+				medrecordsManager.addMedrecords(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("326")) {//病案首页(出院诊断)
+				dischargediagManager.addDischargediag(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("327")) {//病案首页(手术操作)
+				operationManager.addOperation(path, cusId, cusName,upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("321")) {//检查、检验结果
+				checkresultManager.addCheckresult(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else if (upFileflag.equals("322")) {//检查、检验结果详细
+				checkdetailManager.addCheckdetail(path, cusId,cusName, upCollectdate, upId,fileName);
+			} 
+			else {
+				System.out.println("没有了");
+			}
+		} catch (Exception e) {
+			String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+			baseService.updateOrDelete(qsql,0,"<font color='red'>addToData异常</font>", upId);
+			
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			Errorlog errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag(upFileflag);
+			errorlog.setErrFilepath(fileName);
+			errorlog.setErrLog(log);
+			errorlog.setErrType("addToData异常");
+			baseService.save(errorlog);
+		}
+	}
+
+	/**
+	 * 统计
+	 */
+	@Override
+	public void count() {
+		try {
+			SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+			String hql = "from Customer where cusStatus=1 or cusStatus=2";
+			List<Customer> list = baseService.find(hql);
+			for (int i = 0; i < list.size(); i++) {
+				try {
+					Customer customer = list.get(i);
+					String cusId = customer.getCusId();
+					int cufRecordcount = 0;//昨日上传类型数量
+					int cufFilecount = 0;//历史上传类型数量
+					String cufUpdate;//最后上传日期
+					hql = "SELECT max(UP_DATE) FROM TBL_UPLOADFILE where CUS_ID=?0";
+					Object obj = baseService.findUniqueSql(hql,cusId);
+					if(null != obj){//有上传
+						Date dt = sf.parse(obj.toString());
+						cufUpdate = sf.format(dt);//去掉时分秒
+						hql = "SELECT COUNT(DISTINCT u.UP_FILEFLAG) FROM TBL_UPLOADFILE u WHERE u.CUS_ID=?0 AND u.UP_DATE>?1";
+						cufRecordcount = baseService.findCountSql(hql, cusId, Utils.getDate(-1));//大于昨天0点
+						hql = "SELECT COUNT(DISTINCT u.UP_FILEFLAG) FROM TBL_UPLOADFILE u WHERE u.CUS_ID=?0";
+						cufFilecount = baseService.findCountSql(hql, cusId);
+					} else {//从未上传
+						cufUpdate = "";
+						cufRecordcount = 0;
+						cufFilecount = 0;
+					}
+					CouUploadfileByDate couUploadfileByDate = new CouUploadfileByDate();
+					couUploadfileByDate.setCusId(cusId);
+					couUploadfileByDate.setCufFileflag(customer.getCusDareway());// 医院编码
+					couUploadfileByDate.setCusName(customer.getCusName());
+					couUploadfileByDate.setCufUpdate(cufUpdate); // 上传时间(最后)
+					couUploadfileByDate.setCufRecordcount(cufRecordcount);// 昨日上传项目数
+					couUploadfileByDate.setCufFilecount(cufFilecount);// 历史上传项目总数
+					String today = sf.format(new Date());
+					couUploadfileByDate.setCufCreatedate(sf.parse(today));//创建时间
+					couUploadfileByDate.setCusFlag(customer.getCusFlag());//101单体药店 102 连锁药店 201门诊 301医院
+					baseService.save(couUploadfileByDate);
+				} catch (Exception e) {
+					Errorlog errorlog = new Errorlog();
+    				errorlog.setErrAddtime(new Date());
+    				errorlog.setErrLog(e.toString());
+    				errorlog.setErrType("count循环异常");
+    				baseService.save(errorlog);
+				}
+			}
+		} catch (Exception e) {
+			Errorlog errorlog = new Errorlog();
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrLog(e.toString());
+			errorlog.setErrType("count异常");
+			baseService.save(errorlog);
+		}
+	}
+	
+	/**
+	 * 定点资格
+	 */
+	@Override
+	public void tzddlog(){
+		String hql = "from Tzddlog order by tzDate desc NULLS LAST";
+		List tzddList = baseService.find(hql);
+		Tzddlog tzddlog;
+		for (int i = 0; i < tzddList.size(); i++) {
+			tzddlog = (Tzddlog) tzddList.get(i);
+			String manual = tzddlog.getTzManual() == null ? "1" : tzddlog.getTzManual();//0是手动关闭定点资格，1否
+			if(manual.equals("0")){
+				continue;
+			}
+			String scan = tzddlog.getTzScan() == null ? "0" : tzddlog.getTzScan();//0扫描，1 不扫描
+			String ybcx = tzddlog.getTzYbcx() == null ? "1" : tzddlog.getTzYbcx();//0医保标记是，1医保标记否
+			if (scan.equals("1") || ybcx.equals("0")) {//不扫描或者使用医保的跳过
+				continue;
+			}
+			String yybm = tzddlog.getTzYybm();
+			String cusId = tzddlog.getTzCusid();
+			String name = tzddlog.getTzCusname() == null ? "" : tzddlog.getTzCusname();
+			String status = tzddlog.getTzStatus() == null ? "" : tzddlog.getTzStatus();// 操作响应：0成功,1 失败,2注销(不扫描),9初始化
+			String operate = tzddlog.getTzOperate() == null ? "" : tzddlog.getTzOperate();// 定点资格：0停止,1启动,9初始化
+			Date date = null;// 起始日期(不可为空)
+			String result = "";
+			hql = "from Customer c where c.cusDareway=?0 and (c.cusStatus=1 or c.cusStatus=2)";//根据yybm查询是否有注册定点
+			List resultList = baseService.find(hql, yybm);
+			if (resultList.size() > 0) {//yybm有注册定点
+				//查询当前定点昨天上传的数据
+				hql = "select count(*) from Uploadfile u where u.cusId=?0 and u.upDate >= ?1"                                                                                                  ;
+				int num = baseService.findCount(hql, cusId, Utils.getDate(-1));
+				if (num > 0) {//昨日有上传数据，开启定点资格 
+					result = DarewayWebServiceClient.getDWResult(yybm, 1);
+					System.out.println(name+"--------昨天有上传，地维信息："+result);
+					result = result == null ? "调用地维接口异常!" : result;
+					if (result.contains("errflag=\"0\"")) {
+						status = "0";//操作成功
+						date = new Date();//tzStartdate更新日期
+					} else {
+						status = "1";
+					}
+					updateTzddLog(tzddlog,"1", status, date, "启用:" + result);
+				} else {//昨日无上传数据，停止定点资格
+					result = DarewayWebServiceClient.getDWResult(yybm, 0);
+					System.out.println(name + " --昨天无无上传，地维信息："+result);
+					result = result == null ? "调用地维接口异常!" : result;
+					if (result.contains("errflag=\"0\"")) {
+						status = "0";
+						date = new Date();
+					} else {
+						status = "1";
+					}
+					updateTzddLog(tzddlog,"0", status, date, "停止:" + result);
+				}
+			} else {//yybm没有注册定点
+				result = DarewayWebServiceClient.getDWResult(yybm, 0);
+				System.out.println(name + " --未注册定点，地维信息："+result);
+				result = result == null ? "调用地维接口异常!" : result;
+				if (result.contains("errflag=\"0\"")) {
+					status = "0";
+					date = new Date();
+				} else {
+					status = "1";
+				}
+				updateTzddLog(tzddlog,"0", status, date, "未注册停止:" + result);
+			}
+		}
+	}
+	
+	private void updateTzddLog(Tzddlog tzddlog, String operate, String status, Date date, String note) {
+		tzddlog.setTzOperate(operate);
+		if (null != status) {
+			tzddlog.setTzStatus(status);
+		}
+		if (null != date){
+			tzddlog.setTzStartdate(date);
+		}
+		tzddlog.setTzDate(new Date());
+		tzddlog.setTzNote(note);
+		try{
+			baseService.update(tzddlog);
+			System.out.println("success");
+		}catch(Exception e){
+			System.out.println(e.toString());
+		}
+	}
+}

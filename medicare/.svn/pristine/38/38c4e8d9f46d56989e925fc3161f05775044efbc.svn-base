@@ -1,0 +1,251 @@
+package yibao.yiwei.controller;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.service.IBaseService;
+
+@SuppressWarnings("unchecked")
+@Controller
+public class DeleteController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	@RequestMapping("/toDelete")
+	public String toDelete(HttpServletRequest request) {
+		return "/delete";
+	}
+	
+	public String getSql(String type){
+		String sql;
+		if(type.equals("drugcatalog")){
+			sql = "delete from tbl_drugcatalog where cus_id=?0 and DC_ID not in(" +
+			"select min(DC_ID) from tbl_drugcatalog where cus_id=?1 group by " +
+			"DC_CODE,CUS_ID,DC_COMMERCIAL,DC_GENERICNAME,DC_MNEMONICCODE,DC_SPECIFICATION,DC_UNIT,DC_DOSAGEFORM," +
+			"DC_PERMISSION,DC_MFRS,DC_MAKEIN,DC_HCSCODE,DC_CATEGORY,CUS_PARENTID,CUS_DAREWAY,DC_PRICE,DC_PACKAGINGUNIT," +
+			"DC_PACKAGINGPRICE,DC_PACKAGINGNUM,DC_CATCODE,DC_SETTLEMENTCODE,DC_ISRX,DC_ISSPECIAL,DC_ISEPHEDRADINE,DC_ISSPIRIT,DC_ISIMPORT," +
+			"DC_TABOO,DC_INDICATION,DC_STATUS)";
+		} else if (type.equals("supplier")){
+			sql = "delete from TBL_SUPPLIER where cus_id=?0 and SP_ID not in(" +
+			"select min(SP_ID) from TBL_SUPPLIER where cus_id=?1 group by " +
+			"CUS_ID,CUS_PARENTID,SP_CODE,SP_NAME,SP_CONTACT,SP_PHONE,SP_CERTIFICATENO,SP_QUALITY,SP_ANNEX," +
+			"SP_CAT,SP_POSTCODE,SP_EMAIL,SP_ADDRESS,SP_FAX,SP_STATUS,CUS_DAREWAY,AC_CODE,AC_NAME)";
+		} else if (type.equals("employee")){
+			sql = "delete from TBL_EMPLOYEE where cus_id=?0 and EM_ID not in(" +
+			"select min(EM_ID) from TBL_EMPLOYEE where cus_id=?1 group by " +
+			"CUS_ID,CUS_PARENTID,EM_CODE,EM_NAME,EM_SEX,EM_IDNUM,EM_TITLENAME,EM_QUALIFICATION,EM_PHONE,EM_ANNEX,AC_CODE,AC_NAME,EM_STATUS," +
+			"EM_TITLECODE,EM_JOBCODE,EM_JOBNAME,EM_CERTIFIED,EM_LICENCE,EM_CLASSIFYCODE,EM_CLASSIFYNAME,EM_SCOPECODE,EM_SCOPENAME,DEPT_CODE,DEPT_NAME,EM_ISEXPERT)";
+		} else if (type.equals("warehouseitem")){
+			sql = "delete from TBL_WAREHOUSEITEM where cus_id=?0 and WI_ID not in(" +
+			"select min(WI_ID) from TBL_WAREHOUSEITEM where cus_id=?1 group by " +
+			"CUS_ID,CUS_PARENTID,CUS_DAREWAY,WI_TYPE,DRUG_CODE,DRUG_NAME,DRUG_NUM,DRUG_PURCHASEPRICE,DRUG_BATCHNO,DRUG_MFRS,DRUG_MADEIN,DRUG_EXPDATE," +
+			"DRUG_MFGDATE,DRUG_EID,WI_CODE,WI_DATETIME,WI_PRICE,DRUG_SPECIFICATION,DRUG_UNIT,DRUG_HCSCODE,WI_WHCODE,WI_WHNAME,WI_LOCATION,DRUG_BUYER,DRUG_BUYERNAME,DRUG_EXAMINER,DRUG_EXAMINERNAME)";
+		} else if (type.equals("deliveryitem")){
+			sql = "delete from TBL_DELIVERYITEM where cus_id=?0 and DI_ID not in(" +
+			"select min(DI_ID) from TBL_DELIVERYITEM where cus_id=?1 group by " +
+			"CUS_ID,CUS_PARENTID,DI_NO,DI_TYPE,DI_REASON,DRUG_CODE,DRUG_NAME,DRUG_NUM,DI_SPECIFICATION,DRUG_BATCHNO,DRUG_MFRS,DRUG_MADEIN," +
+			"DRUG_EXPDATE,DRUG_MFGDATE,DRUG_EID,DI_HCSCODE,DI_WHCODE,DI_WHNAME,DI_LOCATION,DI_OPCODE,DI_OPNAME,DI_OPDATETIME,DI_UNIT)";
+		} else if (type.equals("itemstock")){
+			sql = "delete from TBL_ITEMSTOCK where cus_id=?0 and IS_ID not in(" +
+			"select min(IS_ID) from TBL_ITEMSTOCK where cus_id=?1 group by " +
+			"CUS_ID,CUS_PID,CUS_DAREWAY,ITEM_CODE,ITEM_NAME,ITEM_NUM,ITEM_UNIT,ITEM_SPECIFICATION,ITEM_BATCHNO,ITEM_PERMISSION,ITEM_MFGDATE," +
+			"ITEM_EXPDATE,ITEM_MFRS,ITEM_MAKEIN,ITEM_HCSCODE,ITEM_WHCODE,ITEM_WHNAME,ITEM_LOCATION)";
+		} else if (type.equals("salesitem")){
+			sql = "delete from TBL_SALESITEM where cus_id=?0 and SI_ID not in(" +
+			"select min(SI_ID) from TBL_SALESITEM where cus_id=?1 group by " +
+			"CUS_ID,CUS_PARENTID,SO_NO,DRUG_CODE,DRUG_NUM,DRUG_SALESPRICE,DRUG_BATCHNO,DRUG_MFRS,DRUG_MADEIN,DRUG_MFGDATE,DRUG_EXPDATE,DRUG_EID,SO_DATETIME,SO_PAYTYPE,SO_SALESPSNNAME,CUS_DAREWAY,SI_PTSSEX,SI_PTSAGE,SI_PTSIDCARD,SI_PTSHEALTHCARD,DRUG_NAME,DRUG_SPECIFICATION,SI_SETTLEMENTNAME,SI_STATUS,SI_OPCODE,SI_OPNAME,SI_UNIT)";
+		} else if (type.equals("warehouse")){
+			sql = "delete from TBL_WAREHOUSE where cus_id=?0 and WH_ID not in(" +
+			"select min(WH_ID) from TBL_WAREHOUSE where cus_id=?1 group by " +
+			"CUS_ID,CUS_PID,CUS_DAREWAY,WH_CODE,WH_NAME,WH_MANCODE,WH_MANNAME,WH_LOCATION,WH_STATUS)";
+		} else if (type.equals("prescribe")){
+			sql = "delete from TBL_PRESCRIBE where cus_id=?0 and RP_ID not in(" +
+			"select min(RP_ID) from TBL_PRESCRIBE where cus_id=?1 group by " +
+			"CUS_ID,CUS_PID,CUS_DAREWAY,RP_NO,RP_DEPTNO,RP_DEPTNAME,RP_PTSNAME,RP_PTSSEX,RP_PTSAGE,RP_PTSHEALTHCARD,RP_PTSIDCARD,RP_PTSBIRTHDAY," +
+			"RP_ITEMCODE,RP_ITEMNAME,RP_ITEMPRICE,RP_ITEMNUM,RP_ITEMSPECIFICATION,RP_ITEMDOSAGEFORM,RP_ITEMMFRS,RP_ITEMMAKEIN,RP_ITEMBATCHNO," +
+			"RP_WHCODE,RP_WHNAME,RP_LOCATION,RP_DRUGFREQ,RP_DRUGROUTE,RP_DRUGTIME,RP_DRUGAMOUNT,RP_ANNEX,RP_DRCODE,RP_DRNAME,RP_DRTIME,RP_AUDITCODE," +
+			"RP_AUDITNAME,RP_AUDITTIME,RP_CHECKCODE,RP_CHECKNAME,RP_CHECKTIME)";
+		} else if (type.equals("hospitalized")){
+			sql = "delete from TBL_HOSPITALIZED where cus_id=?0 and HOSP_ID not in(" +
+			"select min(HOSP_ID) from TBL_HOSPITALIZED where cus_id=?1 group by " +
+			"CUS_ID,CUS_DAREWAY,DOCTOR_TYPE,CASE_NO,HOSP_NO,DIAG_TYPE,DIAG_DEPT,DIAG_DEPTNAME,DIAG_DOCTOR,DIAG_DOCTORNAME,DIAG_DATETIME,ICD_CODE," +
+			"ICD_NAME,HOSP_TYPE,HOSP_WAY,HOSP_DEPT,HOSP_DEPTNAME,HOSP_DOCTOR,HOSP_DOCTORNAME,HOSP_AREAS,HOSP_WARDNO,HOSP_BEDNO,HOSP_INTIME,SI_PTSNAME,SI_PTSSEX,SI_PTSAGE,SI_PTSIDCARD,SI_PTSHEALTHCARD)";
+		} else if (type.equals("discharged")){
+			sql = "delete from TBL_DISCHARGED where cus_id=?0 and DC_ID not in(" +
+			"select min(DC_ID) from TBL_DISCHARGED where cus_id=?1 group by " +
+			"CUS_ID,CUS_DAREWAY,CASE_NO,HOSP_NO,SI_PTSIDCARD,SI_PTSHEALTHCARD,SI_PTSNAME,SI_PTSSEX,SI_PTSAGE,DC_INDATE,DC_OUTDATE,DC_HOSPDAYS," +
+			"DC_OUTYPE,DC_HOSPTIMES,DC_DIAGCODE,DC_DIAGNAME,DC_DOCTORCODE,DC_DOCTORNAME)";
+		} else if (type.equals("doctororder")){
+			sql = "delete from TBL_DOCTORORDER where cus_id=?0 and DO_ID not in(" +
+			"select min(DO_ID) from TBL_DOCTORORDER where cus_id=?1 group by " +
+			"CUS_ID,CUS_PID,CUS_DAREWAY,CASE_NO,HOSP_NO,DO_NO,DO_TYPE,DO_BEGINTIME,DO_DEPT,DO_DEPTNAME,DO_DOCTOR,DO_DOCTORNAME,DO_CHECK," +
+			"DO_CHECKNAME,ITEM_CODE,ITEM_NAME,ITEM_PRICE,ITEM_FREQ,ITEM_AMOUNT,ITME_ROUTE,DO_ENDDR,DO_ENDDRRNAME,DO_ENDNURSE,DO_ENDNURSENAME,DO_ENDTIME)";
+		} else if (type.equals("orderperform")){
+			sql = "delete from TBL_ORDERPERFORM where cus_id=?0 and DO_ID not in(" +
+			"select min(DO_ID) from TBL_ORDERPERFORM where cus_id=?1 group by " +
+			"CUS_ID,CUS_PID,CUS_DAREWAY,CASE_NO,HOSP_NO,DO_NO,DO_TYPE,ITEM_CODE,ITEM_NAME,ITEM_PRICE,ITEM_FREQ,ITEM_AMOUNT,ITME_ROUTE,DO_PERFORM,DO_PERFORMNAME,DO_PERFORMTIME)";
+		} else if (type.equals("clinicrecords")){
+			sql = "delete from TBL_CLINICRECORDS where cus_id=?0 and DIAG_ID not in(" +
+			"select min(DIAG_ID) from TBL_CLINICRECORDS where cus_id=?1 group by " +
+			"CUS_ID,CUS_PID,CUS_DAREWAY,DIAG_NO,DIAG_DATETIME,DIAG_DEPTCODE,DIAG_DEPTNAME,DIAG_DOCTOR,DIAG_DOCTORNAME,DIAG_DOCTORTIME,SI_PTSIDCARD," +
+			"SI_PTSHEALTHCARD,SI_PTSNAME,SI_PTSSEX,SI_PTSAGE,DIAG_ICDCODE,DIAG_ICDNAME,REG_TYPE,DIAG_TYPE,SEC_TYPE,DIAG_PAYTYPE)";
+		} else if (type.equals("department")){
+			sql = "delete from TBL_DEPARTMENT where cus_id=?0 and DEPT_ID not in(" +
+			"select min(DEPT_ID) from TBL_DEPARTMENT where cus_id=?1 group by " +
+			"DEPT_CODE,DEPT_NAME,CUS_ID,CUS_PID,CUS_DAREWAY,DEPT_BEDS,DEPT_EMPS,DEPT_STATUS)";
+		} else if (type.equals("medrecords")){
+			sql = "delete from TBL_MEDRECORDS where cus_id=?0 and MER_ID not in(" +
+			"select min(MER_ID) from TBL_MEDRECORDS where cus_id=?1 group by " +
+			"CUS_ID,CUS_DAREWAY,MER_ORGAN,MER_ORGANCODE,MER_PAYTYPE,MER_HOSPTIMES,MER_CASENO,MER_HOSPNO,MER_PTSNAME,MER_PTSSEX,MER_BIRTHDAY,MER_AGE,MER_COUNTRY," +
+			"MER_WEIGHT,MER_BIRPLACE,MER_PROPLACE,MER_NATION,MER_IDNUMBER,MER_PROFESSION,MER_MARSTATUS,MER_NOWADDR,MER_NOWPHONE,MER_NOWPOST,MER_HUKOUADDR,MER_HUKOUPOST,MER_WORKADDR,MER_WORKPHONE,MER_WORKPOST,MER_CONTACTNAME,MER_RELATIONSHIP,MER_CONTACTADDR," +
+			"MER_CONTACTPHONE,MER_INTYPE,MER_INTIME,MER_INDEPT,MER_INWARD,MER_TURNDEPT,MER_OUTTIME,MER_OUTDEPT,MER_OUTWARD,MER_INDAYS,MER_CLINICDIAG,MER_CLINICDIAGCODE,MER_INDIAG,MER_INSTATUS,MER_INDIAGDATE,MER_DEMAGECAUSE,MER_DAMAGECODE," +
+			"MER_PATHOLOGICAL,MER_PATHCODE,MER_PATHNUM,MER_ALLERGIC,MER_ALLERGICNAME,MER_CLNICOUT,MER_INOUT,MER_BEFORAFTER,MER_CLINICPATH,MER_RADIOPATH,MER_DIRECTOR,MER_CHIEF,MER_ATTEND,MER_RESIDENT,MER_STUDAYDOC,MER_INTERN,MER_NURSE,MER_CODER,MER_QUALTY,MER_QCDOC,MER_QCNUR,MER_QCDATE," +
+			"MER_OUTWAY,MER_RECCUSNAME,MER_BLOODTYPE,MER_RH,MER_IMPORTTYPE,MER_IMPORTCOUNT,MER_IMPORTRESP,MER_INCOUNT,MER_SELFMONEY,MER_BEDBILL,MER_NURSECOST,MER_WESTERN,MER_CHINESE,MER_HERB,MER_RADIOCOST,MER_TESTCOST,MER_OXYCOST,MER_BLOODCOST,MER_DIAGCOST,MER_OPERATCOST," +
+			"MER_DELIVERYCOST,MER_CHECKCOST,MER_DRUGCOST,MER_INFANTCOST,MER_LACOST,MER_OTHER,MER_AUTOPSY,MER_SAFENUM,MER_SUCCNUM)";
+		} else if (type.equals("checkresult")){
+			sql = "delete from TBL_CHECKRESULT where cus_id=?0 and CR_ID not in(" +
+			"select min(CR_ID) from TBL_CHECKRESULT where cus_id=?1 group by " +
+			"CUS_ID,CUS_DATEWAY,CR_CHECKRES,CR_CHECKNO,CR_CASENO,CR_HOSPNO,CR_DEPTCODE,CR_DEPT,CR_ROOM,CR_BED,CR_CLINICDIAG,CR_CHECKPOSI,CR_MODEL,CR_MODELTYPE,CR_ITEMCODE,CR_ITEMNAME,CR_TOOL,CR_CHECKRESULT,CR_PTSNAME,CR_PTSSEX,CR_AGE,CR_IDNUM," +
+			"CR_HEALTHCARD,CR_SENDDATE,CR_CHECKDATE,CR_REPORTDATE,CR_SENDDOC,CR_SENDDOCNO,CR_CHECKDOC,CR_CHECKDOCNO,CR_AUDITDOC,CR_AUDITDOCNO,CR_COMMENT)";
+		} else if (type.equals("checkdetail")){
+			sql = "delete from TBL_CHECKDETAIL where cus_id=?0 and CT_ID not in(" +
+			"select min(CT_ID) from TBL_CHECKDETAIL where cus_id=?1 group by " +
+			"CUS_ID,CUS_DAREWAY,CT_CHECKNO,CT_HOSPNO,CT_ITEMCODE,CT_ITEMNAME,CT_RESULT,CT_UNIT,CT_POINT,CT_RANGE,CT_COMMENT)";
+		} else {
+			sql = "";
+		}
+		return sql;
+	}
+	
+	@RequestMapping(value="getCCCName")
+    @ResponseBody
+	public Map getCCCName(String str){
+		String hql = "from Customer where cusName like '%"+str+"%'";
+		List<Customer> list = baseService.find(hql);
+		List list2 = new ArrayList();
+		Map<String, Object> map;
+		Customer customer;
+		for(int i = 0; i < list.size(); i++){
+			customer = list.get(i);
+			map = new HashMap<String, Object>();
+			map.put("id", customer.getCusId());
+			map.put("text", customer.getCusName());
+			list2.add(map);
+		}
+		Map<String, Object> map2 = new HashMap<String, Object>();
+		map2.put("rows", list2);
+		return map2;
+	}
+	
+	@ResponseBody
+	@RequestMapping("/deleteRepeat")
+	public Map deleteRepeat(String type,String cusId){
+		try{
+			if(null != cusId && !cusId.equals("")){//单个定点删除
+				baseService.updateOrDeleteSql(getSql(type),cusId,cusId);
+				System.out.println(cusId+"-"+type+"重复数据删除完成");
+			} else {//循环定点删除
+				String sql = "from Customer";
+				List<Customer> list = baseService.find(sql);
+				Customer customer;
+				for (int i=0;i<list.size();i++){
+					try{
+						customer = list.get(i);
+						System.out.println(i+"-"+type+"-"+customer.getCusName());
+						baseService.updateOrDeleteSql(getSql(type),customer.getCusId(),customer.getCusId());
+					} catch (Exception e) {
+						System.out.println("循环删除重复异常："+e.getMessage());
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			System.out.println("删除重复数据异常："+e.getMessage());
+		}
+		return null;
+	}
+	
+	public String getSql2(String type){
+		String sql;
+		if(type.equals("drugcatalog")){
+			sql = "delete from tbl_drugcatalog where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("supplier")){
+			sql = "delete from TBL_SUPPLIER where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("employee")){
+			sql = "delete from TBL_EMPLOYEE where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("warehouseitem")){
+			sql = "delete from TBL_WAREHOUSEITEM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("deliveryitem")){
+			sql = "delete from TBL_DELIVERYITEM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("itemstock")){
+			sql = "delete from TBL_ITEMSTOCK where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("salesitem")){
+			sql = "delete from TBL_SALESITEM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("warehouse")){
+			sql = "delete from TBL_WAREHOUSE where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("prescribe")){
+			sql = "delete from TBL_PRESCRIBE where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("hospitalized")){
+			sql = "delete from TBL_HOSPITALIZED where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("discharged")){
+			sql = "delete from TBL_DISCHARGED where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("doctororder")){
+			sql = "delete from TBL_DOCTORORDER where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("orderperform")){
+			sql = "delete from TBL_ORDERPERFORM where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("clinicrecords")){
+			sql = "delete from TBL_CLINICRECORDS where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("department")){
+			sql = "delete from TBL_DEPARTMENT where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("medrecords")){
+			sql = "delete from TBL_MEDRECORDS where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("checkresult")){
+			sql = "delete from TBL_CHECKRESULT where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else if (type.equals("checkdetail")){
+			sql = "delete from TBL_CHECKDETAIL where cus_id not in (select cus_id from tbl_customer where cus_status=1 or cus_status=2)";
+		} else {
+			sql = "";
+		}
+		return sql;
+	}
+	
+	@ResponseBody
+	@RequestMapping("/deleteCancle")
+	public Map deleteCancle(String type){
+		try{
+			System.out.println("开始删除"+type+"已注销数据");
+			baseService.updateOrDeleteSql(getSql2(type));
+			System.out.println(type+"已注销数据删除成功");
+		} catch (Exception e) {
+			System.out.println("删除已注销异常："+e.getMessage());
+		}
+		return null;
+	}
+	
+	/**
+	 * 测试方法
+	 */
+	@RequestMapping("/testt")
+	public void testt(){
+		String sql = "select u.* from (select * from TBL_UPLOADFILE where IS_HANDLE=0 order by up_date desc) u where rownum <=5";
+		List<Uploadfile> list = baseService.findSql2(sql,"u",Uploadfile.class);
+		Uploadfile uploadfile;
+		for(int i=0;i<list.size();i++){
+			uploadfile = list.get(i);
+			System.out.println(uploadfile.getUpId());
+		}
+	}
+
+}

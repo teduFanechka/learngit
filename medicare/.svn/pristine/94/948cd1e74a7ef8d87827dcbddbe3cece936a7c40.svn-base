@@ -1,0 +1,24 @@
+#MyEclipse Hibernate Properties
+#Mon Dec 12 14:32:14 CST 2016
+sessionFactoryName=yibao.yiwei.entity.HibernateSessionFactory
+genBasicCompId=true
+profile=
+daoSFId=
+version=3.3
+jndiPath=
+detectM2M=false
+reStrategyClass=
+detectO2O=false
+springDaoFile=
+useJavaTypes=false
+keyGenerator=native
+libInstallFolder=
+addLibs2Project=false
+genVersionTag=false
+sessionFactoryId=
+basePersistenceClass=
+genAnnotations=true
+reSettingsFile=/medicare/hibernate.reveng.xml
+configFile=/medicare/src/config/hibernate.cfg.xml
+createConfigFile=false
+addLibs2Classpath=false

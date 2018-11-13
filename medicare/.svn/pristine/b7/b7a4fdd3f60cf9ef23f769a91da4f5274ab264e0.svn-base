@@ -1,0 +1,154 @@
+$(function() {
+    $(".tabb").tabs({
+        fit: true,
+        border: false,
+        selected: 0,
+    });
+    $('#manager').datagrid({
+        pageSize: 20,
+        pageList: [10, 20, 30, 40, 50],
+        url: 'getAllManager'	
+    });
+    
+})
+
+// 根据状态显示图片
+function manStatus(value, row, index) {
+    if (row.muStatus == 1) { // 这里是判断哪些行
+        return '<a href="#"></a><img src="images/accept.png"  title="已启用" alt="" />';
+    } else {
+        return '<a href="#"></a><img src="images/delete.png" title="已停用" alt="" />';
+    }
+}
+
+function manRole(value, row, index) {
+	var userId = row.muUserid;
+	var text;
+	$.ajax({
+		type: "POST",
+		url:"manRole?userId="+userId,
+		async: false,//默认true异步，false同步
+		success: function(data){
+			text = data.roName;
+		}
+	})
+	return text;
+}
+
+function manArea(value, row, index) {
+	var userId = row.muUserid;
+	var text;
+	$.ajax({
+		type: "POST",
+		url:"manArea?userId="+userId,
+		async: false,//默认true异步，false同步
+		success: function(data){
+			text = data.areaName;
+		}
+	})
+	return text;
+}
+
+// 弹出辖区管理窗口
+function editXQ(){
+	// $('input:checkbox').removeAttr('checked');//清除页面所有的checkbox 勾选状态
+	$("input[name='box']").removeAttr('checked');// 清除弹出框内的checkbox 勾选状态
+    var array = $('#manager').datagrid('getSelections'); 
+    var len = array.length;
+    if (len > 1) {
+    	$.messager.alert('系统提示','只能选择一个用户');
+    } else if (array.length < 1) {
+    	$.messager.alert('系统提示','请选择一个用户');
+    } else {
+    	var id=$('#manager').datagrid('getSelected');
+    	var muUserid=id.muUserid;// 管理员userid
+    	$.get("./getxiaquRelate",// 请求管理员区划关联表
+    			{muUserid:muUserid},
+    			function(data){
+    				if(data.list!==null){
+    					var areacodes=data.list;// 后台数据:当前选中管理员对应的辖区
+    					 $("input[name='box']").each(function(){//遍历所有checkbox
+    						 for ( var i = 0; i < areacodes.length; i++) {//遍历辖区数组   							 
+    							 if(areacodes[i]==$(this).val()){
+    								 $(this).attr("checked","checked"); 
+    							 }
+    						 }
+    					 });
+    				}
+    	})
+    	 $('#nfdXQ').dialog('open');
+    }
+}  
+/*
+ * 保存管理员辖区设置
+ */
+function addMancus(){
+	var id=$('#manager').datagrid('getSelected');
+	var muUserid=id.muUserid;// 管理员userid
+	var array = document.getElementsByName("box");
+	var items = [];
+	$("input:checkbox[name='box']:checked").each(function() { // 遍历name=box的多选框
+		items.push($(this).val());  // 每一个被选中项的值push到数组中
+	});
+	var acAreacodes=items.toString();// 定义选中的checkbox value 以,分隔
+	$.post("addManareaRelate",
+			{acAreacodes:acAreacodes,muUserid:muUserid},
+			function(data){
+				$.messager.show({
+	                title: '系统提示',
+	                msg: data.status
+	            });
+			});
+	$('#nfdXQ').dialog('close');
+}
+
+function editRo(){
+	// $('input:checkbox').removeAttr('checked');//清除页面所有的checkbox 勾选状态
+	$("input[name='box2']").removeAttr('checked');// 清除弹出框内的checkbox 勾选状态
+    var array = $('#manager').datagrid('getSelections'); 
+    var len = array.length;
+    if (len > 1) {
+    	$.messager.alert('系统提示','只能选择一个用户');
+    } else if (array.length < 1) {
+    	$.messager.alert('系统提示','请选择一个用户');
+    } else {
+    	var id=$('#manager').datagrid('getSelected');
+    	var muUserid=id.muUserid;// 管理员userid
+    	$.get(
+    			"./getRoleManager",// 请求管理员区划关联表
+    			{muUserid:muUserid},
+    			function(data){
+    				if(data.list!==null){
+    					var roids=data.list;// 后台数据:当前选中管理员对应的辖区
+    					 $("input[name='box2']").each(function(){//遍历所有checkbox
+    						 for ( var i = 0; i < roids.length; i++) {//遍历辖区数组   							 
+    							 if(roids[i]==$(this).val()){
+    								 $(this).attr("checked","checked"); 
+    							 }
+    						 }
+    					 });
+    				}
+    	})
+    	 $('#nfdRO').dialog('open');
+    }
+}  
+
+function addRoManager(){
+	var id=$('#manager').datagrid('getSelected');
+	var muUserid=id.muUserid;// 管理员userid
+	var array = document.getElementsByName("box2");
+	var items = [];
+	$("input:checkbox[name='box2']:checked").each(function() { // 遍历name=box的多选框
+		items.push($(this).val());  // 每一个被选中项的值push到数组中
+	});
+	var roids=items.toString();// 定义选中的checkbox value 以,分隔
+	$.post("addRoleManager",
+			{roids:roids,muUserid:muUserid},
+			function(data){
+				$.messager.show({
+	                title: '系统提示',
+	                msg: data.status
+	            });
+			});
+	$('#nfdRO').dialog('close');
+}

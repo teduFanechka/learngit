@@ -1,0 +1,121 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>删除重复数据</title>
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path }/css/ew-main.css" />
+		<link rel="stylesheet" href="${path }/css/ew-home.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+	</head>
+	<script type="text/javascript">
+
+		//删除已注销
+		function deleteCancle(type){
+			$.messager.show({
+				title: "系统提示",
+                msg: "正在删除"+type+"的已注销客户数据..."
+			});	
+			$.ajax({
+				type: "POST",
+		        url: "deleteCancle",
+		        data:{type:type},
+		        success: function(data) {
+					$.messager.alert('系统提示',data.info);
+				}
+			});
+		}
+
+		//删除重复数据
+		function deleteRepeat(type){
+			var cusId = $("#cusId").searchbox("getValue");
+			$.messager.show({
+				title: "系统提示",
+                msg: "正在删除"+type+"的重复数据..."
+			});	
+			$.ajax({
+				type: "POST",
+		        url: "deleteRepeat",
+		        data:{type:type,cusId:cusId},
+		        success: function(data) {
+					$.messager.alert('系统提示',data.info);
+				}
+			});
+		}
+
+		//重名文件去重，只保留一条
+		function deleteFile(type){
+			$.messager.show({
+				title: "系统提示",
+                msg: "同一客户的重名文件正在去重..."
+			});	
+			$.ajax({
+				type: "POST",
+		        url: "uploadfileSame",
+		        success: function(data) {
+					$.messager.alert('系统提示',data.info);
+				}
+			});
+		}
+
+		//即时检索
+		function btsloader(param,success,error){
+			var q = param.q || "";
+			if(q.length <= 0) {
+				return false;
+			}
+			$.ajax({
+				url:"getCCCName",
+				type:"post",
+				data:{
+					str:q //post传参
+				},
+				success:function(data){
+					var items = $.map(data.rows, function(item){
+						return {
+							id:item.id,
+							name:item.text
+						};
+					});
+					success(items);
+				},
+			});
+		}
+
+		//清空输入框
+		function clearForm() {
+		    $("#cusId").textbox('setValue','')
+		}
+	</script>
+	<body>
+		<input id="cusId" class="easyui-combobox" style="width:400px;" data-options="prompt:'请输入定点名称', loader: btsloader,mode: 'remote',valueField: 'id',textField: 'name'"/>
+		<a href="javascript:" class="clear" onClick=clearForm();>
+			<img style="margin:3px 5px;position: absolute" class="cl-xx-child" src="images/xx.png" />
+		</a><br/><br/>
+		<a href="javascript:;" onclick="deleteCancle('drugcatalog')">项目编码已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('drugcatalog')">项目编码重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('supplier')">供应商表已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('supplier')">供应商表重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('employee')">医护人员已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('employee')">医护人员重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('warehouseitem')">入库信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('warehouseitem')">入库信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('deliveryitem')">出库信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('deliveryitem')">出库信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('itemstock')">库存信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('itemstock')">库存信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('salesitem')">销售信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('salesitem')">销售信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('warehouse')">库房信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('warehouse')">库房信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('prescribe')">处方信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('prescribe')">处方信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('hospitalized')">住院记录已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('hospitalized')">住院记录重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('discharged')">出院记录已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('discharged')">出院记录重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('doctororder')">医嘱信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('doctororder')">医嘱信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('orderperform')">医嘱执行已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('orderperform')">医嘱执行记录重复</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('department')">科室信息已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('department')">科室信息重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('clinicrecords')">诊断记录已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('clinicrecords')">诊断记录重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('medrecords')">病案首页已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('medrecords')">病案首页概要重复</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('dischargediag')">出院诊断已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('dischargediag')">病案出院诊断重复</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('operation')">手术操作已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('operation')">病案手术操作重复</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('checkresult')">检查结果已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('checkresult')">检查检验结果重复</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('checkdetail')">检查详细已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteRepeat('checkdetail')">检查检验详细重复</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('uploadfile')">上传文件已注销</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteFile()">上传文件重复数据</a><br/>
+		<a href="javascript:;" onclick="deleteCancle('customer')">客户信息已注销</a><br/>
+	</body>
+</html>

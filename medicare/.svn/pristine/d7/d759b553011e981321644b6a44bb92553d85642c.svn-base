@@ -1,0 +1,8 @@
+package yibao.yiwei.service;
+
+import yibao.yiwei.entity.Page;
+public interface IUpdatelogManager {
+
+	public Page queryForPage(String hql, String url, int pagenum);
+
+}

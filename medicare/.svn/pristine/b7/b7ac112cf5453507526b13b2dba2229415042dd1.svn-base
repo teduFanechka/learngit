@@ -1,0 +1,18 @@
+org.quartz.scheduler.instanceName = MyScheduler
+org.quartz.scheduler.instanceId   = AUTO
+
+org.quartz.threadPool.threadCount = 20
+org.quartz.jobStore.class = org.quartz.impl.jdbcjobstore.JobStoreTX
+org.quartz.jobStore.driverDelegateClass = org.quartz.impl.jdbcjobstore.oracle.OracleDelegate
+org.quartz.jobStore.tablePrefix = QRTZ_
+org.quartz.jobStore.dataSource  = myDS
+org.quartz.jobStore.useProperties = true
+
+org.quartz.jobStore.isClustered = true
+
+org.quartz.dataSource.myDS.driver = oracle.jdbc.driver.OracleDriver
+org.quartz.dataSource.myDS.URL = jdbc:oracle:thin:@10.115.170.216:1521/zbybdb
+#org.quartz.dataSource.myDS.URL = jdbc:oracle:thin:@192.168.1.103:1521/orcl
+org.quartz.dataSource.myDS.user = yiwei
+org.quartz.dataSource.myDS.password = yiwei0533
+org.quartz.dataSource.myDS.maxConnections =10

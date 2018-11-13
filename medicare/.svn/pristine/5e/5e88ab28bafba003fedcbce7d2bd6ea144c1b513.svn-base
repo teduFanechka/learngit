@@ -1,0 +1,145 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 仓库信息
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_WAREHOUSE", schema = "YIWEI")
+public class Warehouse implements java.io.Serializable {
+
+	private String whId;//主键
+	private String cusId;//客户id
+	private String cusPid;//客户上级id
+	private String cusDareway;//医院编码
+	private String whCode;//1库房编码
+	private String whName;//2库房名称
+	private String whMancode;//3负责人编码
+	private String whManname;//4负责人姓名
+	private String whLocation;//5库房位置
+	private String whStatus;//6状态
+	private Date whPicktime;//采集时间
+	private Date whAddtime;//创建时间
+
+	@GenericGenerator(name = "WarehouseId", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "WarehouseId")
+	@Column(name = "WH_ID", unique = true, nullable = false, length = 32)
+	public String getWhId() {
+		return this.whId;
+	}
+
+	public void setWhId(String whId) {
+		this.whId = whId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_PID", length = 32)
+	public String getCusPid() {
+		return this.cusPid;
+	}
+
+	public void setCusPid(String cusPid) {
+		this.cusPid = cusPid;
+	}
+
+	@Column(name = "CUS_DAREWAY", length = 32)
+	public String getCusDareway() {
+		return this.cusDareway;
+	}
+
+	public void setCusDareway(String cusDareway) {
+		this.cusDareway = cusDareway;
+	}
+
+	@Column(name = "WH_CODE", length = 32)
+	public String getWhCode() {
+		return this.whCode;
+	}
+
+	public void setWhCode(String whCode) {
+		this.whCode = whCode;
+	}
+
+	@Column(name = "WH_NAME", length = 64)
+	public String getWhName() {
+		return this.whName;
+	}
+
+	public void setWhName(String whName) {
+		this.whName = whName;
+	}
+
+	@Column(name = "WH_MANCODE", length = 32)
+	public String getWhMancode() {
+		return this.whMancode;
+	}
+
+	public void setWhMancode(String whMancode) {
+		this.whMancode = whMancode;
+	}
+
+	@Column(name = "WH_MANNAME", length = 32)
+	public String getWhManname() {
+		return this.whManname;
+	}
+
+	public void setWhManname(String whManname) {
+		this.whManname = whManname;
+	}
+
+	@Column(name = "WH_LOCATION", length = 120)
+	public String getWhLocation() {
+		return this.whLocation;
+	}
+
+	public void setWhLocation(String whLocation) {
+		this.whLocation = whLocation;
+	}
+
+	@Column(name = "WH_STATUS",  length = 32)
+	public String getWhStatus() {
+		return this.whStatus;
+	}
+
+	public void setWhStatus(String whStatus) {
+		this.whStatus = whStatus;
+	}
+
+	@Column(name = "WH_PICKTIME", length = 7)
+	public Date getWhPicktime() {
+		return this.whPicktime;
+	}
+
+	public void setWhPicktime(Date whPicktime) {
+		this.whPicktime = whPicktime;
+	}
+
+	@Column(name = "WH_ADDTIME", length = 7)
+	public Date getWhAddtime() {
+		return this.whAddtime;
+	}
+
+	public void setWhAddtime(Date whAddtime) {
+		this.whAddtime = whAddtime;
+	}
+
+}

@@ -1,0 +1,410 @@
+
+// 编码表 1-0 :0 否 1 
+// 317销售结算状态
+function formatOperIsnot(val, row, index) {
+if (val == '0') {
+		return '否';
+	} else if (val == '1') {
+		return '是';
+	} else {
+		return '是';
+	}
+}
+
+// 314 仓库信息,库房状态,供应商状态状态编码表 1-1: 0 无效 1 有效
+function formatOperStatus(val, row, index) {
+	if (val == '0') {
+			return '无效';
+		} else if (val == '1') {
+			return '有效';
+		} else {
+			return '有效';
+		}
+	}
+// 304 供应商企业状态 类别编码表 1-2编码 说明1 生产商2 供应商9 其他
+function formatOperSpCat(val, row, index) {
+	if (val == '1') {
+		return '生产商';
+	} else if (val == '2') {
+		return '供应商';
+	} else if (val == '9') {
+		return '其它';
+	} else {
+		return '供应商';
+	}
+}
+// 317 销售详细表,医护人员 性别编码表 1-3 性别 1 男,2 女, 9 未知
+function formatOperSex(val, row, index) {
+	if (val == '1') {
+		return '男';
+	} else if (val == '2') {
+		return '女';
+	} else if (val == '男' || val == '女') {
+		return val;
+	} else {
+		return '未做说明 ';
+	}
+}
+// 305医护人员 职称编码表 1-4编码 说明1 正高2 副高3 中级4 师级/助理5 士级6 待聘
+function formatOperTitlecode(val, row, index) {
+	if (val == '1') {
+		return '正高';
+	} else if (val == '2') {
+		return '副高';
+	} else if (val == '3') {
+		return '中级';
+	} else if (val == '4') {
+		return '师级/助理';
+	} else if (val == '5') {
+		return '士级';
+	} else if (val == '6') {
+		return '待聘';
+	}  else {
+		return '未做说明';
+	}
+}
+// 305医护人员职务编码表 1-5编码
+function formatOperJobcode(val, row, index) {
+
+	if (val == '231') {
+		return '主任医师';
+	} else if (val == '232') {
+		return '副主任医师';
+	} else if (val == '233') {
+		return '主治医师';
+	} else if (val == '234') {
+		return '医师';
+	} else if (val == '235') {
+		return '医士';
+	} else if (val == '241') {
+		return '主任药师';
+	} else if (val == '242') {
+		return '副主任药师';
+	} else if (val == '243') {
+		return '主管药师';
+	} else if (val == '244') {
+		return '药师';
+	} else if (val == '245') {
+		return '荮士';
+	} else if (val == '251') {
+		return '主任护师';
+	} else if (val == '252') {
+		return '副主任护师';
+	} else if (val == '253') {
+		return '主管护师';
+	} else if (val == '254') {
+		return '护师';
+	}  else if (val == '255') {
+		return '护士';
+	}  else if (val == '261') {
+		return '主任技师';
+	}  else if (val == '262') {
+		return '副主任技师';
+	}  else if (val == '263') {
+		return '主管技师';
+	}  else if (val == '264') {
+		return '技师';
+	}  else if (val == '265') {
+		return '技士';
+	}  else {
+		return '未知';
+	}
+}
+// 305医护人员执业类别编码表 1-6编码 说明1 临床2 中医3 民族医4 中西医结合5 口腔
+function formatOperClassifycode(val, row, index) {
+	if (val == '1') {
+		return '临床';
+	} else if (val == '2') {
+		return '中医';
+	} else if (val == '3') {
+		return '民族医';
+	} else if (val == '4') {
+		return '中西医结合';
+	} else if (val == '5') {
+		return '口腔';
+	}  else if (val == '5') {
+		return '公共卫生';
+	}  else {
+		return '未知';
+	}
+}
+// 305医护人员执业范围编码表 1-7编码
+function formatOperScopecode(val, row, index) {
+
+			if (val == '001') {    return   '内科';   }
+			else if (val == '002') {    return   '外科';   }
+			else if (val == '003') {    return   '妇产科';   }
+			else if (val == '004') {    return   '儿科';   }
+			else if (val == '005') {    return   '眼耳鼻咽喉科';   }
+			else if (val == '006') {    return   '皮肤病与性病';   }
+			else if (val == '007') {    return   '精神卫生';   }
+			else if (val == '008') {    return   '职业病';   }
+			else if (val == '009') {    return   '医学影像和放射治疗';   }
+			else if (val == '010') {    return   '医学检验与病理';   }
+			else if (val == '011') {    return   '全科医学';   }
+			else if (val == '012') {    return   '急救医学';   }
+			else if (val == '013') {    return   '康复医学';   }
+			else if (val == '014') {    return   '预防保健';   }
+			else if (val == '015') {    return   '特种医学与军事医学';   }
+			else if (val == '016') {    return   '计划生育技术服务';   }
+			else if (val == '017') {    return   '中医专业';   }
+			else if (val == '018') {    return   '中西医结合专业';   }
+			else if (val == '019') {    return   '蒙医专业';   }
+			else if (val == '020') {    return   '藏医专业';   }
+			else if (val == '021') {    return   '维医专业';   }
+			else if (val == '022') {    return   '傣医专业';   }
+			else if (val == '023') {    return   '口腔专业';   }
+			else if (val == '024') {    return   '公共卫生类别专业';   }
+			else if (val == '025') {    return   '省级以上卫生行政部门规定的其他专业';   }
+			else {return '未做说明';			}
+}
+// 入库类别编码表 1-8
+function formatOperWiType(val,row,index){
+	 if (val == '0') {    return   '期初库存';   }
+	 else if (val == '1') {    return   '采购入库';   }
+	 else if (val == '2') {    return   '调拨入库';   }
+	 else if (val == '3') {    return   '退货入库';   }
+	 else if (val == '4') {    return   '盘盈';   }
+	 else if (val == '5') {    return   '拆零';   }
+	 else if (val == '9') {    return   '其它';   }
+	 else {	 return '未做说明';	}
+
+}
+// 出库类别编码表 1-9
+function formatOperDiType(val,row,index){
+	if (val == '1') {    return   '销售出库';   }
+	else if (val == '2') {    return   '调拨出库';   }
+	else if (val == '3') {    return   '盘亏';   }
+	else if (val == '4') {    return   '拆零';   }
+	else if (val == '9') {    return   '其他';   }
+	else{ return val;}
+}
+// 317结算方式(销售) 编码表 1-10:1 医保2 银联3 现金4 转账汇款5 积分/优惠券9 其他
+function formatOperPaytype(val, row, index) {
+	if (val == '1') {
+		return '医保';
+	} else if (val == '2') {
+		return '银联'; 
+	} else if (val == '3') {
+		return '现金';
+	} else if (val == '4') {
+		return '转账汇款';
+	} else if (val == '5') {
+		return '积分/优惠券';
+	} else if (val == '9') {
+		return '其他';
+	}else {
+		return 'null';
+	}
+}
+// 目录编码表 1-19 1 药品2 诊疗项目3 医疗服务设施
+function formatOperCatcode(val, row, index) {
+	if (val == '1') {
+		return '药品';
+	} else if (val == '2') {
+		return '诊疗项目';
+	} else if (val == '3') {
+		return '医疗服务设施';
+	} else {
+		return '药品';
+	}
+}
+// 项目编码表 1-12
+function formatOperSettlementcode(val, row, index) {
+	 if (val == '001') {    return   '甲类药品';   }
+	 else if (val == '002') {    return   '乙类药品';   }
+	 else if (val == '003') {    return   '特字药品';   }
+	 else if (val == '004') {    return   '自费药品';   }
+	 else if (val == '005') {    return   '一般治疗检查';   }
+	 else if (val == '006') {    return   '特殊治疗检查';   }
+	 else if (val == '007') {    return   '自费项目';   }
+	 else if (val == '008') {    return   '自费';   }
+	 else if (val == '009') {    return   '参保前费用';   }
+	 else if (val == '010') {    return   '普通治疗检查';   }
+	 else if (val == '011') {    return   '服务设施';   }
+	 else if (val == '012') {    return   '自费服务设施';   }
+	 else if (val == '999') {    return   '其他';   } 
+	 else {	return val;	}
+}
+// 结算状态编码表 1-12编码 说明0 未结算1 已结算2 已撤销9 其他
+function formatOpersiStatus(val, row, index) {
+	if (val == '0') {
+		return '未结算';
+	} else if (val == '1') {
+		return '已结算';
+	} else if (val == '2') {
+		return '已撤销';
+	} else {
+		return '其它';
+	}
+}
+// 医嘱类型编码表 1-18编码 说明001 长期医嘱002 临时医嘱003 备用医嘱
+function formatOperdoType(val, row, index) {
+	if (val == '001') {
+		return '长期医嘱';
+	} else if (val == '002') {
+		return '临时医嘱';
+	} else if (val == '003') {
+		return '备用医嘱';
+	} else {
+		return '其它';
+	}
+}
+// 住院类别编码表 1-13编码 说明
+function formatOperhospType(val, row, index) {
+	if (val == '001') {
+		return '住院';
+	} else if (val == '002') {
+		return '家庭病床';
+	} else if (val == '003') {
+		return '急诊转院';
+	} else if (val == '004') {
+		return '门诊慢性病';
+	} else {
+		return '其它';
+	}
+}
+// 接诊方式编码表 1-14编码 说明001 新发生002 自急诊转入003 自门诊大病转入004 自门诊特殊转入005 自家庭病床转入006
+// 自住院转入007 康复住院
+function formatOperdiagType(val, row, index) {
+	if (val == '001') {
+		return '新发生';
+	} else if (val == '002') {
+		return '自急诊转入';
+	} else if (val == '003') {
+		return '自门诊大病转入';
+	} else if (val == '004') {
+		return '自门诊特殊转入';
+	} else if (val == '005') {
+		return '自家庭病床转入';
+	} else if (val == '006') {
+		return '自住院转入';
+	} else if (val == '007') {
+		return '康复住院';
+	} else {
+		return '其它';
+	}
+}
+
+// 就医类别编码表 1-15 编码 说明
+
+function formatOperdoctorType(val, row, index) {
+	if (val == '001') {
+		return '本地定点医院就医';
+	} else if (val == '002') {
+		return '异地安置';
+	} else if (val == '003') {
+		return '长期驻外';
+	} else if (val == '004') {
+		return '准假外出';
+	} else if (val == '005') {
+		return '异地转诊转院';
+	} else if (val == '006') {
+		return '非定点急诊';
+	} else if (val == '007') {
+		return '异地安置的异地转院';
+	} else if (val == '008') {
+		return '长驻外地的异地转院';
+	} else if (val == '009') {
+		return '累加';
+	} else {
+		return '其它';
+	}
+}
+
+// 入院方式编码表 1-16
+function formatOperhospWay(val, row, index) {
+	if (val == '001') {
+		return '门诊';
+	} else if (val == '002') {
+		return '急诊';
+	} else if (val == '003') {
+		return '转入';
+	} else {
+		return '其它';
+	}
+}
+
+// 出院方式编码表 1-17编码 说明
+function formatOperdcOutype(val, row, index) {
+	if (val == '001') {
+		return '治愈';
+	} else if (val == '002') {
+		return '好转';
+	} else if (val == '003') {
+		return '未愈';
+	} else if (val == '004') {
+		return '恶化';
+	} else if (val == '005') {
+		return '死亡';
+	} else if (val == '006') {
+		return '自动出院';
+	} else if (val == '007') {
+		return '转院治疗';
+	} else if (val == '008') {
+		return '转家庭病床';
+	} else if (val == '009') {
+		return '未治';
+	} else if (val == '010') {
+		return '门诊大病(记账)医疗年度结束';
+	} else if (val == '011') {
+		return '年终出院';
+	} else {
+		return '其它';
+	}
+}
+// 来源编码表 1-20
+function formatcrCheckres(val, row, index) {
+	if (val == '1') {
+		return '门诊';
+	} else if (val == '2') {
+		return '住院';
+	} else {
+		return '其它';
+	}
+}
+/**
+ * 停止定点资格表格式化字段
+ */
+function tzOperate(val, row, index) {
+	if(val=='0'){
+		return '停止定点资格';
+	}
+	else if(val=='1'){
+		return '开启定点资格';
+	}
+	
+}
+function tzStatus(val, row, index) {
+	if(val=='0'){
+		return '成功';
+	}
+	else if(val=='1'){
+		return '失败';
+	}else  if(val=='2'){
+		return '错误';
+	}
+}
+function tzScan(val, row, index) {
+	if(val=='0'){
+		return '是';
+	}
+	else if(val=='1'){
+		return '否';
+	}else  if(val=='2'){
+		return '错误';
+	}
+}
+function tzYbcx(val, row, index) {
+	if(val=='0'){
+		return '是';
+	}
+	else if(val=='1'){
+		return '否';
+	}else  {
+		return '未知';
+	}
+}
+
+// <script src="${path}/js/tool/formatter.js"></script>
+// <th data-options="field:'soPaytype',align:'center',formatter:formatOper">

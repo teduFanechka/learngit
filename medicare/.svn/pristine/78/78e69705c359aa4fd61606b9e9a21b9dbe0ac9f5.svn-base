@@ -1,0 +1,135 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Operation;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IOperationManager;
+
+/**
+ * 病案首页(手术操作)
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class OperationManager implements IOperationManager {
+
+	@Autowired
+	private IBaseDao baseDao;
+
+	/**
+	 * 添加病案首页(手术操作)
+	 */
+	@Override
+	public void addOperation(String path, String cusId, String cusName, Date upCollectdate, int upId,String fileName) throws IOException, ParseException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		int error = 0;
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Operation operation;
+		Errorlog errorlog;
+		String qsql = "update Uploadfile set isHandle=1,upCount=?0,upName=?1 where upId=?2";
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 17) {
+						throw new DataException("正确字段数:17,实际解析字段数:" + name.length + ",字段不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						operation = new Operation();
+						operation.setCusId(cusId);// 获取上级编码
+						operation.setCusDareway(""); // 医院编码
+						operation.setOpAddtime(new Date());// 创建日期
+						operation.setOpPicktime(upCollectdate);// 采集日期从传来的文件采集时间获取
+						operation.setOpCaseno(name[0].trim());// 病案号
+						operation.setOpHospno(name[1].trim());// 住院号
+						operation.setOpDate(name[2].trim());// 手术操作日期
+						operation.setOpCode(name[3].trim());// 手术操作编码
+						operation.setOpName(name[4].trim());// 手术操作名称
+						operation.setOpLevel(name[5].trim());// 手术级别
+						operation.setOpPersoncode(name[6].trim());// 术者编码
+						operation.setOpPerson(name[7].trim());// 术者姓名
+						operation.setOpAide1code(name[8].trim());// I 助编码
+						operation.setOpAide1(name[9].trim());// I 助姓名
+						operation.setOpAide2code(name[10].trim());// II 助编码
+						operation.setOpAide2(name[11].trim());// II 助姓名
+						operation.setOpOptype(name[12].trim());// 手术操作类型
+						operation.setOpAnesmode(name[13].trim());// 手术麻醉方法
+						operation.setOpAnescode(name[14].trim());// 麻醉医师编码
+						operation.setOpAnes(name[15].trim());// 麻醉医师姓名
+						operation.setOpHeallevel(name[16].trim());// 手术切口愈合等级
+						baseDao.save(operation);
+						count++;
+					} catch (Exception e) {
+						error++;
+						String log = e.toString();
+						if (log.length() > 300){
+							log = log.substring(0, 300);
+						}
+						errorlog = new Errorlog();
+						errorlog.setCusId(cusId);
+						errorlog.setCusName(cusName);
+						errorlog.setErrAddtime(new Date());
+						errorlog.setErrFileflag("病案首页(手术操作)");
+						errorlog.setErrFilepath(fileName);
+						errorlog.setErrLog(log + "\n错误行号:" + (count+error) + ",当前错误行内容:\n" + line);
+						errorlog.setErrType("数据解析错误");
+						baseDao.save(errorlog);
+					}
+				}
+				baseDao.updateOrDelete(qsql, count,"解析成功"+count+"条，失败"+error+"条",upId);
+			} else {
+				baseDao.updateOrDelete(qsql,0,"非文件", upId);
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 300){
+				log = log.substring(0, 300);
+			}
+			errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("病案首页(手术操作)");
+			errorlog.setErrFilepath(fileName);
+			if (null !=name && name.length < 17) {
+				errorlog.setErrType("数据上传字段不全错误");
+				errorlog.setErrLog(log);
+				baseDao.updateOrDelete(qsql,0,"数据上传字段不全错误,正确字段数:17,实际解析字段数:" + name.length, upId);
+			} else {
+				errorlog.setErrType("数据解析错误");
+				errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+				baseDao.updateOrDelete(qsql,0,"数据解析错误", upId);
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+	}
+
+}

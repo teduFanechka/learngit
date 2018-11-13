@@ -1,0 +1,113 @@
+package yibao.yiwei.controller.system;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.system.Areacode;
+import yibao.yiwei.service.IBaseService;
+
+/**
+ * 统筹区划控制器
+ * 
+ * @author Administrator
+ * 
+ */
+@Controller
+public class AreacodeController {
+	
+	@Autowired
+	private IBaseService<Areacode> baseService;
+
+	/**
+	 * 转到区划管理
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toAreacode")
+	public String toAreacode() {
+		return "/areacode/areacode";
+	}
+	
+	/**
+	 * 区划管理
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws IOException
+	 */
+	@ResponseBody
+	@RequestMapping("/getAllAreacode")
+	public Map<String, Object> getAllAreacode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		List<Areacode> list;
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String hql = "from Areacode";
+		list = baseService.findByPage(hql, rows, page);
+		String hqlC = "select count(a.ac_Areacode) from tbl_Areacode a";
+		int count = baseService.findCountSql(hqlC);
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+
+	/**
+	 * 添加或修改区划
+	 * @param request
+	 * @param response
+	 * @return
+	 * @throws ParseException
+	 */
+	@ResponseBody
+	@RequestMapping("/addOrUpdateAreacode")
+	public Map<String, Object> addOrUpdateAreacode(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		Areacode areacode = new Areacode();
+		String acParentcode = request.getParameter("acParentcode");
+		String status;
+		String acAreacode = request.getParameter("acAreacode");
+		String acAreaname = request.getParameter("acAreaname");
+		String acStatus = request.getParameter("acStatus");
+		if (acStatus.equals("") || acStatus == null) {
+			areacode.setAcStatus(1);
+		} else {
+			areacode.setAcStatus(Integer.parseInt(acStatus));
+		}
+		areacode.setAcAreacode(acAreacode);
+		areacode.setAcAreaname(acAreaname);
+		if (acParentcode == null || acParentcode.equals("")) {
+			areacode.setAcParentcode("zbs");
+			baseService.save(areacode);
+			status = "添加完成";
+		} else {
+			areacode.setAcParentcode(acParentcode);
+			baseService.update(areacode);
+			status = "更新完成";
+		}
+		map.put("status", status);
+		return map;
+
+	}
+
+	// 批量删除信息 return null; 返回string 也可以
+	@RequestMapping("/delAreacode")
+	public void delAreacode(HttpServletRequest request, HttpServletResponse response) {
+		String acAreacode = request.getParameter("acAreacode");
+		String acParentcode = request.getParameter("acParentcode");
+		String hql = "delete Areacode a where a.acAreacode=?0 and a.acParentcode =?1";
+		baseService.updateOrDelete(hql, acAreacode, acParentcode);
+		hql = "delete ManareaRelate where acAreacode=?0";
+		baseService.updateOrDelete(hql, acAreacode);
+	}
+}

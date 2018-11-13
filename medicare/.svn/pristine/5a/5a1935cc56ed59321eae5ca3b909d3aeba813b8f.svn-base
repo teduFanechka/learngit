@@ -1,0 +1,167 @@
+package yibao.yiwei.controller.system;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.system.Customer;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.ProjectConstant;
+import yibao.yiwei.utils.Utils;
+
+/**
+ * 文件上传预警
+ * 
+ * @author Administrator
+ * 
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class CouUploadfileByDateController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	/**
+	 * 转到上传统计
+	 * @param cusFlag
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/toCouUploadfileByDate")
+	public String toCouUploadfileByDate(HttpServletRequest request,String cusFlag) {
+		request.setAttribute("cusFlag", cusFlag);
+		return "/system/couUploadfileByDate";
+	}
+
+	/**
+	 * 上传统计
+	 * @param cusFlag
+	 * @param cusName
+	 * @param page
+	 * @param rows
+	 * @param request
+	 * @param response
+	 * @param session
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@RequestMapping("/getCouUploadfileByDate")
+	public void getCouUploadfileByDate(String cusFlag, String cusName, String page, String rows, HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException {
+		String hql = "from CouUploadfileByDate where cusFlag=?0 and cufCreatedate = (select max(cufCreatedate) from CouUploadfileByDate) ";
+		String countHql = "select count(cufId) from CouUploadfileByDate where cusFlag=?0 and cufCreatedate = (select max(cufCreatedate) from CouUploadfileByDate) ";
+		if (null != cusName && !cusName.equals("")) {
+			cusName = cusName.trim();
+			hql+= " and(cusName like '%" + cusName + "%' or cufFileflag='" + cusName + "')";//cufFileflag医院编码
+			countHql+= " and (cusName like '%" + cusName + "%' or cufFileflag='" + cusName + "')";
+		}
+		hql += " order by cufUpdate desc nulls last";
+		List list = baseService.findByPage(hql, rows, page, cusFlag);
+		int total = baseService.findCount(countHql, cusFlag);
+		Utils.toBeJson(list, total, response);
+	}
+
+	/**
+	 * 转到上传统计详情
+	 * @param cusId
+	 * @param request
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	@RequestMapping("/toCouUploadfileDetail")
+	public String toCouUploadfileDetail(String cusId, HttpServletRequest request) throws UnsupportedEncodingException {
+		request.setAttribute("cusId", cusId);
+		return "/system/couUploadfileDetail";
+	}
+
+	/**
+	 * 上传统计详情
+	 * @param cusId
+	 * @param response
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	@RequestMapping("/getCouUploadfileDetail")
+	public void getCouUploadfileDetail(String cusId, HttpServletResponse response) throws IOException, ParseException {
+		Customer customer = (Customer)baseService.get(Customer.class, cusId);
+		String cusFlag = customer.getCusFlag();
+		List<String> flags = new ArrayList();
+		if (cusFlag.equals("101") || cusFlag.equals("102")) {//单体、连锁
+			flags.add("102");// 项目编码
+			flags.add("103");// 供应商/生产商信息
+			flags.add("104");// 医护人员信息
+			flags.add("106");// 入库信息
+			flags.add("112");// 出库信息
+			flags.add("116");// 库存信息
+			flags.add("108");// 销售信息
+			flags.add("114");// 库房信息
+			flags.add("110");// 处方信息
+			flags.add("115");// 科室信息
+		} else if (cusFlag.equals("201")) {//门诊
+			flags.add("202");// 项目编码
+			flags.add("203");// 供应商/生产商信息
+			flags.add("204");// 医护人员信息
+			flags.add("206");// 入库信息
+			flags.add("212");// 出库信息
+			flags.add("208");// 销售信息
+			flags.add("216");// 库存信息
+			flags.add("214");// 库房信息
+			flags.add("210");// 处方信息
+			flags.add("215");// 科室信息
+		} else if (cusFlag.equals("301")) {//医院
+			flags.add("303");// 项目编码
+			flags.add("304");// 供应商/生产商信息
+			flags.add("305");// 医护人员信息
+			flags.add("307");// 入库信息
+			flags.add("316");// 出库信息
+			flags.add("318");// 库存信息
+			flags.add("317");// 销售信息
+			flags.add("314");// 库房信息
+			flags.add("308");// 住院记录
+			flags.add("309");// 出院记录
+			flags.add("310");// 医嘱信息
+			flags.add("319");// 医嘱执行记录
+			flags.add("315");// 科室信息
+			flags.add("313");// 诊断记录
+			flags.add("325");// 病案首页(概要)
+			flags.add("326");// 病案首页(出院诊断)
+			flags.add("327");// 病案首页(手术操作)
+			flags.add("321");// 检查、检验结果
+			flags.add("322");// 检查、检验结果详细
+		}
+		List rows = new ArrayList();
+		for (String fileFlag : flags) {
+			String hql = "select up_Date,up_Count from tbl_Uploadfile where up_Date=(select max(up_Date) from tbl_Uploadfile where cus_Id=?0 and up_Fileflag=?1) and cus_Id=?2 and up_Fileflag=?3";
+			List tem = baseService.findSql(hql, cusId, fileFlag, cusId, fileFlag);
+			Map map = new HashMap();
+			map.put("typeName", ProjectConstant.map.get(fileFlag));
+			if(tem.size()>0){//有上传
+				Object[] obj = (Object[])tem.get(0);
+				map.put("lastUpdatedate", obj[0].toString().split(" ")[0]);
+				map.put("upCount", obj[1].toString());
+			} else {//无上传
+				map.put("lastUpdatedate", "<font color='red'>无上传记录</font>");
+				map.put("upCount", 0);
+			}
+			rows.add(map);
+		}
+		JSONObject jobj = new JSONObject();
+		jobj.accumulate("rows", rows);
+		response.setCharacterEncoding("utf-8");
+		response.getWriter().write(jobj.toString());
+	}
+
+}

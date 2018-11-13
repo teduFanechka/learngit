@@ -1,0 +1,15 @@
+.work-platform-col{
+   width: 50%; height: 100%; float: left;
+}
+
+.work-platform-row{
+    width:100%;height:50%;padding:10px;background:#fafafa;
+}
+
+.work-platform-col ul{
+    margin: 0 0 0 15px; padding: 0;
+}
+
+.work-platform-col li{
+    line-height: 20px; 
+}

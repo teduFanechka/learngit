@@ -1,0 +1,163 @@
+// 根据选择器checkbox的checked值进行全选/反选操作
+
+function selectAll(selector)
+{  
+    var checkBoxList=document.getElementsByName("isSelected");  
+    if(selector.checked)  
+    {  
+        var checkedFlag=true;  
+    }  
+    else  
+    {  
+        var checkedFlag=false;  
+    }  
+    for(i=0;i<checkBoxList.length;i++)  
+    {  
+        checkBoxList[i].checked=checkedFlag;  
+    }  
+}  
+
+// 获取要删除的记录的id序列后，进行批量多条删除操作
+function deleteItems()
+{  
+    var delList=selectedList();  
+    if(delList=="")  
+    {  
+        alert("尚未选择要删除的记录！");  
+        return null;  
+    }  
+    var a = window.confirm("确认删除吗?");
+    if(a){
+    	// 获取所有要删除的id数组
+	    var idList=delList.split(",");
+		    for(i=0;i<idList.length;i++){
+		    	publicDel(idList[i]);  
+		     }
+	    }
+}  
+
+// 获取要删除的记录的id序列，通过","分割
+function selectedList()
+{  
+    var delList="";  
+    var checkBoxList=document.getElementsByName("isSelected");  
+    for(i=0;i<checkBoxList.length;i++)  
+    {  
+        if(checkBoxList[i].checked)  
+        {  
+            delList+=checkBoxList[i].value+",";  
+        }  
+    }  
+    if(delList=="")  
+    {  
+        return delList;  
+    }  
+    delList=delList.slice(0,delList.length-1);  
+    return delList;  
+}  
+// -------------------****************-----------------------
+// 单独删除
+function deleteItem(idList)// 发出异步请求
+{ 
+	var a =window.confirm("确认删除吗?");
+	if(a){
+		publicDel(idList);
+	}
+}  
+
+// 抽取出单独删除和批量删除的公共方法
+function publicDel(idList){
+	 var xhr=createXHR();  
+	    xhr.onreadystatechange=function()  
+	    {  
+	    	// 获取XMLHTTP readyState状态==4,响应已完成；您可以获取并使用服务器的响应了
+	        if(xhr.readyState==4)  
+	        {  
+	            if(xhr.status>=200&&xhr.status<300||xhr.status==304)  
+	            {               
+	               <!-- alert(xhr.responseText);  -->     
+	               //从页面列表中删除数据及样式
+	                doDeleteSuccess(idList);  	              
+	            }  
+	        }  
+	    }  
+	    xhr.open("get","delHistory?id="+idList,true);  
+	    xhr.send(null);  
+}
+function createXHR()  
+{  
+    if(window.XMLHttpRequest)  
+    {  
+        return new XMLHttpRequest();  
+    }  
+    else if(window.ActiveXObject)  
+    {  
+        return new ActiveXObject("Microsoft.XMLHTTP");  
+    }  
+}  
+
+// 将已经删除的行从列表里清除，依据删除的行的id
+function doDeleteSuccess(idList)  
+{  
+    var idArray=idList.split(",");// 将id序列分割为数组
+    for(i=0;i<idArray.length;i++)  
+    {  
+        var btn=document.getElementById(idArray[i]);  
+        // 获取要删除的节点，此处为button所在的<tr></tr>标签
+        var whoToDel=btn.parentNode.parentNode;  
+        whoToDel.parentNode.removeChild(whoToDel);  
+    }  
+} 
+
+// ajax 实现文件上传
+function ajaxFileUpload() {
+
+	$.ajaxFileUpload( {
+		url : "fileUpload",
+		secureuri : false,
+		fileElementId : "file",
+		dataType : "json",
+		success : function(data) {
+			if (data.status == "success") {
+				// 上传成功
+		$('#history')[0].reset();// 表单重置
+		alert("上传成功:" + data.fileName);
+		return;
+	}
+	switch (data.message) {
+	// 解析上传状态
+		case "0": // 上传成功
+
+			break;
+		case "-1": // 上传文件不能为空
+			alert("上传文件不能为空");
+			break;
+		case "2":
+			alert("文件超过上传大小");
+			break;
+		case "3":
+			alert("文件格式错误");
+			break;
+		case "4":
+			alert("上传文件路径非法");
+			break;
+		case "5":
+			alert("上传目录没有写权限");
+			break;
+		default: // 上传失败
+			alert("上传文件失败");
+			break;
+		}
+	},
+
+	});
+}
+
+// 删除确认功能未应用于页面
+// 注意如果方法直接写在jsp页面必须将"." 路径换为 ${pageContext.request.contextPath }
+function dodelete(id) {
+	var a = window.confirm("确认删除吗?");
+	if (a) {
+		window.location.href = "./delHistory?id=" + id;
+	}
+}

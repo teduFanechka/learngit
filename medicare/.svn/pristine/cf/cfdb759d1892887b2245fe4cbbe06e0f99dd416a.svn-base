@@ -1,0 +1,27 @@
+package yibao.yiwei.service;
+
+import java.text.ParseException;
+import java.util.List;
+
+@SuppressWarnings("unchecked")
+public interface IUploadfileManager {
+	
+
+	/**
+	 * 更新文件解析状态isHandle,如果b=false,设置isCompress=5
+	 * @param b 判断解析文件是否正确
+	 * @param id 上传记录upId
+	 */
+	public int updateHandle(boolean b, Integer id);
+
+	/**
+	 * 
+	 * @param orgId 机构id
+	 * @param date 一天/一周/一月
+	 * @return List 根据日期天数与文件类型102 获得 当天解析出该类型文件的cusID 集合
+	 * @throws ParseException
+	 */
+	public List getAllcusIds(String days, String orgId) throws ParseException;
+
+
+}

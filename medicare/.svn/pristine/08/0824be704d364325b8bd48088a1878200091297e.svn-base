@@ -1,0 +1,19 @@
+package yibao.yiwei.service;
+
+import java.util.List;
+
+@SuppressWarnings("unchecked")
+public interface ITimerTask {
+
+	/**
+	 * 解析
+	 * @param list
+	 */
+	public void analysis(List list);
+	
+	/**
+	 * 统计
+	 */
+	public void count();
+
+}

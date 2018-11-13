@@ -1,0 +1,169 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+import yibao.yiwei.utils.JacksonDateHMSSerializer;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+/**
+ * 检查、检验结果详细
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_CHECKDETAIL", schema = "YIWEI")
+public class Checkdetail implements java.io.Serializable {
+
+	private String ctId;
+	private String cusId;
+	private String cusDareway;
+	private Date ctPicktime;
+	private Date ctAddtime;
+	private String ctCheckno;// 检查流水号1
+	private String ctHospno;// 住院号/门诊号2
+	private String ctItemcode;// 项目编码3
+	private String ctItemname;// 项目名称4
+	private String ctResult;// 结果5
+	private String ctUnit;// 单位6
+	private String ctPoint;// 提示7
+	private String ctRange;// 参考范围8
+	private String ctComment;// 备注9
+
+	@GenericGenerator(name = "Checkdetail_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Checkdetail_id")
+	@Column(name = "CT_ID", unique = true, nullable = false, length = 32)
+	public String getCtId() {
+		return this.ctId;
+	}
+
+	public void setCtId(String ctId) {
+		this.ctId = ctId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_DAREWAY", length = 32)
+	public String getCusDareway() {
+		return this.cusDareway;
+	}
+
+	public void setCusDareway(String cusDareway) {
+		this.cusDareway = cusDareway;
+	}
+
+	@JsonSerialize(using = JacksonDateHMSSerializer.class)
+	@Column(name = "CT_PICKTIME", length = 7)
+	public Date getCtPicktime() {
+		return this.ctPicktime;
+	}
+
+	public void setCtPicktime(Date ctPicktime) {
+		this.ctPicktime = ctPicktime;
+	}
+	@Column(name = "CT_ADDTIME", length = 7)
+	public Date getCtAddtime() {
+		return this.ctAddtime;
+	}
+
+	public void setCtAddtime(Date ctAddtime) {
+		this.ctAddtime = ctAddtime;
+	}
+
+	@Column(name = "CT_CHECKNO", length = 32)
+	public String getCtCheckno() {
+		return this.ctCheckno;
+	}
+
+	public void setCtCheckno(String ctCheckno) {
+		this.ctCheckno = ctCheckno;
+	}
+
+	@Column(name = "CT_HOSPNO", length = 32)
+	public String getCtHospno() {
+		return this.ctHospno;
+	}
+
+	public void setCtHospno(String ctHospno) {
+		this.ctHospno = ctHospno;
+	}
+
+	@Column(name = "CT_ITEMCODE", length = 32)
+	public String getCtItemcode() {
+		return this.ctItemcode;
+	}
+
+	public void setCtItemcode(String ctItemcode) {
+		this.ctItemcode = ctItemcode;
+	}
+
+	@Column(name = "CT_ITEMNAME", length = 200)
+	public String getCtItemname() {
+		return this.ctItemname;
+	}
+
+	public void setCtItemname(String ctItemname) {
+		this.ctItemname = ctItemname;
+	}
+
+	@Column(name = "CT_RESULT", length = 200)
+	public String getCtResult() {
+		return this.ctResult;
+	}
+
+	public void setCtResult(String ctResult) {
+		this.ctResult = ctResult;
+	}
+
+	@Column(name = "CT_UNIT", length = 32)
+	public String getCtUnit() {
+		return this.ctUnit;
+	}
+
+	public void setCtUnit(String ctUnit) {
+		this.ctUnit = ctUnit;
+	}
+
+	@Column(name = "CT_POINT", length = 200)
+	public String getCtPoint() {
+		return this.ctPoint;
+	}
+
+	public void setCtPoint(String ctPoint) {
+		this.ctPoint = ctPoint;
+	}
+
+	@Column(name = "CT_RANGE", length = 100)
+	public String getCtRange() {
+		return this.ctRange;
+	}
+
+	public void setCtRange(String ctRange) {
+		this.ctRange = ctRange;
+	}
+
+	@Column(name = "CT_COMMENT", length = 400)
+	public String getCtComment() {
+		return this.ctComment;
+	}
+
+	public void setCtComment(String ctComment) {
+		this.ctComment = ctComment;
+	}
+
+}

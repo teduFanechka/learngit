@@ -1,0 +1,176 @@
+package yibao.yiwei.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.exception.DataException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Deliveryitem;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.service.IDeliveryitemManager;
+
+/**
+ * 出库信息表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class DeliveryitemManager implements IDeliveryitemManager {
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 添加出库信息表
+	 */
+	@Override
+	public boolean addDeliveryitems(String path, String cusId,String cusName, Date upCollectdate, int upId, String cusFlag) throws IOException, ParseException {
+		BufferedReader bufr = null;
+		int count = 0;// 定义当行行号
+		boolean b = false;// 定义解析是否正常
+		String line = null;// 定义当前行
+		String[] name = null;// 定义当前行String数组
+		Deliveryitem deliveryitem;
+		try {
+			File file = new File(path);
+			if (file.isFile()) {
+				bufr = new BufferedReader(new FileReader(file));
+				while ((line = bufr.readLine()) != null) {
+					name = line.split("##");
+					// 上传文件解析不正确,可能为数据不全
+					if (name.length < 21) {
+						throw new DataException("异常信息:正确字段总数:21,实际解析字段数:" + name.length + ",数据不全解析停止", null);
+					}
+					for (int i = 0; i < name.length; i++) {
+						if (null != name[i] && name[i].trim().equals("NULL")){
+							name[i] = "";
+						}
+					}
+					try{
+						//判断定点是否连锁,数据解析至分店cusid下
+						// 判断定点类型是连锁药店并且上传有最后一位分店编码
+						deliveryitem = new Deliveryitem();
+						if (cusFlag.equals("102") && name.length > 21) {// length:25
+							String branchcode = name[21].trim();
+							// 分店标识为零,则保存在总店id下
+							if (branchcode.equals("0")) {
+								deliveryitem.setCusId(cusId);
+							} else {
+								// 查找分店id,父id是当前cusid,分店编码为name[]最后一位
+								String hql = "select c.cusId from Customer c where c.cusParentid =?0 and c.cusBranchcode=?1 ";
+								List list = baseDao.find(hql, cusId, branchcode);
+								if (list.size() > 0) {
+									// 分店已注册查找到分店id
+									deliveryitem.setCusId(list.get(0).toString());
+								} else {// 如果当前分店编码未注册,执行下次循环
+									continue;
+								}
+							}
+						} else {
+							deliveryitem.setCusId(cusId);
+						}
+						deliveryitem.setCusParentid("0");
+						deliveryitem.setDiNo(name[0].trim());// 出库编号 1
+						if (name[5].trim().equals("NULL") || name[5].trim().equals("")) {
+							deliveryitem.setDrugNum(0.0);
+						} else {
+							deliveryitem.setDrugNum(Double.parseDouble(name[5].trim()));// 数量(出库 )6
+						}
+						DateFormat df;
+						if (name[11].trim().equals("NULL") || name[11].trim().equals("")) {
+							deliveryitem.setDrugMfgdate(null);
+						} else {
+							if (name[11].trim().trim().length() <= 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							deliveryitem.setDrugMfgdate(df.parse(name[11].trim()));// 生产日期 12
+						}
+						if (name[10].trim().equals("NULL") || name[10].trim().equals("")) {
+							deliveryitem.setDrugExpdate(null);
+						} else {
+							if (name[10].trim().trim().length() <= 10) {
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							deliveryitem.setDrugExpdate(df.parse(name[10].trim()));// 有效期 11
+						}
+						deliveryitem.setDiReason(name[2].trim());// 出库原因 3
+						deliveryitem.setDrugCode(name[3].trim());// 项目编码(药品编码) 4
+						deliveryitem.setDrugBatchno(name[7].trim());// 生产批次 8
+						deliveryitem.setDrugMfrs(name[8].trim());// 生产商 9
+						deliveryitem.setDrugMadein(name[9].trim());// 药品产地 10
+						deliveryitem.setDrugEid(name[12].trim());// 电子监管码 13
+						deliveryitem.setDiType(name[1].trim());// 出库类别2
+						deliveryitem.setDrugName(name[4].trim());// 项目名称(药品名称)5
+						deliveryitem.setDiSpecification(name[6].trim());// 规格7
+						deliveryitem.setDiHcscode(name[13].trim());// 医保编码14
+						deliveryitem.setDiWhcode(name[14].trim());// 仓库编码15
+						deliveryitem.setDiWhname(name[15].trim());// 仓库名称16
+						deliveryitem.setDiLocation(name[16].trim());// 货位/货架号17
+						deliveryitem.setDiOpcode(name[17].trim());// 操作员编码18
+						deliveryitem.setDiOpname(name[18].trim());// 操作员名称19
+						if (name[19].trim().equals("NULL") || name[19].trim().equals("")) {
+							deliveryitem.setDiOpdatetime(null);
+						} else {
+							if (name[19].trim().length() == 10) {// 出库日期20
+								df = new SimpleDateFormat("yyyy-MM-dd");
+							} else {
+								df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+							}
+							deliveryitem.setDiOpdatetime(df.parse(name[19].trim()));
+						}
+						deliveryitem.setDiUnit(name[20].trim());// 单位21
+						deliveryitem.setDiPicktime(upCollectdate);// 采集时间
+						deliveryitem.setDiAddtime(new Date());// 创建时间
+						baseDao.save(deliveryitem);
+						count++;
+					} catch (Exception e) {
+						System.out.println("该行解析错误");
+					}
+				}
+				String upHql = "update Uploadfile u set u.upCount=?0 where u.upId=?1 ";
+				baseDao.updateOrDelete(upHql, count, upId);
+				b = true;
+			}
+		} catch (Exception e) {
+			String log = e.toString();
+			if (log.length() > 400){
+				log = log.substring(0, 300);
+			}
+			Errorlog errorlog = new Errorlog();
+			errorlog.setCusId(cusId);
+			errorlog.setCusName(cusName);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("出库信息表");
+			errorlog.setErrFilepath(path);
+			errorlog.setErrLog(log + "\n错误行号:" + (count+1) + "  当前错误行内容:\n" + line);
+			if (null !=name && name.length < 21) {
+				errorlog.setErrType("数据上传字段不全错误");
+			} else {
+				errorlog.setErrType("数据解析错误");
+			}
+			baseDao.save(errorlog);
+		} finally {
+			if (bufr != null) {
+				bufr.close();
+			}
+		}
+		return b;
+	}
+}

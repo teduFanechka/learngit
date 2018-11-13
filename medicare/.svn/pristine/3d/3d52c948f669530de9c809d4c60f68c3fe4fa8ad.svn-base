@@ -1,0 +1,233 @@
+package yibao.yiwei.dao.impl;
+
+import java.io.Serializable;
+import java.util.List;
+
+import org.hibernate.Query;
+import org.hibernate.SessionFactory;
+import org.hibernate.transform.Transformers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import yibao.yiwei.dao.IBaseDao;
+
+@SuppressWarnings("unchecked")
+@Repository
+public class BaseDao<T> implements IBaseDao<T> {
+
+	@Autowired
+	private SessionFactory sessionFactory;
+
+	/**
+	 * getSessionFactory
+	 */
+	@Override
+	public SessionFactory getSessionFactory() {
+		return sessionFactory;
+	}
+	
+	/**
+	 * 添加
+	 */
+	@Override
+	public Serializable save(T entity) {
+		return getSessionFactory().getCurrentSession().save(entity);
+	}
+
+	/**
+	 * 添加或修改
+	 */
+	@Override
+	public void update(T entity) {
+		getSessionFactory().getCurrentSession().saveOrUpdate(entity);
+	}
+
+	/**
+	 * 删除
+	 */
+	@Override
+	public void delete(T entity) {
+		getSessionFactory().getCurrentSession().delete(entity);
+	}
+	
+	/**
+	 * 根据ID查询
+	 */
+	@Override
+	public T get(Class<T> entityClazz, Serializable id) {
+		return (T) getSessionFactory().getCurrentSession().get(entityClazz, id);
+	}
+
+	/**
+	 * hql增删改
+	 */
+	@Override
+	public int updateOrDelete(String hql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createQuery(hql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return query.executeUpdate();
+	}
+
+	/**
+	 * hql查询(返回多条)
+	 */
+	@Override
+	public List<T> find(String hql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createQuery(hql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return (List) query.list();
+	}
+	
+	/**
+	 * hql查询(返回单条)
+	 */
+	@Override
+	public T findUnique(String hql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createQuery(hql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return (T)query.uniqueResult();
+	}
+	
+	/**
+	 * hql统计
+	 */
+	@Override
+	public int findCount(String hql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createQuery(hql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return Integer.parseInt(query.uniqueResult().toString());
+	}
+	
+	/**
+	 * hql分页查询
+	 */
+	@Override
+	public List<T> findByPage(String hql, int currentPage, int pageSize, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createQuery(hql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return query.setFirstResult((currentPage - 1) * pageSize)
+					.setMaxResults(pageSize)
+					.list();
+	}
+	
+	/**
+	 * sql增删改
+	 */
+	@Override
+	public int updateOrDeleteSql(String sql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createSQLQuery(sql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return query.executeUpdate();
+	}
+	
+	/**
+	 * sql查询(返回多条)
+	 */
+	@Override
+	public List<T> findSql(String sql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createSQLQuery(sql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return (List) query.list();
+	}
+	
+	/**
+	 * sql查询(返回单条)
+	 */
+	@Override
+	public T findUniqueSql(String sql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createSQLQuery(sql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return (T)query.uniqueResult();
+	}
+	
+	/**
+	 * sql统计
+	 */
+	@Override
+	public int findCountSql(String sql, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createSQLQuery(sql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return Integer.parseInt(query.uniqueResult().toString());
+	}
+	
+	/**
+	 * sql分页查询
+	 */
+	@Override
+	public List<T> findByPageSql(String sql, int currentPage, int pageSize, Object...objects) {
+		Query query = getSessionFactory().getCurrentSession().createSQLQuery(sql);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return query.setFirstResult((currentPage - 1) * pageSize)
+					.setMaxResults(pageSize)
+					.list();
+	}
+	
+	/**
+	 * sql查询转换实体
+	 */
+	@Override
+	public List<T> findSql2(String sql,String tableName,Class<T> entityClazz, Object... objects) {
+		Query query = getSessionFactory().getCurrentSession().createSQLQuery(sql).addEntity(tableName,entityClazz);
+		if (null != objects) {
+			for (int i = 0; i < objects.length; i++) {
+				query.setParameter(i + "", objects[i]);
+			}
+		}
+		return (List) query.list();
+	}
+	
+	@Override
+	public List<T> findDto(String sql,Class<T> entityClazz){
+		return getSessionFactory().getCurrentSession().createSQLQuery(sql)
+						.setResultTransformer(Transformers.aliasToBean(entityClazz))
+						.list();
+	}
+	
+	@Override
+	public List<T> findDto2(String sql,Class<T> entityClazz){
+		return getSessionFactory().getCurrentSession().createSQLQuery(sql)
+						.addEntity(entityClazz)
+						.list();
+	}
+
+}

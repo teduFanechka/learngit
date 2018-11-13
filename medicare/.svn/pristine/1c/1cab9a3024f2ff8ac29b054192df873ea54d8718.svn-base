@@ -1,0 +1,245 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 病案首页(手术操作)表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_OPERATION", schema = "YIWEI")
+public class Operation implements java.io.Serializable {
+
+	private String opId;
+	private String cusId;
+	private String cusDareway;
+	private Date opPicktime;
+	private Date opAddtime;
+	private String opCaseno;//病案号 
+	private String opHospno;//住院号 
+	private String opDate;//手术操作日期 
+	private String opCode;//手术操作编码 
+	private String opName;//手术操作名称 
+	private String opLevel;//手术级别 
+	private String opPersoncode;//术者编码
+	private String opPerson;//术者姓名  
+	private String opAide1code;//I 助编码
+	private String opAide1;//I 助姓名
+	private String opAide2code;//II 助编码 
+	private String opAide2;//II 助姓名
+	private String opOptype;//手术操作类型  
+	private String opAnesmode;//手术麻醉方法
+	private String opAnescode;//麻醉医师编码  
+	private String opAnes;//麻醉医师姓名 
+	private String opHeallevel;//手术切口愈合等级  
+
+	@GenericGenerator(name = "Operation_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Operation_id")
+	@Column(name = "OP_ID", unique = true, nullable = false, length = 32)
+	public String getOpId() {
+		return this.opId;
+	}
+
+	public void setOpId(String opId) {
+		this.opId = opId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_DAREWAY", length = 32)
+	public String getCusDareway() {
+		return this.cusDareway;
+	}
+
+	public void setCusDareway(String cusDareway) {
+		this.cusDareway = cusDareway;
+	}
+
+	@Column(name = "OP_PICKTIME", length = 7)
+	public Date getOpPicktime() {
+		return this.opPicktime;
+	}
+
+	public void setOpPicktime(Date opPicktime) {
+		this.opPicktime = opPicktime;
+	}
+
+	@Column(name = "OP_ADDTIME", length = 7)
+	public Date getOpAddtime() {
+		return this.opAddtime;
+	}
+
+	public void setOpAddtime(Date opAddtime) {
+		this.opAddtime = opAddtime;
+	}
+
+	@Column(name = "OP_CASENO", length = 32)
+	public String getOpCaseno() {
+		return this.opCaseno;
+	}
+
+	public void setOpCaseno(String opCaseno) {
+		this.opCaseno = opCaseno;
+	}
+
+	@Column(name = "OP_HOSPNO", length = 32)
+	public String getOpHospno() {
+		return this.opHospno;
+	}
+
+	public void setOpHospno(String opHospno) {
+		this.opHospno = opHospno;
+	}
+
+	@Column(name = "OP_DATE", length = 32)
+	public String getOpDate() {
+		return this.opDate;
+	}
+
+	public void setOpDate(String opDate) {
+		this.opDate = opDate;
+	}
+
+	@Column(name = "OP_CODE", length = 32)
+	public String getOpCode() {
+		return this.opCode;
+	}
+
+	public void setOpCode(String opCode) {
+		this.opCode = opCode;
+	}
+
+	@Column(name = "OP_NAME", length = 32)
+	public String getOpName() {
+		return this.opName;
+	}
+
+	public void setOpName(String opName) {
+		this.opName = opName;
+	}
+
+	@Column(name = "OP_LEVEL", length = 32)
+	public String getOpLevel() {
+		return this.opLevel;
+	}
+
+	public void setOpLevel(String opLevel) {
+		this.opLevel = opLevel;
+	}
+
+	@Column(name = "OP_PERSONCODE", length = 32)
+	public String getOpPersoncode() {
+		return this.opPersoncode;
+	}
+
+	public void setOpPersoncode(String opPersoncode) {
+		this.opPersoncode = opPersoncode;
+	}
+
+	@Column(name = "OP_PERSON", length = 32)
+	public String getOpPerson() {
+		return this.opPerson;
+	}
+
+	public void setOpPerson(String opPerson) {
+		this.opPerson = opPerson;
+	}
+
+	@Column(name = "OP_AIDE1CODE", length = 32)
+	public String getOpAide1code() {
+		return this.opAide1code;
+	}
+
+	public void setOpAide1code(String opAide1code) {
+		this.opAide1code = opAide1code;
+	}
+
+	@Column(name = "OP_AIDE1", length = 32)
+	public String getOpAide1() {
+		return this.opAide1;
+	}
+
+	public void setOpAide1(String opAide1) {
+		this.opAide1 = opAide1;
+	}
+
+	@Column(name = "OP_AIDE2CODE", length = 32)
+	public String getOpAide2code() {
+		return this.opAide2code;
+	}
+
+	public void setOpAide2code(String opAide2code) {
+		this.opAide2code = opAide2code;
+	}
+
+	@Column(name = "OP_AIDE2", length = 32)
+	public String getOpAide2() {
+		return this.opAide2;
+	}
+
+	public void setOpAide2(String opAide2) {
+		this.opAide2 = opAide2;
+	}
+
+	@Column(name = "OP_OPTYPE", length = 32)
+	public String getOpOptype() {
+		return this.opOptype;
+	}
+
+	public void setOpOptype(String opOptype) {
+		this.opOptype = opOptype;
+	}
+
+	@Column(name = "OP_ANESMODE", length = 32)
+	public String getOpAnesmode() {
+		return this.opAnesmode;
+	}
+
+	public void setOpAnesmode(String opAnesmode) {
+		this.opAnesmode = opAnesmode;
+	}
+
+	@Column(name = "OP_ANESCODE", length = 32)
+	public String getOpAnescode() {
+		return this.opAnescode;
+	}
+
+	public void setOpAnescode(String opAnescode) {
+		this.opAnescode = opAnescode;
+	}
+
+	@Column(name = "OP_ANES", length = 32)
+	public String getOpAnes() {
+		return this.opAnes;
+	}
+
+	public void setOpAnes(String opAnes) {
+		this.opAnes = opAnes;
+	}
+
+	@Column(name = "OP_HEALLEVEL", length = 32)
+	public String getOpHeallevel() {
+		return this.opHeallevel;
+	}
+
+	public void setOpHeallevel(String opHeallevel) {
+		this.opHeallevel = opHeallevel;
+	}
+
+}

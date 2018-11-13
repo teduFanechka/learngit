@@ -1,0 +1,158 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>药品入库种类统计图</title>
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/js/highcharts.js"></script>
+		<script src="${path}/js/public.js"></script>
+		<script src="${path}/js/Calendar3.js"></script>
+		<script type="text/javascript">
+			var cusFlag;
+			var cusNames = [];// 定义药店名称数组
+			var totals = [];
+			var chart;
+	
+			// 清空折线图
+			function chartClear() {
+				var series = chart.series;
+				while (series.length > 0) {
+					series[0].remove(false);
+				}
+				chart.redraw();
+			}
+			// 创建折线图
+			function createMyChart() {
+				chart = new Highcharts.Chart( {
+					chart : {
+						// 将报表对象渲染到层上
+					renderTo : 'container'
+				},
+	
+				title : {
+				    text : '药品入库种类统计图',
+					x : -20
+				// center
+					},
+					subtitle : {
+						text : '',
+						x : -20
+					},
+					xAxis : {
+						type : 'datetime',
+						dateTimeLabelFormats : {
+							day : '%m-%d' // %Y-%m-%d
+					}
+					},
+					yAxis : { // y坐标轴
+						title : {
+							text : '记录数'
+						},
+						plotLines : [ { // 通过颜色线横贯在绘图区域上标记轴中的一个特定值
+							value : 0,
+							width : 1,
+							color : '#808080'
+						} ]
+					},
+					tooltip : {
+						// 数据提示框日期格式化的方法：
+						dateTimeLabelFormats : {
+							day : '%Y-%m-%d'
+						},
+						// 数据提示框(一般为单位)
+						valueSuffix : '种'
+					},
+					legend : { // 图例说明是包含图表中数列标志和名称的容器
+						layout : 'vertical', // 垂直 (horizontal水平)
+						align : 'right',
+						verticalAlign : 'middle',
+						borderWidth : 0
+					},
+					series : [],
+					credits : {
+						enabled : false
+					// 禁用版权信息
+					}
+				});
+				chart.showLoading(); // 显示加载中...
+			}
+	
+			// 为图表设置值
+			function drawMyChart(chartdata, init) {
+				if (typeof chartdata != undefined) {
+					cusNames = chartdata.cusNames;
+					totals = chartdata.totals;
+					if (cusNames.length > 0) {
+						if (init) {
+							var date = chartdata.startDate;// 参数起始日期
+							var date = date.split('-');
+							var myDate = new Date();
+							//解决ie无法识别new Date()
+							myDate.setUTCFullYear(date[0], date[1] - 1, date[2]);
+							myDate.setUTCHours(0, 0, 0, 0);
+						} else {
+							var myDate = new Date();
+						}
+						var y = myDate.getFullYear();
+						var m = myDate.getMonth();
+						var d = myDate.getDate();
+						chartClear();//重绘折线图
+						for ( var i = 0; i < cusNames.length; i++) {
+							var seriedata = {
+								'pointStart' : Date.UTC(y, m, d),
+								'pointInterval' : -(24 * 3600 * 1000),
+								'name' : cusNames[i],
+								'data' : totals[i]
+							};
+							var serie = chart.addSeries(seriedata);
+						}
+					}
+				}
+				chart.hideLoading();// 加载完成后隐藏
+			}
+			// 初始化jsp
+			$(function() {
+				cusFlag = $("#container").attr("cusFlag");
+				createMyChart();
+				// 使用JQuery从后台获取JSON格式的数据
+				jQuery.getJSON('warehouseitemKindChartJson?cusFlag=' + cusFlag,
+						null, function(data) {
+							drawMyChart(data, false);
+						});
+			});
+			// 查询事件
+			function dosubmit() {
+				// 使用JQuery从后台获取JSON格式的数据
+				var firstDate = $("input[name='firstDate']").val();
+				var secondDate = $("input[name='secondDate']").val();
+				if (firstDate == "" || secondDate == "") {
+					return;
+				}
+	
+				// 使用JQuery从后台获取JSON格式的数据
+				jQuery.getJSON('warehouseitemKindChartJson?cusFlag=' + cusFlag, {
+					"firstDate" : firstDate,
+					"secondDate" : secondDate
+				}, function(data) {
+					drawMyChart(data, true);
+				});
+	
+			}
+		</script>
+	</head>
+	<body>
+		<div id="container" style="min-width: 800px; height: 400px;" cusFlag="${cusFlag }"></div>
+		<div style="height: 50px; margin: 3px 0 0 50px;">
+			<form>
+				从
+				<input name="firstDate" type="text" size="10" maxlength="10" onclick="new Calendar().show(this);" readonly="readonly" />
+				到
+				<input name="secondDate" type="text" size="10" maxlength="10" onclick="new Calendar().show(this);" readonly="readonly" />
+				<input type="button" onclick="dosubmit();" value="搜索" />
+				<input type="reset" value="清空" />
+			</form>
+		</div>
+	</body>
+</html>

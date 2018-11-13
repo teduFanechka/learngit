@@ -1,0 +1,541 @@
+package yibao.yiwei.temp;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.entity.system.CusareaRelate;
+import yibao.yiwei.entity.system.CusorgRelate;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.service.ICustomerManager;
+import yibao.yiwei.utils.JsonDateValueProcessor;
+import yibao.yiwei.utils.ProjectConstant;
+
+/**
+ * 没有注入Controller 注意
+ * 备份于搜索customer 分区县 注释部分 
+ * @author Administrator 使用了注解的controller不用继承也不用实现 客户端记录表
+ */
+@SuppressWarnings("unchecked")
+public class CustomerController {
+
+	@Autowired
+	private IBaseService baseService;
+	
+	@Autowired
+	private ICustomerManager customerManager;
+	
+	@Autowired
+	private Customer customer;
+	
+	@Autowired
+	private CusareaRelate cusareaRelate;
+	
+	@Autowired
+	private CusorgRelate cusorgRelate;
+
+	// 欢迎页面
+	@RequestMapping("/welcome")
+	public String goWelcome(HttpServletRequest request) {
+		return "/public/welcome";
+	}
+
+	// 添加
+	@RequestMapping("/toAddCustomer")
+	public String toAddCustomer() {
+		return "/customer/addCustomer";
+	}
+
+	/**
+	 * 请求单体药店视图-进销存数据模块
+	 * 
+	 * @param request
+	 * @param session
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	@RequestMapping("/getCustomerList")
+	public String getCustomerList(HttpServletRequest request,
+			HttpSession session) throws UnsupportedEncodingException {
+		String cusName = request.getParameter("cusName");// 查询参数
+		String cusFlag = request.getParameter("cusFlag");// 定点标识
+		List<?> list = new ArrayList<Object>();
+		if (cusName != null) {
+			cusName = URLDecoder.decode(cusName, "UTF-8");
+			String hql = "select c.cusName , c.cusId  from Customer c where c.cusFlag=?0 and c.cusStatus in (1,2) "
+					+ " and c.cusName like '%"
+					+ cusName
+					+ "%' order by c.cusRegdate desc";
+			list = baseService.find(hql, cusFlag);
+		} else {
+			// 获取session中的组织机构id
+			String orgId = (String) session.getAttribute("orgId");
+			// 根据客户标识,机构id获取所有客户名称列表
+			list = customerManager.getAllCusName(cusFlag, orgId);
+		}
+		request.setAttribute("list", list);
+		if (cusFlag.equals("101")) {
+			return "/customer/listmonomerpharmacy";
+		} else if (cusFlag.equals("102")) {// 只有连锁药店才传定点标识这个参数
+			request.setAttribute("cusFlag", cusFlag);
+			return "/customer/listchainpharmacy";
+		} else if (cusFlag.equals("201")) {
+			return "/customer/listclinic";
+		} else if (cusFlag.equals("301")) {
+			return "/customer/listhospital";
+		} else {
+			return null;
+		}
+
+	}
+
+	// 药店注册
+	@RequestMapping("/service/register")
+	@ResponseBody
+	public Map<String, Object> addCustomer(Customer customer, HttpServletRequest request,
+			HttpServletResponse response) {
+
+		// 检验客户名称是否有重复,如果有返回一个字符串.
+		String cusUniqure = request.getParameter("cusUniqure");
+		String cusname = request.getParameter("cusName");
+		String hql = "select count(c.cusName) from Customer c where c.cusUniqure=?0 or c.cusName=?1";
+		String cusid = "";// 定义主键
+		String errmsg;// 返回的提示信息
+		int errcode;// 0 成功 1 用户已存在
+		String areacode, orgid;// 区划编码,组织id
+		int temp = baseService.findCount(hql, cusUniqure, cusname);
+		if (temp > 0) {
+			// return "redirect:/file/toAddCustomer";
+			errmsg = "user already exists";
+			errcode = 1;
+		} else {
+			// Timestamp cusRegdate = new Timestamp(System.currentTimeMillis());
+			Date cusRegdate = new Date();
+			customer.setCusRegdate(cusRegdate);
+			baseService.save(customer);
+			cusid = customer.getCusId();
+
+			/**
+			 * 开始设置定点区划与组织
+			 */
+			if (cusname.contains("张店")) {
+				areacode = "370303";
+				orgid = "111111";
+			} else if (cusname.contains("淄川")) {
+				areacode = "370302";
+				orgid = "222222";
+			} else if (cusname.contains("桓台")) {
+				areacode = "370321";
+				orgid = "333333";
+			} else if (cusname.contains("临淄")) {
+				areacode = "370305";
+				orgid = "444444";
+			} else if (cusname.contains("高青")) {
+				areacode = "370322";
+				orgid = "555555";
+			} else if (cusname.contains("周村")) {
+				areacode = "370306";
+				orgid = "666666";
+			} else if (cusname.contains("博山")) {
+				areacode = "370304";
+				orgid = "777777";
+			} else if (cusname.contains("沂源")) {
+				areacode = "370323";
+				orgid = "888888";
+			} else if (cusname.contains("市直")) {
+				areacode = "370300";
+				orgid = "999999";
+			} else {
+				areacode = "370303";
+				orgid = "111111";
+			}
+			hql = "select count(c.cusId) from CusorgRelate c where c.cusId=?0";
+			int count = Integer.parseInt(baseService.find(hql, cusid).get(0).toString());
+			if (count == 0) {
+				// 添加定点机构关联表
+				cusorgRelate.setCusId(cusid);
+				cusorgRelate.setOrgId(orgid);
+				baseService.save(cusorgRelate);
+			}
+			hql = "select count(c.cusId) from CusareaRelate c where c.cusId=?0";
+			count = Integer.parseInt(baseService.find(hql, cusid)
+					.get(0).toString());
+			if (count == 0) {
+				// 添加定点区划关联表
+				cusareaRelate.setAcAreacode(areacode);
+				cusareaRelate.setCusId(cusid);
+				baseService.save(cusareaRelate);
+			}
+			/**
+			 * 结束设置定点区划与组织
+			 */
+			errmsg = "register success";
+			errcode = 0;
+		}
+		// backInfo(response, errcode, errmsg, id);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("id", cusid);
+		map.put("errmsg", errmsg);
+		map.put("errcode", errcode);
+		//System.out.println(errmsg);
+		return map;
+	}
+
+	// 返回json信息
+	public void backInfo(HttpServletResponse response, int errcode,
+			String errmsg, String id) {
+		String json = "";
+		json = "{ \"errcode\": " + errcode + ",\"errmsg\": \"" + errmsg
+				+ "\",\"id\": \"" + id + "\" }";
+
+		try {
+			response.setContentType("text/html;charset=utf-8");
+			response.getWriter().write(json);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 获取
+	@RequestMapping("/getCustomer")
+	public String getCustomer(String id, HttpServletRequest request) {
+		customer = (Customer)baseService.get(Customer.class, id);;
+		request.setAttribute("c", customer);
+		return "/customer/editCustomer";
+	}
+
+	// 更新
+	@RequestMapping("/updateCustomer")
+	public String updateCustomer(Customer customer) {
+		baseService.update(customer);
+		return "redirect:/getAllCustomer";
+	}
+
+	// 新增或修改表格数据
+	@RequestMapping("/addOrUpdateCustomer ")
+	public void addOrUpdateCustomer(HttpServletRequest request,
+			HttpServletResponse response) throws ParseException {
+		// 获取jsonArray格式的字符串 有元素为int,date类型获取Object再转换
+		String jsonStr = request.getParameter("json");
+		String cusId = null;// 定义主键
+		String json = "";// 返回json 状态
+		JSONArray jsonArray = new JSONArray();
+		jsonArray = JSONArray.fromObject(jsonStr);
+		// 当jsonStr=[] 时,即没有修改任何数据jssonArray.size() =0
+		if (jsonArray.size() > 0) {
+			// 获取jsonArray第一个json对象 jsonObject
+			JSONObject jo = jsonArray.getJSONObject(0);
+			// 验证所有必填项不为空
+			if (jo.size() > 0) {
+				// 解析jo 并获取实体字段值
+				String cusParentid = jo.getString("cusParentid");
+				String cusBranchcode = jo.getString("cusBranchcode");
+				String cusName = jo.getString("cusName");
+				String cusRegip = jo.getString("cusRegip");
+				String cusPhone = jo.getString("cusPhone");
+				String cusContact = jo.getString("cusContact");
+				String cusAddr = jo.getString("cusAddr");
+				String cusFlag = jo.getString("cusFlag");
+				String cusUniqure = jo.getString("cusUniqure");
+				String cusDareway = jo.getString("cusDareway");
+				String cusRemark = jo.getString("cusRemark");
+				String cusStatus = jo.getString("cusStatus");
+				if (cusStatus.equals("")) {
+					customer.setCusStatus(0);
+				} else {
+					customer.setCusStatus(Integer.parseInt(cusStatus));
+				}
+				String cusRegdate1 = jo.getString("cusRegdate");
+				DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				if (cusRegdate1.equals("")) {
+					customer.setCusRegdate(null);
+				} else {
+					Date cusRegdate = df.parse(cusRegdate1);
+					customer.setCusRegdate(cusRegdate);
+				}
+				customer.setCusParentid(cusParentid);
+				customer.setCusAddr(cusAddr);
+				customer.setCusBranchcode(cusBranchcode);
+				customer.setCusContact(cusContact);
+				customer.setCusDareway(cusDareway);
+				customer.setCusFlag(cusFlag);
+				customer.setCusName(cusName);
+				customer.setCusPhone(cusPhone);
+				customer.setCusRegip(cusRegip);
+				customer.setCusRemark(cusRemark);
+				customer.setCusUniqure(cusUniqure);
+				// 如果等于14 就表示是有主键id,update一条表格数据 , 否则是新增一条表格数据
+				if (jo.size() == 14) {
+					// 获取id主键
+					cusId = jo.getString("cusId");
+					customer.setCusId(cusId);
+					baseService.update(customer);
+					json = "{ \"status\": \"update\" }";
+				} else {
+					baseService.save(customer);
+					json = "{\"status\":\"add\"}";
+				}
+				try {
+					response.setContentType("text/html;charset=utf-8");
+					response.getWriter().write(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+
+
+	/**
+	 * 修改注册定点名称与唯一标识(添加"-注销状态"),状态改为-1
+	 * 
+	 * @ResponseBody 相当于下面response 作用 同上
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping("/delCustomer")
+	public void delCustomer(HttpServletRequest request,
+			HttpServletResponse response) {
+		String ids = request.getParameter("ids");// 要批量删除的id字符串获取主键字符串 1,2,3
+		String arr[] = ids.split(",");// 分隔为主键数组
+		for (int i = 0; i < arr.length; i++) {
+			// customerManager.delCustomer(arr[i]);// 根据ID主键进行删除操作
+			/**
+			 * 修改状态为-1
+			 */
+			customer = (Customer)baseService.get(Customer.class, arr[i]);
+			String cusName = customer.getCusName();
+			cusName += "-注销状态";
+			String cusUniqure = customer.getCusUniqure();
+			cusUniqure += "-注销状态";
+			//System.out.println(cusName + "  " + cusUniqure);
+			String hql = "update Customer c set c.cusStatus=-1,c.cusName=?0,c.cusUniqure=?1 where c.cusId=?2";
+			baseService.updateOrDelete(hql, cusName, cusUniqure, arr[i]);
+		}
+	}
+
+	// 分页显示所有客户 page方式
+	@RequestMapping("/getAllCustomer")
+	public String getAllCustomer(HttpServletRequest request) {
+
+		Page page;
+		String hql = "from Customer c order by c.cusRegdate desc";
+		String countHql = "select count(*) from Customer";
+		String url = request.getRequestURI();
+		String pagenum = request.getParameter("pagenum");
+		if (pagenum == null) {
+			page = baseService.queryForPage(countHql,hql, url, 1);
+		} else {
+			page = baseService.queryForPage(countHql,hql, url, Integer.parseInt(pagenum));
+		}
+		request.setAttribute("page", page);
+		return "/customer/customerManager";
+	}
+
+	// 分页获取条件查询 page方式
+	public String getConditionCustomerPage(HttpServletRequest request) {
+		Page page;
+		String cusFlag = request.getParameter("cusFlag");
+		String hql = "from Customer c where c.cusFlag=?0";
+		String countHql = "select count(c.id) from Customer c where c.cusFlag=?0";
+		String url = request.getRequestURI();
+		String currentPage = request.getParameter("pagenum");
+		if (currentPage == null) {
+			page = baseService.queryForPage(countHql, hql, url, 1, cusFlag);
+		} else {
+			page = baseService.queryForPage(countHql, hql, url, Integer.parseInt(currentPage), cusFlag);
+		}
+		request.setAttribute("page", page);
+		return "/customer/customerPage";
+	}
+
+	// 请求customer视图(用于定点管理模块)
+	@RequestMapping("/toCustomer")
+	public String toCustomer(HttpServletRequest request) {
+		String cusFlag = request.getParameter("cusFlag");
+		request.setAttribute("cusFlag", cusFlag);
+		return "/customer/customer";
+	}
+
+	/**
+	 * datagrid 形式获取条件查询(用于定点管理模块)
+	 * 
+	 * @param request
+	 * @param response
+	 * @param session
+	 * @param session
+	 *            权限控制
+	 * @return
+	 * @throws IOException
+	 */
+	@ResponseBody
+	@RequestMapping("/getConditionCustomer")
+	public Map<String, Object> getConditionCustomer(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IOException {
+		Map<String, Object> map = new HashMap<String, Object>();
+		// 获取session中的组织机构id
+		//String orgId = (String) session.getAttribute("orgId");
+		List<?> list = new ArrayList<Object>();// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusFlag = request.getParameter("cusFlag");// 定点标识
+		String cusName = request.getParameter("cusName");// 按定点名称查询
+		String hql, countHql;
+		int count;
+		// 按名称模糊查询定点
+		if (cusName == null) {
+			countHql = "select count(*) from Customer c where c.cusFlag=?0 and c.cusStatus>-1 ";
+			count = baseService.findCount(countHql, cusFlag);
+			hql = "from Customer c where c.cusFlag=?0 and c.cusStatus>-1 order by c.cusStatus asc,c.cusId, c.cusRegdate desc";
+			list = baseService.findByPage(hql, rows, page,
+					cusFlag);
+		} else {
+			cusName = cusName.trim();
+			if (cusName.equals("")) {
+				countHql = "select count(*) from Customer c where c.cusFlag=?0 and c.cusStatus>-1 ";
+				count = baseService.findCount(countHql, cusFlag);
+				hql = "from Customer c where c.cusFlag=?0 and c.cusStatus>-1 order by c.cusStatus asc,c.cusId, c.cusRegdate desc";
+				list = baseService.findByPage(hql, rows, page, cusFlag);
+			} else {
+				countHql = "select count(*) from Customer c where c.cusFlag=?0 and c.cusName like '%" + cusName + "%' ";
+				count = baseService.findCount(countHql, cusFlag);
+				hql = "from Customer c where c.cusFlag=?0 and c.cusName like '%" + cusName
+						+ "%' order by c.cusStatus asc,c.cusId, c.cusRegdate desc";
+				list = baseService.findByPage(hql, rows, page, cusFlag);
+
+			}
+
+		}
+/*		if (orgId.equals("000000")) {
+			countHql = "select count(c.id) from Customer c where c.cusFlag=?0 and c.cusStatus>-1 ";
+			// datagrid 获取当前cusFlag条件查询总记录数
+			count = customerManager
+					.getTotalCondetionCustomer(countHql, cusFlag);
+			if (count > 0) {
+				hql = "from Customer c where c.cusFlag=?0 and c.cusStatus>-1 order by c.cusStatus asc,c.cusId, c.cusRegdate desc";
+				// order by c.cusStatus asc, c.cusRegdate desc";
+				list = customerManager.getCondetionCustomer(hql, rows, page,
+						cusFlag);
+				// toBeJson(list, count, response);
+			}
+		} else {
+			countHql = "select count(c.id) from Customer c,CusorgRelate r where c.cusFlag=?0  and c.cusStatus>-1"
+					+ "and c.cusId=r.cusId and r.orgId=?1 ";
+			// datagrid 获取当前cusFlag条件查询总记录数
+			count = customerManager.getTotalCondetionCustomer(countHql,
+					cusFlag, orgId);
+			if (count > 0) {
+				hql = " select c from Customer c,CusorgRelate r  where c.cusFlag=?0 and c.cusStatus>-1 and "
+						+ "c.cusId=r.cusId and r.orgId=?1 order by c.cusStatus asc, c.cusRegdate desc,c.cusId ";
+				list = customerManager.getCondetionCustomer(hql, rows, page,
+						cusFlag, orgId);
+				// toBeJson(list, count, response);
+			}
+		}*/
+		/**
+		 * Customer get方法 @JsonSerialize(using=CustomDateSerializer.class)
+		 * JacksonDateSerializer 配置日期格式 使用jackson 将pojo转换成json
+		 */
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+	}
+
+	/**
+	 * 根据参数查询所有customer 定点手动解析请求
+	 * 
+	 * @param request
+	 * @param response
+	 * @return Map
+	 */
+	@ResponseBody
+	@RequestMapping("/getSearchCustomer")
+	public Map<String, Object> getSearchCustomer(HttpServletRequest request,
+			HttpServletResponse response) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		// 获取session中的组织机构id
+		List<?> list = new ArrayList<Object>();// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusName = request.getParameter("cusName");// 按定点名称查询
+		String hql, countHql;
+		int count;
+		if (cusName == null) {
+			countHql = "select count(*) from Customer c where c.cusStatus=1 ";
+			hql = "from Customer c where c.cusStatus=1  order by c.cusId desc";
+		} else {
+			cusName = cusName.trim();
+			if (cusName.equals("")) {
+				countHql = "select count(*) from Customer c where c.cusStatus=1 ";
+				hql = "from Customer c where c.cusStatus=1  order by c.cusId desc";
+			} else {
+				countHql = "select count(*) from Customer c where c.cusName like '%"
+						+ cusName + "%' ";
+				hql = "from Customer c where  c.cusName like '%" + cusName
+						+ "%' order by c.cusStatus asc, c.cusId desc";
+			}
+		}
+		count = baseService.findCount(countHql);
+		list = baseService.findByPage(hql, rows, page);
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+
+	}
+
+	// 转化为Json格式 ,将有Date 格式的list 转为json 可识别格式"2014-01-12 12:20:10"
+	public void toBeJson(List<?> list, int total, HttpServletResponse response) throws IOException {
+		// 调用工具类 list(含有java.util.Date)转换成json
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		response.setContentType("application/json;charset=UTF-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+
+	// 根据客户id 获取客户信息(用于进销存数据 功能块)
+	@RequestMapping("/getCustomerInfo")
+	public String getCustomerInfo(String cusId, HttpServletRequest request, HttpServletResponse response) {
+		customer = (Customer)baseService.get(Customer.class, cusId);
+		String type = ProjectConstant.getFileFlag(customer.getCusFlag());// 根据101获取"单体药店"
+		request.setAttribute("c", customer);
+		request.setAttribute("cusFlag", type);
+		return "/public/customerinfo";
+	}
+
+	// 测试jsp页面
+	@RequestMapping("/dotest")
+	@ResponseBody
+	public Map<String, Object> dotest() {
+		String hql = "from Customer c where c.cusFlag=?0";
+		List<?> list = baseService.find(hql, "101");
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("code", true);
+		map.put("list", list);
+		return map;
+	}
+}

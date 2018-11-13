@@ -1,0 +1,105 @@
+package yibao.yiwei.entity;
+
+import java.util.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 药品出库记录表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_DRUGSDELIVERY", schema = "YIWEI")
+public class Drugsdelivery implements java.io.Serializable {
+
+	private String ddId;//出库ID
+	private String cusId;//客户ID
+	private String cusParentid;//客户上级ID 总店、单体0
+	private String ddType;//出库类型
+	private String ddNo;//出库单号
+	private Date ddDatetime;//出库时间
+	private String ddAuditor;//审核员
+	private Date ddAuditdate;//审核日期
+
+	@GenericGenerator(name = "Drugsdelivery_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Drugsdelivery_id")
+	@Column(name = "DD_ID", unique = true, nullable = false, length = 32)
+	public String getDdId() {
+		return this.ddId;
+	}
+
+	public void setDdId(String ddId) {
+		this.ddId = ddId;
+	}
+
+	@Column(name = "CUS_ID", length = 32)
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "CUS_PARENTID", length = 32)
+	public String getCusParentid() {
+		return this.cusParentid;
+	}
+
+	public void setCusParentid(String cusParentid) {
+		this.cusParentid = cusParentid;
+	}
+
+	@Column(name = "DD_TYPE", length = 32)
+	public String getDdType() {
+		return this.ddType;
+	}
+
+	public void setDdType(String ddType) {
+		this.ddType = ddType;
+	}
+
+	@Column(name = "DD_NO", length = 32)
+	public String getDdNo() {
+		return this.ddNo;
+	}
+
+	public void setDdNo(String ddNo) {
+		this.ddNo = ddNo;
+	}
+
+	@Column(name = "DD_DATETIME", length = 7)
+	public Date getDdDatetime() {
+		return this.ddDatetime;
+	}
+
+	public void setDdDatetime(Date ddDatetime) {
+		this.ddDatetime = ddDatetime;
+	}
+
+	@Column(name = "DD_AUDITOR", length = 16)
+	public String getDdAuditor() {
+		return this.ddAuditor;
+	}
+
+	public void setDdAuditor(String ddAuditor) {
+		this.ddAuditor = ddAuditor;
+	}
+
+	@Column(name = "DD_AUDITDATE", length = 7)
+	public Date getDdAuditdate() {
+		return this.ddAuditdate;
+	}
+
+	public void setDdAuditdate(Date ddAuditdate) {
+		this.ddAuditdate = ddAuditdate;
+	}
+
+}

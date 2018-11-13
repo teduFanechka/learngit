@@ -1,0 +1,63 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * 定点机构关联表
+ */
+@Entity
+@Table(name = "SYS_CUSORG_RELATE", schema = "YIWEI")
+public class CusorgRelate implements java.io.Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -818526326911984937L;
+	// 定义组织机构id orgId属性,作为标识属性的成员(联合主键A)
+	@Id
+	@Column(name = "ORG_ID", nullable = false, length = 32)
+	private String orgId;
+	// 定义定点id cusId 属性,作为标识属性的成员(联合主键B)
+	@Id
+	@Column(name = "CUS_ID", nullable = false, length = 32)
+	private String cusId;
+
+	public String getCusId() {
+		return this.cusId;
+	}
+
+	public void setCusId(String cusId) {
+		this.cusId = cusId;
+	}
+
+	@Column(name = "ORG_ID", length = 32)
+	public String getOrgId() {
+		return this.orgId;
+	}
+
+	public void setOrgId(String orgId) {
+		this.orgId = orgId;
+	}
+
+//	// 重写equals()方法,根据orgId,muUserid进行判断
+//	public boolean equals(Object obj) {
+//		if (this == obj) {
+//			return true;
+//		}
+//		if (obj != null && obj.getClass() == CusorgRelate.class) {
+//			CusorgRelate target = (CusorgRelate) obj;
+//			return target.getOrgId().equals(this.orgId)
+//					&& target.getCusId().equals(this.cusId);
+//		}
+//		return false;
+//	}
+//
+//	// 重写hashCode()方法,根据orgId,muUserid 计算hashCodew值
+//	public int hashCode() {
+//		return getOrgId().hashCode() * 31 + getCusId().hashCode();
+//	}
+
+}

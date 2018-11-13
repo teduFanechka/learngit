@@ -1,0 +1,61 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import yibao.yiwei.entity.Department;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+
+/**
+ * 科室信息控制器
+ * 
+ * @author Administrator
+ * 
+ */
+@Controller
+public class DepartmentController {
+	
+	@Autowired
+	private IBaseService<Department> baseService;
+	
+	/**
+	 * 转到科室信息
+	 * @param cusId
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("toDepartment")
+	public String toDepartment(String cusId, HttpServletRequest request) {
+		request.setAttribute("cusId", cusId);
+		return "/department/department";
+	}
+
+	/**
+	 * 科室信息
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 */
+	@RequestMapping("getAllDepartment")
+	public void getAllDepartment(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		List<Department> list;// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");// 当前cusId
+		String hql = "from Department d where d.cusId=?0";
+		String countHql = "select count(DEPT_ID) from tbl_Department d where d.cus_Id = ?0";
+		int count = baseService.findCountSql(countHql, cusId);
+		if (count > 0) {
+			list = baseService.findByPage(hql, rows, page, cusId);
+			Utils.toBeJson(list, count, response);
+		}
+	}
+}

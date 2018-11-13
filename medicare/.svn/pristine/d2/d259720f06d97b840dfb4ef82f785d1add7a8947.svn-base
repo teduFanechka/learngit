@@ -1,0 +1,131 @@
+package yibao.yiwei.service.impl.system;
+
+import java.util.Date;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
+import org.dom4j.Node;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.system.Errorlog;
+import yibao.yiwei.entity.system.Tzddlog;
+import yibao.yiwei.service.system.ITzddlogManager;
+import yibao.yiwei.webservice.DarewayWebServiceClient;
+
+/**
+ * 停止定点日志 服务
+ * @author Administrator
+ */
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class TzddlogManager implements ITzddlogManager {
+	
+	private final Log log = LogFactory.getLog(TzddlogManager.class);
+	
+	@Autowired
+	private IBaseDao baseDao;
+	
+	/**
+	 * 抽取开启或停止定点共性方法
+	 * 
+	 * @param ids 主键串
+	 * @param operate 开启1/停止0
+	 */
+	@Override
+	public void updateOperateTzddlog(String ids, int operate, String remark) {
+		String arr[] = ids.split(",");// 分隔为主键数组
+		Tzddlog tzddlog;
+		for (int i = 0; i < arr.length; i++) {
+			String tzId = arr[i];
+			tzddlog = (Tzddlog) baseDao.get(Tzddlog.class, tzId);
+			String yybm = tzddlog.getTzYybm();
+			//调用地纬接口停止定点开始
+			log.info("yybm="+yybm+",operate="+operate);
+			String result = DarewayWebServiceClient.getDWResult(yybm, operate);
+			result = result == null ? "调用地维接口异常!" : result;
+			log.info("result="+result);
+			//add by fd 0516 分解返回值
+			String errflag = null;
+			String errtext = null;
+			//<?xml version="1.0" encoding="GBK"?><p><s errflag="0" /><s errtext="定点【淄川区杨寨东方药店】停止暂停定点资格成功！" /><s _lesb__errcode_="0" /></p>
+			try {
+				Document document = DocumentHelper.parseText(result);
+				Node node1 = document.selectSingleNode("//s[@errflag]");  
+				Node node2 = document.selectSingleNode("//s[@errtext]");
+				
+				Element element1=(Element)node1;
+				errflag = element1.attributeValue("errflag");
+			    
+			    Element element2=(Element)node2;
+			    errtext = element2.attributeValue("errtext");
+			
+
+			} catch (DocumentException e) {
+				e.printStackTrace();
+			}  
+			
+//			StringReader str = new StringReader(result);  
+//			InputSource is = new InputSource(str);  
+//			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();  
+//			DocumentBuilder builder;
+//			try {
+//				builder = factory.newDocumentBuilder();
+//				Document doc = builder.parse(is);
+//				doc.getNodeValue("");
+//				System.out.println();
+//				
+//			} catch (ParserConfigurationException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} catch (SAXException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} 
+			
+//			if (result.contains("errflag=\"0\"")) {
+//				tzddlog.setTzDate(new Date());
+//				status = "0";
+//			} else {
+//				status = "1";
+//			}
+			
+			String status = errflag;
+			tzddlog.setTzDate(new Date());
+			//记录停止定点日志表开始
+			// tzddlog.setTzId(tzId);
+			tzddlog.setTzOperate(operate + "");
+			tzddlog.setTzStatus(status);// 由上面方法
+			tzddlog.setTzStartdate(new Date());
+			if (operate == 0) {
+				tzddlog.setTzManual("0");
+				result = "停止:[" + errflag +"]"+ errtext;
+			} else if (operate == 1) {
+				tzddlog.setTzManual("1");
+				result = "开启:[" + errflag +"]"+ errtext;
+			}
+			tzddlog.setTzNote(result);
+			tzddlog.setRemark(remark);
+			baseDao.update(tzddlog);
+			
+			Errorlog errorlog = new Errorlog();
+			errorlog.setCusId(ids);
+			errorlog.setCusName(ids);
+			errorlog.setErrAddtime(new Date());
+			errorlog.setErrFileflag("定点资格表");
+			errorlog.setErrLog(result);
+			errorlog.setErrType("定点资格开关记录");
+			baseDao.save(errorlog);
+		}
+	}
+}

@@ -1,0 +1,132 @@
+package yibao.yiwei.service;
+
+import java.io.Serializable;
+import java.util.List;
+
+public interface IBaseService<T> {
+
+	/**
+	 * 添加
+	 * @param entity
+	 * @return
+	 */
+	public Serializable save(T entity);
+
+	/**
+	 * 添加或修改
+	 * @param entity
+	 */
+	public void update(T entity);
+
+	/**
+	 * 删除
+	 * @param entity
+	 */
+	public void delete(T entity);
+
+	/**
+	 * 根据ID查询
+	 * @param entityClazz
+	 * @param id
+	 * @return
+	 */
+	public T get(Class<T> entityClazz, Serializable id);
+	
+	/**
+	 * hql增删改
+	 * @param hql
+	 * @param objects
+	 * @return
+	 */
+	public int updateOrDelete(String hql, Object... objects);
+	
+	/**
+	 * hql查询(返回多条)
+	 * @param hql
+	 * @param objects
+	 * @return
+	 */
+	public List<T> find(String hql, Object... objects);
+	
+	/**
+	 * hql查询(返回单条)
+	 * @param hql
+	 * @param objects
+	 * @return
+	 */
+	public T findUnique(String hql, Object... objects);
+	
+	/**
+	 * hql统计
+	 * @param hql
+	 * @param objects
+	 * @return
+	 */
+	public int findCount(String hql, Object... objects);
+	
+	/**
+	 * hql分页查询
+	 * @param hql
+	 * @param rows
+	 * @param page
+	 * @param objects
+	 * @return
+	 */
+	public List<T> findByPage(String hql, String rows, String page, Object... objects);
+	
+	/**
+	 * sql增删改
+	 * @param sql
+	 * @param objects
+	 * @return
+	 */
+	public int updateOrDeleteSql(String sql, Object... objects);
+	
+	/**
+	 * sql查询(返回多条)
+	 * @param sql
+	 * @param objects
+	 * @return
+	 */
+	public List<T> findSql(String sql, Object... objects);
+	
+	/**
+	 * sql查询(返回单条)
+	 * @param sql
+	 * @param objects
+	 * @return
+	 */
+	public T findUniqueSql(String sql, Object... objects);
+	
+	/**
+	 * sql统计
+	 * @param hql
+	 * @param objects
+	 * @return
+	 */
+	public int findCountSql(String hql, Object... objects);
+	
+	/**
+	 * sql分页查询
+	 * @param sql
+	 * @param rows
+	 * @param page
+	 * @param objects
+	 * @return
+	 */
+	public List<T> findByPageSql(String sql, String rows, String page, Object... objects);
+	
+	/**
+	 * sql查询转换实体
+	 * @param sql
+	 * @param tableName
+	 * @param entityClazz
+	 * @param objects
+	 * @return
+	 */
+	public List<T> findSql2(String sql,String tableName,Class<T> entityClazz, Object... objects);
+	
+	public List<T> findDto(String sql,Class<T> entityClazz);
+	
+	public List<T> findDto2(String sql,Class<T> entityClazz);
+}

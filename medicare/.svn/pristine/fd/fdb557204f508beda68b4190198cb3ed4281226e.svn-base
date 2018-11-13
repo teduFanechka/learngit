@@ -1,0 +1,76 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>药品入库数量统计图</title>
+		<c:set value="${pageContext.request.contextPath}" var="path"
+			scope="page" />
+		<link rel="stylesheet" href="${path}/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="${path}/css/bootstrap.css" />
+		<link rel="stylesheet" href="${path}/css/bootstrap-theme.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/js/highcharts/highcharts.js"></script>
+		<script src="${path}/js/highcharts/public.js"></script>
+		<script src="${path}/js/warehouseitem/warehouseitemAmountChart.js"></script>
+	</head>
+	<body>
+
+		<div class="container">
+			<div class="row clearfix">
+				<div class="col-md-12 column">
+					<div class="row clearfix">
+						<div class="col-md-4 column">
+							<div style="margin-top: 20px"></div>
+								<ol>
+									<c:if test="${!empty cusNames}">
+										<c:forEach items="${cusNames}" var="name">
+											<li class="cusitem" cusname="${name}">
+												<a href="javascript: void(0);" class="cus" day="1">${name
+													}</a>
+											</li>
+										</c:forEach>
+									</c:if>
+								</ol>
+							
+						</div>
+						<div class="col-md-8 column">
+							<div class="row clearfix">
+								<div class="col-md-12 column">
+									<div style="margin-top: 20px"></div>
+									<div id="mychartdiv" style="min-width: 800px; height: 400px;"></div>
+								</div>
+							</div>
+							<div class="row clearfix">
+								<div class="col-md-12 column">
+									<div class="text-center">
+										<c:choose>
+											<c:when test="${!empty status}">
+												<ul class="pagination">
+													<li>
+														<a href="javascript: void(0);" class="days" day="1">一天</a>
+													</li>
+													<li>
+														<a href="javascript: void(0);" class="days" day="7">一周</a>
+													</li>
+													<li>
+														<a href="javascript: void(0);" class="days" day="30">一月</a>
+													</li>
+												</ul>
+											</c:when>
+											<c:otherwise>
+												<H3>
+													...未显示
+												</H3>
+											</c:otherwise>
+										</c:choose>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

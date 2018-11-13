@@ -1,0 +1,308 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.controller.system.AuthPassport;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Department;
+import yibao.yiwei.entity.Hospitalized;
+import yibao.yiwei.entity.system.Areacode;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.JsonDateValueProcessor;
+
+/**
+ * 住院信息控制器
+ * 
+ * @author Administrator
+ * 
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class HospitalizedController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	/**
+	 * 请求视图
+	 * 
+	 * @param cusId
+	 *            listhospital.jsp 参数
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("toHospitalized")
+	public String toHospitalized(String cusId, HttpServletRequest request) {
+		request.setAttribute("cusId", cusId);
+		return "/hospitalized/hospitalized";
+	}
+
+	// datagrid分页 获取当前cusid条件查询总记录数
+	@RequestMapping("getAllHospitalized")
+	public void getAllHospitalized(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		List<Hospitalized> list;// 返回的结果集无论有没有条件查询
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");// 当前cusId
+		String hql = "from Hospitalized h where h.cusId=?0 order by h.hospAddtime desc";
+		String countHql = "select count(h.HOSP_ID) from tbl_Hospitalized h where h.cus_Id = ?0 ";
+		int count = baseService.findCountSql(countHql, cusId);
+		if (count > 0) {
+			list = baseService.findByPage(hql, rows, page, cusId);
+			toBeJson(list, count, response);
+		}
+	}
+
+	// 转化为Json格式 ,将有Date 格式的list 转为json 可识别格式"2014-01-12 12:20:10"
+	public void toBeJson(List<Hospitalized> list, int total, HttpServletResponse response) throws IOException {
+		// 调用工具类 list(含有java.util.Date)转换成json
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		response.setContentType("application/json;charset=UTF-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+	
+	/**
+	 * 转到住院统计页面
+	 * @param request
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toHospital")
+	public String toHospital(HttpServletRequest request) {
+		return "/hospitalized/hospital";
+	}
+	
+	/**
+	 * 住院统计页面tree
+	 * @param request
+	 * @param id
+	 * @param type
+	 * @return
+	 */
+	@RequestMapping("/getHospital")
+	@ResponseBody
+	public List getHospital(HttpServletRequest request, String id, String type) throws UnsupportedEncodingException {
+        
+        String hql;
+		List list;
+		List<Map<String, Object>> list2;
+		Map<String, Object> map;
+		Map<String, String> map2;
+		
+        if(null == type){//地区
+        	hql = "from Areacode where acStatus=1";
+        	list = baseService.find(hql);
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Areacode areacode;
+        	for(int i = 0; i < list.size(); i++){
+    			areacode = (Areacode)list.get(i);
+    			map = new HashMap<String, Object>();
+    			map.put("id", areacode.getAcAreacode());
+    			map.put("text", areacode.getAcAreaname());
+    			map.put("state", "closed");
+    			map.put("iconCls", "icon-folder1");
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "customer");
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+    		}
+        } else if(type.equals("customer")){//医院
+        	hql = "select c.* from tbl_Customer c inner join SYS_CUSAREA_RELATE cr on c.cus_Id = cr.cus_Id where cr.ac_Areacode=?0 and c.cus_Flag='301' order by cus_name";
+        	list = baseService.findSql2(hql,"c",Customer.class, id);
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Customer customer;
+        	for(int i = 0; i < list.size(); i++){
+        		customer = (Customer)list.get(i);
+        		map = new HashMap<String, Object>();
+        		map.put("id", customer.getCusId());
+    			map.put("text", customer.getCusName());
+    			map.put("state", "closed");
+    			map.put("iconCls", "icon-folder1");
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "department");
+    			map2.put("cusName", customer.getCusName());
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+        	}
+        } else if(type.equals("department")){//科室
+        	String cusName = URLDecoder.decode(request.getParameter("cusName"), "UTF-8");
+        	
+        	hql = "from Department where deptBeds!='NULL' and deptBeds!='0' and cusId=?0 order by deptName";
+        	list = baseService.find(hql,id);
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Department department;
+        	for(int i = 0; i < list.size(); i++){
+        		department = (Department)list.get(i);
+        		map = new HashMap<String, Object>();
+        		map.put("id", department.getDeptId());
+    			map.put("text", department.getDeptName());
+    			map.put("state", "closed");
+    			map.put("iconCls", "icon-folder1");
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "hospitalized");
+    			map2.put("cusId", department.getCusId());
+    			map2.put("hospDept", department.getDeptCode());
+    			map2.put("cusName", cusName);
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+        	}
+        } else if(type.equals("hospitalized")){//病人
+        	String cusId = request.getParameter("cusId");
+        	String hospDept = request.getParameter("hospDept");
+        	String cusName = URLDecoder.decode(request.getParameter("cusName"), "UTF-8");
+        	
+        	hql = "select h.* from TBL_HOSPITALIZED h left join TBL_DISCHARGED d on h.HOSP_NO=d.HOSP_NO where d.HOSP_NO is null and h.cus_Id=?0 and h.hosp_Dept=?1 order by h.si_Ptsname";
+        	list = baseService.findSql2(hql,"h",Hospitalized.class, cusId, hospDept);
+        	
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Hospitalized hospitalized;
+        	for(int i = 0; i < list.size(); i++){
+        		hospitalized = (Hospitalized)list.get(i);
+        		map = new HashMap<String, Object>();
+        		map.put("id", hospitalized.getHospNo());
+    			map.put("text", hospitalized.getSiPtsname());
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "next");
+    			map2.put("cusName", cusName);
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+        	}
+        } else {
+        	list2 = null;
+        }
+        return list2;
+	}
+	
+	/**
+	 * 搜索
+	 * @param text
+	 * @return
+	 */
+	@RequestMapping("/searchHospital")
+	@ResponseBody
+	public List searchHospital(String text) throws UnsupportedEncodingException {
+		text = URLDecoder.decode(text, "UTF-8");
+		String hql = "from Customer where (cusName like '%" + text + "%' or cusDareway='" + text + "') and (cusStatus = 1 or cusStatus=2)";
+		List list = baseService.find(hql);
+    	List list2 = new ArrayList<Map<String, Object>>();
+    	Map<String, Object> map;
+    	Customer customer;
+    	for(int i = 0; i < list.size(); i++){
+    		customer = (Customer)list.get(i);
+    		map = new HashMap<String, Object>();
+    		map.put("id", customer.getCusId());
+			map.put("text", customer.getCusName());
+			map.put("iconCls", "icon-folder1");
+			list2.add(map);
+    	}
+		return list2;
+	}
+	
+	/**
+	 * 转到定点医院信息统计
+	 * @param id
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("toCustomerInfo")
+	public String toCustomerInfo(String id, HttpServletRequest request) {
+		request.setAttribute("cusId", id);
+		return "/hospitalized/customerInfo";
+	}
+	
+	/**
+	 * 定点医院信息统计
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping("/customerInfo")
+	public void customerInfo(HttpServletRequest request, String cusId, HttpServletResponse response)  throws IOException {
+		String rows = request.getParameter("rows");
+		String page = request.getParameter("page");
+		String sql = "select h.cus_id, h.HOSP_NO, h.SI_PTSNAME, h.HOSP_INTIME, h.hosp_Deptname, h.ICD_NAME from TBL_HOSPITALIZED h left join TBL_DISCHARGED d on h.HOSP_NO=d.HOSP_NO where d.HOSP_NO is null and h.cus_Id=?0 order by h.si_Ptsname";
+		String countSql = "select count(h.HOSP_NO) from TBL_HOSPITALIZED h left join TBL_DISCHARGED d on h.HOSP_NO=d.HOSP_NO where d.HOSP_NO is null and h.cus_Id=?0";
+		List list = baseService.findByPageSql(sql, rows, page,  cusId);
+		int count = baseService.findCountSql(countSql, cusId);
+		List list2 = new ArrayList();
+		Object[] obj;
+		Hospitalized hospitalized;
+		for(int i = 0; i <list.size(); i++){
+			obj = (Object[])list.get(i);
+			hospitalized = new Hospitalized();
+			hospitalized.setCusId(obj[0]+"");
+			hospitalized.setHospNo(obj[1]+"");
+			hospitalized.setSiPtsname(obj[2]+"");
+			hospitalized.setHospIntime((Date)obj[3]);
+			hospitalized.setHospDeptname(obj[4]+"");
+			hospitalized.setIcdName(obj[5]+"");
+			list2.add(hospitalized);
+		}
+		toBeJson(list2, count, response);
+	}
+	
+	public void toBeJson2(List<Map> list, int total, HttpServletResponse response) throws IOException {
+		JsonConfig jsonConfig = new JsonConfig();
+		jsonConfig.registerJsonValueProcessor(Date.class, new JsonDateValueProcessor());
+		JSONObject json = new JSONObject();// new一个JSONObject
+		json.accumulate("total", total);// total代表一共有多少数据
+		json.accumulate("rows", list, jsonConfig);// 增加一个经过转换的list
+		response.setContentType("application/json;charset=UTF-8");// 指定为utf-8
+		response.getWriter().write(json.toString());// 转化为JSOn格式
+	}
+	
+	/**
+	 * 查看医嘱信息
+	 * @param cusId
+	 * @param hospNo
+	 * @return
+	 */
+	@RequestMapping("/getDoctororder")
+	@ResponseBody
+	public List getDoctororder(String cusId,String hospNo){
+		String hql = "from Doctororder where cusId=?0 and hospNo=?1";
+		List list = baseService.find(hql, cusId, hospNo);
+		return list;
+	}
+	
+	/**
+	 * 转到在住院病人信息统计
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping("/toHospitalInfo")
+	public String toHospitalInfo(HttpServletRequest request, String id){
+		System.out.println("病人住院号="+id);
+		return "/hospitalized/hospitalInfo";
+	}
+
+}

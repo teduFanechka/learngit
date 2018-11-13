@@ -1,0 +1,259 @@
+package yibao.yiwei.controller.count;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.controller.system.AuthPassport;
+import yibao.yiwei.entity.Abc;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Uploadfile;
+import yibao.yiwei.entity.count.CouUploadfileByDate;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+import yibao.yiwei.utils.timer.AnalysisTimerTask;
+
+/**
+ * 手动解析文件
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class FileParseController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	/**
+	 * 转到数据解析
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toManualParse")
+	public String toManualParse() {
+		return "/uploadfilewarning/manualParse";
+	}
+	
+	/**
+	 * 数据解析
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/getSearchCustomer")
+	public Map<String, Object> getSearchCustomer(HttpServletRequest request, HttpServletResponse response) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		List<Customer> list = new ArrayList<Customer>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusName = request.getParameter("cusName") != null ? request.getParameter("cusName").trim() : "";// 按定点名称查询
+		String hql = "from Customer c where c.cusStatus=1";//cusStatus=2是连锁分店，不上传文件
+		String countHql = "select count(*) from Customer c where c.cusStatus=1";
+		if (!cusName.equals("")) {
+			hql+=" and c.cusName like '%" + cusName + "%' or c.cusDareway='" + cusName + "' or c.cusPcode like '%" + cusName + "%'";
+			countHql+= " and c.cusName like '%" + cusName + "%' or c.cusDareway='" + cusName + "' or c.cusPcode like '%" + cusName + "%'";
+		}
+		hql+=" order by c.cusRegdate desc";
+		list = baseService.findByPage(hql, rows, page);
+		int count = baseService.findCount(countHql);
+		map.put("total", count);
+		map.put("rows", list);
+		return map;
+
+	}
+
+	/**
+	 * 手动解析文件
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/batchParse")
+	public Map batchParse(HttpServletRequest request, HttpServletResponse response) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		Abc abc;
+		try{
+			if (null != request.getParameter("num")) {//解析全部
+				Timer timer = new Timer();
+				timer.schedule(new TimerTask() {
+		            public void run() {
+		            	Abc abc;
+		            	try {
+			            	String sql = "select u.* from TBL_UPLOADFILE SAMPLE(0.1) u where IS_HANDLE=0";//随机查询百分之一的记录
+							List<Uploadfile> list = baseService.findSql2(sql,"u",Uploadfile.class);
+							int poolNum = list.size() > 20 ? 20 : list.size();
+							if(poolNum > 0) {
+								ExecutorService pool = Executors.newFixedThreadPool(poolNum);
+								for(int i = 0; i < poolNum; i++){
+									try {
+										sql = "update Uploadfile u set u.isHandle=-1 where u.upId=?0";
+										baseService.updateOrDelete(sql, list.get(i).getUpId());
+										pool.submit(new AnalysisTimerTask(list.get(i)));
+									} catch (Exception e) {
+										abc = new Abc();
+										abc.setaDate(new Date());
+										abc.setaClass("线程循环异常");
+										abc.setaInfo(e.getMessage());
+										baseService.save(abc);
+									}
+								}
+								pool.shutdown();//结束线程池
+							}
+		            	} catch (Exception e) {
+		            		abc = new Abc();
+							abc.setaDate(new Date());
+							abc.setaClass("线程池创建异常");
+							abc.setaInfo(e.getMessage());
+							baseService.save(abc);
+						}
+		            	
+		            }
+		        }, 1000,60000);//1秒后开始执行第一次run方法体，以后每隔60秒循环执行
+				map.put("status", "开始解析...");
+			} else {//解析选中
+				String ids = request.getParameter("ids");
+				String idsArr[] = ids.split(",");
+				String hql;
+				List list;
+				for (String cusId : idsArr) {
+					try {
+						hql = "from Uploadfile u where u.cusId=?0 and u.isHandle=0";
+						list = baseService.find(hql, cusId);
+						if(list.size() > 0) {
+							AnalysisTimerTask task = new AnalysisTimerTask("");
+							task.loopList(list);
+						}
+					} catch (Exception e) {
+						abc = new Abc();
+						abc.setaDate(new Date());
+						abc.setaClass("解析选中异常");
+						abc.setaInfo(e.getMessage());
+						baseService.save(abc);
+					}
+					
+				}
+				map.put("status", "解析选中已完成!");
+			}
+		} catch (Exception e) {
+			abc = new Abc();
+			abc.setaDate(new Date());
+			abc.setaClass("手动解析异常");
+			abc.setaInfo(e.getMessage());
+			baseService.save(abc);
+			map.put("status", "解析出现异常!");
+			e.printStackTrace();
+		}
+		return map;
+	}
+	
+	/**
+	 * 手动预警
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/couUploadfile")
+	public Map couUploadfile(){
+		Map<String, Object> map = new HashMap<String, Object>();
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+		String hql = "from Customer where cusStatus=1 or cusStatus=2";
+		List<Customer> customerList = baseService.find(hql);
+		Customer customer;
+		CouUploadfileByDate couUploadfileByDate;
+		Abc abc;
+		for (int i = 0; i < customerList.size(); i++) {
+			try {
+				customer = customerList.get(i);
+				String cusId = customer.getCusId();
+				String cufUpdate = "";//最后上传日期
+				int cufRecordcount = 0;//昨日上传类型总数
+				int cufFilecount = 0;//历史上传类型总数
+				hql = "SELECT max(u.UP_DATE) FROM TBL_UPLOADFILE u where u.CUS_ID=?0";//customer最后上传文件日期
+				List tem = baseService.findSql(hql,cusId);
+				if (null != tem.get(0)) {
+					cufUpdate = sf.format((Date)tem.get(0));//最后上传日期,格式化日期去掉时分秒
+					hql = "SELECT COUNT(DISTINCT u.UP_FILEFLAG) FROM TBL_UPLOADFILE u WHERE u.CUS_ID=?0 AND u.UP_DATE>?1";
+					cufRecordcount = baseService.findCountSql(hql, cusId, Utils.getDate(-1));//大于昨天0点
+					hql = "SELECT COUNT(DISTINCT u.UP_FILEFLAG) FROM TBL_UPLOADFILE u WHERE u.CUS_ID=?0";//历史上传类型总数
+					cufFilecount = baseService.findCountSql(hql, cusId);
+				} else {//customer从来无上传
+					cufUpdate = "";
+					cufRecordcount = 0;
+					cufFilecount = 0;
+				}
+				couUploadfileByDate = new CouUploadfileByDate();
+				couUploadfileByDate.setCusId(cusId);
+				couUploadfileByDate.setCufFileflag(customer.getCusDareway());// 医院编码
+				couUploadfileByDate.setCusName(customer.getCusName());
+				couUploadfileByDate.setCufUpdate(cufUpdate); // 上传时间(最后)
+				couUploadfileByDate.setCufRecordcount(cufRecordcount);// 昨日上传项目数
+				couUploadfileByDate.setCufFilecount(cufFilecount);// 历史上传项目总数
+				String today = sf.format(new Date());
+				couUploadfileByDate.setCufCreatedate(sf.parse(today));//创建时间
+				couUploadfileByDate.setCusFlag(customer.getCusFlag());//101单体药店 102 连锁药店 201门诊 301医院
+				baseService.save(couUploadfileByDate);
+			} catch (Exception e) {
+				abc = new Abc();
+				abc.setaDate(new Date());
+				abc.setaClass("手动预警异常");
+				abc.setaInfo(e.getMessage());
+				baseService.save(abc);
+			}
+		}
+		map.put("status", "手动预警完成");
+		return map;
+	}
+	
+	/**
+	 * 删除解析成功的文件
+	 * @return
+	 */
+	@ResponseBody
+	@RequestMapping("/deleteFile")
+	public Map deleteFile(){
+		Map<String, Object> map = new HashMap<String, Object>();
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+            public void run() {
+            	String sql = "select * from TBL_UPLOADFILE SAMPLE(1) where IS_HANDLE=1 and IS_COMPRESS is null";
+            	List<Uploadfile> list = baseService.findSql2(sql,"u",Uploadfile.class);
+        		File file;
+        		Abc abc;
+        		for(int i = 0; i < list.size(); i++){
+        			try {
+        				file = new File(list.get(i).getUpFilepath());
+        				if (file.exists() && file.isFile()) {
+        					file.delete();
+        				}
+        			} catch (Exception e) {
+        				abc = new Abc();
+        				abc.setaDate(new Date());
+        				abc.setaClass("删除文件异常");
+        				abc.setaInfo(e.getMessage());
+        				baseService.save(abc);
+        			}
+        		}
+            }
+        }, 1000,180000);//1秒后开始执行第一次run方法体，以后每隔3分钟循环执行
+		map.put("status", "删除完成");
+		return map;
+	}
+}

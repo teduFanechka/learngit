@@ -1,0 +1,77 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>检查详细表</title>
+
+		<c:set value="${pageContext.request.contextPath}" var="path" scope="page" />
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+		<script src="${path}/easyui/locale/easyui-lang-zh_CN.js"></script>
+		<script src="${path}/js/yiwei.js"></script>
+		<script src="${path}/js/formatter.js"></script>
+		<script type="text/javascript">
+			$(function() {
+				var cusId = $("#checkdetail").attr("name");
+				var url = "getAllCheckdetail?cusId="+cusId;
+				datagrid('checkdetail', '检查详细表', 'ctId', url, 'ctId', 'desc');
+			})
+
+		</script>
+	</head>
+	<body>
+		<!-- datagrid表格开始 -->
+		<table id="checkdetail" name="${cusId }">
+			<thead>
+				<tr>
+					<%--<th data-options="field:'sb',checkbox:true"></th>
+					--%>
+					<th field="ctId" align="center" hidden=true>
+						<!-- hidden=true 隐藏列 -->
+					</th>
+					<th field="cusId" hidden=true align="center">
+						客户ID
+					</th>
+					<th field="ctCheckno" align="center">
+						检查流水号
+					</th>
+					<th field="ctHospno" align="center">
+						住院号/门诊号
+					</th>
+					<th field="ctItemcode" align="center">
+						项目编码
+					</th>
+					<th field="ctItemname" align="center">
+						项目名称
+					</th>
+					<th field="ctResult" align="center">
+						结果
+					</th>
+					<th field="ctUnit" align="center">
+						单位
+					</th>
+					<th field="ctPoint"  hidden=true align="center">
+						提示
+					</th>
+					<th field="ctRange" align="center">
+						参考范围
+					</th>
+					<th field="ctComment"  hidden=true align="center">
+						备注
+					</th>
+					<th field="ctPicktime" hidden=true align="center">
+						采集时间
+					</th>
+					<th field="ctAddtime" hidden=true align="center">
+						创建时间
+					</th>
+
+				</tr>
+			</thead>
+		</table>
+		<!-- datagrid表格结束 -->
+	</body>
+</html>

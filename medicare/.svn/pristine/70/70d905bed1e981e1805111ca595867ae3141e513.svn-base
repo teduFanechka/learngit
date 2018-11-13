@@ -1,0 +1,11 @@
+package yibao.yiwei.service;
+
+import java.io.IOException;
+import java.text.ParseException;
+
+public interface ISalesorderManager {
+
+	// 批量保丰
+	public boolean addSalesorders(String path, String cusId) throws IOException, ParseException;
+
+}

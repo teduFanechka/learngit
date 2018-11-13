@@ -1,0 +1,195 @@
+/*$(function() {
+	var datagrid;
+	datagrid = $('#manualparse').datagrid( {
+		title : '解析客户记录表',
+		iconCls : 'icon-ok',
+		idField : 'cusId',// 主键
+		pageSize : 10,// 默认选择的分页是每页5行数据
+		pageList : [ 5, 10, 20, 50 ],// 可以选择的分页集合
+		nowrap : false,// true,列内容多时自动折至第二行
+		striped : true,// 设置为true将交替显示行背景。
+		collapsible : false,// 显示可折叠按钮
+		url : 'getSearchCustomer',
+		loadMsg : '数据装载中......',
+		singleSelect : false,// 为true时只能选择单行,无法批量删除
+		fit : true, // datagrid自适应宽度
+		fitColumns : true,// 允许表格自动缩放，以适应父容器，防止水平滚动
+		sortName : 'cusRegdate',// 当数据表格初始化时以哪一列来排序
+		sortOrder : 'desc',// 定义排序顺序，可以是'asc'或者'desc'（正序或者倒序）。
+		remoteSort : true,// 定义从服务器对数据进行排序。
+		checkbox : true,
+		pagination : true,// 分页
+		rownumbers : false, // 行数
+		queryParams : {}, // 查询条件
+		toolbar : [ {
+			text : '按选择批量解析',
+			iconCls : 'icon-save',
+			handler : function() {
+			var array = $('#manualparse').datagrid('getSelections');// 获取删除选中项数组
+			var ids = "";// 要删除的id字符串
+			for ( var i = 0; i < array.length; i++) {// 组成一个字符串，ID主键之间用逗号隔开
+				if (i != array.length - 1) {
+					ids += array[i].cusId + ",";
+				} else {
+					ids += array[i].cusId;
+				}
+			}
+			if (array != "") {
+				$.messager.confirm('提示', '是否要解析选中定点?', function(r) {
+					if (r) {
+						$.post("batchParse", {
+							ids : ids
+						// 传向后台的参数,用,分隔
+								}, function(data) { // 前台没有返回json,里面就没有data
+									
+									 * $('#manualparse').datagrid( { url :
+									 * 'getConditionCustomer?cusFlag='+cusFlag
+									 * });
+									 
+								$.messager.alert('操作提示', data.status, 'info')
+
+							});
+					}
+				});
+			} else {
+				$.messager.alert("提示", "请先选择要解析的定点！", "info");
+			}
+
+		}
+		} ,'-',{
+			text : '解析全部定点上传数据',
+			iconCls : 'icon-save',
+			handler : function() {
+				$.messager.confirm('提示', '是否要解析全部定点上传数据?', function(r) {
+					if (r) {
+						$.post("batchParse?num=1",function(data) { // 前台没有返回json,里面就没有data
+								$.messager.alert('操作提示', data.status, 'info')
+
+							});
+						}
+				});
+			}
+		}]
+
+	});
+
+});
+// 表格查询
+function queryForm() {
+	var params = $('#manualparse').datagrid('options').queryParams;
+	// 先取得 datagrid 的查询参数
+	var fields = $('#searchForm').serializeArray(); // 自动序列化表单元素为JSON对象
+	$.each(fields, function(i, field) {
+		params[field.name] = field.value; // 设置查询参数
+		});
+	$('#manualparse').datagrid('reload'); // 设置好查询参数 reload
+}
+
+// 点击清空按钮出发事件
+function clearForm() {
+	// $("#searchForm").find("input").val("");// 找到form表单下的所有input标签并清空
+	$('#searchForm').form('clear');
+	// queryForm();
+}
+*/
+
+$(function() {
+        $(".tabb").tabs({
+                fit: true,
+                border: false,
+                selected: 0,
+        });
+        $('#manualparse').datagrid({
+                pageSize: 20,
+                pageList: [10, 20, 30, 40, 50],
+                url: 'getSearchCustomer'
+        });
+})
+//搜索
+function findUser() {
+        var params = $('#manualparse').datagrid('options').queryParams; // 先取得 datagrid的查询参数
+        var fields = $('#manualPForm').serializeArray(); // 自动序列化表单元素为JSON对象
+        $.each(fields,
+        function(i, field) {
+                params[field.name] = field.value; // 设置查询参数
+        });
+        $('#manualparse').datagrid('reload'); // 设置好查询参数 reload
+}
+//根据值判断图片
+function fmtStatus(value, row, index) {
+	if (row.cusStatus == 1) { // 这里是判断哪些行
+		return '<a href="#"></a><img src="images/accept.png" title="正常"   alt="正常" />';
+	} else {
+		return '<a href="#"></a><img src="images/delete.png" title="已删除" alt="已删除" />';
+	}
+}
+// 手动解析
+function addMpa() {
+        var array = $('#manualparse').datagrid('getSelections'); // 获取删除选中项数组
+        var ids = ""; // 要删除的id字符串
+        for (var i = 0; i < array.length; i++) { // 组成一个字符串，ID主键之间用逗号隔开
+                if (i != array.length - 1) {
+                        ids += array[i].cusId + ",";
+                } else {
+                        ids += array[i].cusId;
+                }
+        }
+        if (array != "") {
+                $.messager.confirm('提示', '是否要解析选中定点?',
+                function(r) {
+                        if (r) {
+                                $.post("batchParse", {
+                                        ids: ids
+                                        // 传向后台的参数,用,分隔
+                                },
+                                function(data) { // 前台没有返回json,里面就没有data
+                                        /*
+									 * $('#manualparse').datagrid( { url :
+									 * 'getConditionCustomer?cusFlag='+cusFlag
+									 * });
+									 */
+                                        $.messager.alert('操作提示', data.status, 'info')
+                                });
+                        }
+                });
+        } else {
+                $.messager.alert("提示", "请先选择要解析的定点！", "info");
+        }
+}
+// 解析全部数据
+function editMpa() {
+    $.messager.confirm('提示', '是否要解析全部定点上传数据?',
+    function(r) {
+        if (r) {
+            $.post("batchParse?num=1",
+            function(data) { // 前台没有返回json,里面就没有data
+                    $.messager.alert('操作提示', data.status, 'info')
+            });
+        }
+    });
+}
+//手动预警
+function ediCou() {
+    $.messager.confirm('提示', '是否要开始手动预警?',
+    function(r) {
+        if (r) {
+            $.post("couUploadfile",
+            function(data) { // 前台没有返回json,里面就没有data
+                    $.messager.alert('操作提示', data.status, 'info')
+            });
+        }
+    });
+}
+
+//删除解析成功的文件
+function delFile() {
+    $.messager.confirm('提示', '是否删除解析成功的文件?',
+    function(r) {
+        if (r) {
+            $.post("deleteFile",
+            function(data) { // 前台没有返回json,里面就没有data
+                    $.messager.alert('操作提示', data.status, 'info')
+            });
+        }
+    });
+}

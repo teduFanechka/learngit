@@ -1,0 +1,52 @@
+package yibao.yiwei.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Hcusers;
+import yibao.yiwei.service.IHcusersManager;
+
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class HcusersManager implements IHcusersManager {
+
+	@Autowired
+	private IBaseDao baseDao;
+	
+
+	// 根据解析上传文件来的 姓名,性别,身份证号 保存 Hcusers 并返回 主键 hcuId
+	@Override
+	public String addHcusers(String hcuHcnum, String hcuName, String hcuSex, String hcuIdnum,int count) {
+		Hcusers hcusers = new Hcusers();
+		String hcuId = "";
+		// 先根据医保卡号hcuHcnum 判断数据库中有没有存储过此人信息
+		String hql = "from Hcusers h where h.hcuHcnum=?0";
+		List<Hcusers> list = baseDao.find(hql, hcuHcnum);
+		if (!list.isEmpty()) {
+			hcuId = list.get(0).getHcuId();
+		} else {
+			if (hcuSex.equals("NULL")) {
+				hcusers.setHcuSex(0);
+			} else if (hcuSex.equals("男")) {
+				hcusers.setHcuSex(0);
+			} else if (hcuSex.equals("女")) {
+				hcusers.setHcuSex(1);
+			}
+			hcusers.setHcuAddress("");
+			hcusers.setHcuHcnum(hcuHcnum);
+			hcusers.setHcuIdnum(hcuIdnum);
+			hcusers.setHcuName(hcuName);
+			hcusers.setHcuRemark("");
+			baseDao.save(hcusers);
+			System.out.println(">>>>>>>>>>>>>>>第" + count + "行hcusers内容解析保存数据完成!");
+			//count++;
+			hcuId = hcusers.getHcuId();
+		}
+		return hcuId;
+	}
+}

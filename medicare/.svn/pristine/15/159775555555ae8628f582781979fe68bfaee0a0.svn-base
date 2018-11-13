@@ -1,0 +1,134 @@
+package yibao.yiwei.entity.system;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 组织机构
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "SYS_ORGANIZATION", schema = "YIWEI")
+public class Organization implements java.io.Serializable {
+
+	private String orgId; // 机构id
+	private String orgPid; // 父机构id
+	private String orgCode; // 机构编码
+	private String orgName; // 机构名称
+	private int orgAllcounts; // 下属诊疗机构总数
+	private int orgCounts; // 下属定点总数
+	private int orgHcounts; // 定点医院数
+	private int orgMcounts; // 定点门诊数
+	private int orgDcounts; // 定点药店数
+	private int orgWorkers; // 工作人员数
+	private String orgStatus; // 机构状态
+
+	@GenericGenerator(name = "Organization_id", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "Organization_id")
+	@Column(name = "ORG_ID", unique = true, nullable = false, length = 32)
+	public String getOrgId() {
+		return this.orgId;
+	}
+
+	public void setOrgId(String orgId) {
+		this.orgId = orgId;
+	}
+
+	@Column(name = "ORG_PID", length = 32)
+	public String getOrgPid() {
+		return this.orgPid;
+	}
+
+	public void setOrgPid(String orgPid) {
+		this.orgPid = orgPid;
+	}
+
+	@Column(name = "ORG_CODE", length = 32)
+	public String getOrgCode() {
+		return this.orgCode;
+	}
+
+	public void setOrgCode(String orgCode) {
+		this.orgCode = orgCode;
+	}
+
+	@Column(name = "ORG_NAME", length = 128)
+	public String getOrgName() {
+		return this.orgName;
+	}
+
+	public void setOrgName(String orgName) {
+		this.orgName = orgName;
+	}
+
+	@Column(name = "ORG_ALLCOUNTS", precision = 22, scale = 0)
+	public int getOrgAllcounts() {
+		return this.orgAllcounts;
+	}
+
+	public void setOrgAllcounts(int orgAllcounts) {
+		this.orgAllcounts = orgAllcounts;
+	}
+
+	@Column(name = "ORG_COUNTS", precision = 22, scale = 0)
+	public int getOrgCounts() {
+		return this.orgCounts;
+	}
+
+	public void setOrgCounts(int orgCounts) {
+		this.orgCounts = orgCounts;
+	}
+
+	@Column(name = "ORG_HCOUNTS", precision = 22, scale = 0)
+	public int getOrgHcounts() {
+		return this.orgHcounts;
+	}
+
+	public void setOrgHcounts(int orgHcounts) {
+		this.orgHcounts = orgHcounts;
+	}
+
+	@Column(name = "ORG_MCOUNTS", precision = 22, scale = 0)
+	public int getOrgMcounts() {
+		return this.orgMcounts;
+	}
+
+	public void setOrgMcounts(int orgMcounts) {
+		this.orgMcounts = orgMcounts;
+	}
+
+	@Column(name = "ORG_DCOUNTS", precision = 22, scale = 0)
+	public int getOrgDcounts() {
+		return this.orgDcounts;
+	}
+
+	public void setOrgDcounts(int orgDcounts) {
+		this.orgDcounts = orgDcounts;
+	}
+
+	@Column(name = "ORG_WORKERS", precision = 22, scale = 0)
+	public int getOrgWorkers() {
+		return this.orgWorkers;
+	}
+
+	public void setOrgWorkers(int orgWorkers) {
+		this.orgWorkers = orgWorkers;
+	}
+
+	@Column(name = "ORG_STATUS", length = 1)
+	public String getOrgStatus() {
+		return this.orgStatus;
+	}
+
+	public void setOrgStatus(String orgStatus) {
+		this.orgStatus = orgStatus;
+	}
+
+}

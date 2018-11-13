@@ -1,0 +1,168 @@
+package yibao.yiwei.service.impl;
+
+import java.io.Serializable;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import yibao.yiwei.dao.IBaseDao;
+import yibao.yiwei.entity.Page;
+import yibao.yiwei.service.IBaseService;
+
+@SuppressWarnings("unchecked")
+@Service
+@Transactional
+public class BaseService<T> implements IBaseService<T> {
+	
+	@Autowired
+	private IBaseDao<T> baseDao;
+
+	/**
+	 * 添加
+	 */
+	@Override
+	public Serializable save(T entity) {
+		return baseDao.save(entity);
+	}
+
+	/**
+	 * 添加或修改
+	 */
+	@Override
+	public void update(T entity) {
+		baseDao.update(entity);
+	}
+
+	/**
+	 * 删除
+	 */
+	@Override
+	public void delete(T entity) {
+		baseDao.delete(entity);
+	}
+
+	/**
+	 * 根据ID查询
+	 */
+	@Override
+	public T get(Class<T> entityClazz, Serializable id) {
+		return baseDao.get(entityClazz, id);
+	}
+	
+	/**
+	 * hql增删改
+	 */
+	@Override
+	public int updateOrDelete(String hql, Object... objects) {
+		return baseDao.updateOrDelete(hql, objects);
+	}
+	
+	/**
+	 * hql查询(返回多条)
+	 */
+	@Override
+	public List<T> find(String hql, Object... objects) {
+		return baseDao.find(hql, objects);
+	}
+	
+	/**
+	 * hql查询(返回单条)
+	 */
+	@Override
+	public T findUnique(String hql, Object... objects){
+		return baseDao.findUnique(hql, objects);
+	}
+	
+	/**
+	 * hql统计
+	 */
+	@Override
+	public int findCount(String hql, Object... objects) {
+		return baseDao.findCount(hql, objects);
+	}
+	
+	/**
+	 * hql分页查询
+	 */
+	@Override
+	public List<T> findByPage(String hql, String rows, String page, Object... objects) {
+		int currentpage = Integer.parseInt((null == page || page.equals("0")) ? "1" : page);
+		int pageSize = Integer.parseInt((null == rows || rows.equals("0")) ? "10" : rows);
+		return baseDao.findByPage(hql, currentpage, pageSize, objects);
+	}
+	
+	/**
+	 * sql增删改
+	 */
+	@Override
+	public int updateOrDeleteSql(String sql, Object... objects) {
+		return baseDao.updateOrDeleteSql(sql, objects);
+	}
+	
+	/**
+	 * sql查询(返回多条)
+	 */
+	@Override
+	public List<T> findSql(String sql, Object... objects) {
+		return baseDao.findSql(sql, objects);
+	}
+	
+	/**
+	 * sql查询(返回单条)
+	 */
+	@Override
+	public T findUniqueSql(String sql, Object... objects){
+		return baseDao.findUniqueSql(sql, objects);
+	}
+	
+	/**
+	 * sql统计
+	 */
+	@Override
+	public int findCountSql(String hql, Object... objects) {
+		return baseDao.findCountSql(hql, objects);
+	}
+	
+	/**
+	 * sql分页查询
+	 */
+	@Override
+	public List<T> findByPageSql(String sql, String rows, String page, Object... objects) {
+		int currentpage = Integer.parseInt((null == page || page.equals("0")) ? "1" : page);
+		int pageSize = Integer.parseInt((null == rows || rows.equals("0")) ? "10" : rows);
+		return baseDao.findByPageSql(sql, currentpage, pageSize, objects);
+	}
+	
+	/**
+	 * sql查询转换实体
+	 */
+	@Override
+	public List<T> findEntitySql(String sql,Class<T> entityClazz, Object... objects) {
+		return baseDao.findEntitySql(sql,entityClazz,objects);
+	}
+	
+	/**
+	 * sql查询转换dto
+	 */
+	@Override
+	public List<T> findDtoSql(String sql,Class<T> entityClazz){
+		return baseDao.findDtoSql(sql, entityClazz);
+	}
+	
+	/**
+	 * 分页条件查询page方式
+	 */
+	@Override
+	public Page queryForPage(String countHql, String hql, String url, int pageNum, Object... params) {
+		int allRow = baseDao.findCountSql(countHql, params);//总记录数
+		final int currentPage = Page.countCurrentPage(pageNum);//当前的页码
+		Page page = new Page(allRow, currentPage);//分页信息保存在bean中
+		final int pageSize = page.getPageSize();//每页记录数
+		List list = baseDao.findByPage(hql, currentPage, pageSize, params);
+		page.setUrl(url);
+		page.setList(list);
+		return page;
+	}
+}

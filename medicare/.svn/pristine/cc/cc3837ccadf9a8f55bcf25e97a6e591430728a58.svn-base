@@ -1,0 +1,19 @@
+package yibao.yiwei.service;
+
+import java.io.IOException;
+import java.text.ParseException;
+
+public interface IDrugsdeliveryManager {
+
+	/**
+	 * 解析文件保存药品出库信息表,更新文件上传记录表upCount
+	 * @param path	文件路径
+	 * @param cusId	客户id
+	 * @param upId 当前文件上传记录表主键
+	 * @return 真/假
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public boolean addDrugsdeliverys(String path, String cusId, int upId) throws IOException, ParseException;
+
+}

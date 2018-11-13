@@ -1,0 +1,94 @@
+package yibao.yiwei.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import org.hibernate.annotations.GenericGenerator;
+
+/**
+ * 参保用户表
+ * @author Administrator
+ *
+ */
+@SuppressWarnings("serial")
+@Entity
+@Table(name = "TBL_HCUSERS", schema = "YIWEI")
+public class Hcusers implements java.io.Serializable {
+
+	private String hcuId;//用户ID
+	private String hcuIdnum;//身份证号
+	private String hcuHcnum;//医保卡号
+	private String hcuName;//姓名
+	private int hcuSex;//性别
+	private String hcuAddress;//住址
+	private String hcuRemark;//备注
+
+	@GenericGenerator(name = "HcusersId", strategy = "guid")
+	@Id
+	@GeneratedValue(generator = "HcusersId")
+	@Column(name = "HCU_ID", unique = true, nullable = false, length = 32)
+	public String getHcuId() {
+		return this.hcuId;
+	}
+
+	public void setHcuId(String hcuId) {
+		this.hcuId = hcuId;
+	}
+
+	@Column(name = "HCU_IDNUM", length = 18)
+	public String getHcuIdnum() {
+		return this.hcuIdnum;
+	}
+
+	public void setHcuIdnum(String hcuIdnum) {
+		this.hcuIdnum = hcuIdnum;
+	}
+
+	@Column(name = "HCU_HCNUM", length = 32)
+	public String getHcuHcnum() {
+		return this.hcuHcnum;
+	}
+
+	public void setHcuHcnum(String hcuHcnum) {
+		this.hcuHcnum = hcuHcnum;
+	}
+
+	@Column(name = "HCU_NAME", length = 16)
+	public String getHcuName() {
+		return this.hcuName;
+	}
+
+	public void setHcuName(String hcuName) {
+		this.hcuName = hcuName;
+	}
+
+	@Column(name = "HCU_SEX", precision = 22, scale = 0)
+	public int getHcuSex() {
+		return this.hcuSex;
+	}
+
+	public void setHcuSex(int hcuSex) {
+		this.hcuSex = hcuSex;
+	}
+
+	@Column(name = "HCU_ADDRESS", length = 32)
+	public String getHcuAddress() {
+		return this.hcuAddress;
+	}
+
+	public void setHcuAddress(String hcuAddress) {
+		this.hcuAddress = hcuAddress;
+	}
+
+	@Column(name = "HCU_REMARK")
+	public String getHcuRemark() {
+		return this.hcuRemark;
+	}
+
+	public void setHcuRemark(String hcuRemark) {
+		this.hcuRemark = hcuRemark;
+	}
+
+}

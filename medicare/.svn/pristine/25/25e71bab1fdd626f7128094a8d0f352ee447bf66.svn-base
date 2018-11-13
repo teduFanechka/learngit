@@ -1,0 +1,79 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<title>删除重复数据</title>
+		<link rel="stylesheet" href="${path}/easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" href="${path }/css/ew-main.css" />
+		<link rel="stylesheet" href="${path }/css/ew-home.css" />
+		<link rel="stylesheet" href="${path}/easyui/themes/icon.css" />
+		<script src="${path}/easyui/jquery-1.7.2.min.js"></script>
+		<script src="${path}/easyui/jquery.easyui.min.js"></script>
+	</head>
+	<script type="text/javascript">
+		function getCusid(url){
+			var cusId = $("#cusId").searchbox("getValue");
+			var url2 = url + cusId;
+			$.get(url2, function(result){
+			    //这样就不跳转页面了
+			});
+		}
+
+		function deleteCancle(url){
+			$.get(url, function(result){
+			    //这样就不跳转页面了
+			});
+		}
+
+		function btsloader(param,success,error){
+			var q = param.q || "";
+			if(q.length <= 0) {
+				return false;
+			}
+			$.ajax({
+				url:"getCCCName",
+				type:"post",
+				data:{
+					str:q //post传参
+				},
+				success:function(data){
+					var items = $.map(data.rows, function(item){
+						return {
+							id:item.id,
+							name:item.text
+						};
+					});
+					success(items);
+				},
+			  });
+		  }
+
+		function clearForm() {
+		    $("#cusId").textbox('setValue','')
+		}
+	</script>
+	<body>
+		<input id="cusId" class="easyui-combobox" style="width:200px;" data-options="prompt:'请输入定点名称', loader: btsloader,mode: 'remote',valueField: 'id',textField: 'name'"/>
+		<a href="javascript:" class="clear" onClick=clearForm();>
+			<img style="margin:3px 5px;position: absolute" class="cl-xx-child" src="images/xx.png" />
+		</a><br/><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=drugcatalog&cusId=')">项目编码重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=drugcatalog')">项目编码已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=supplier&cusId=')">供应商表重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=supplier')">供应商表已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=employee&cusId=')">医护人员重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=employee')">医护人员已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=warehouseitem&cusId=')">入库信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=warehouseitem')">入库信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=deliveryitem&cusId=')">出库信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=deliveryitem')">出库信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=itemstock&cusId=')">库存信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=itemstock')">库存信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=salesitem&cusId=')">销售信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=salesitem')">销售信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=warehouse&cusId=')">库房信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=warehouse')">库房信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=prescribe&cusId=')">处方信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=prescribe')">处方信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=hospitalized&cusId=')">住院记录重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=hospitalized')">住院记录已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=discharged&cusId=')">出院记录重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=discharged')">出院记录已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=doctororder&cusId=')">医嘱信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=doctororder')">医嘱信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=orderperform&cusId=')">医嘱执行记录重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=orderperform')">执行记录已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=clinicrecords&cusId=')">诊断记录重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=clinicrecords')">诊断记录已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=department&cusId=')">科室信息重复数据</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=department')">科室信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=medrecords&cusId=')">住院病案首页重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=medrecords')">病案首页已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=checkresult&cusId=')">检查检验信息重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=checkresult')">检查信息已注销</a><br/>
+		<a href="javascript:;" onclick="getCusid('deleteRepeat?type=checkdetail&cusId=')">检查检验详细重复</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:;" onclick="deleteCancle('deleteCancle?type=checkdetail')">检查详细已注销</a><br/>
+	</body>
+</html>

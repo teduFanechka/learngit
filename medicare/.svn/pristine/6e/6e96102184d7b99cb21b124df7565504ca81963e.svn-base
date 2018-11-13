@@ -1,0 +1,370 @@
+package yibao.yiwei.controller;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import yibao.yiwei.controller.system.AuthPassport;
+import yibao.yiwei.entity.Customer;
+import yibao.yiwei.entity.Department;
+import yibao.yiwei.entity.Doctororder;
+import yibao.yiwei.entity.Hospitalized;
+import yibao.yiwei.entity.system.Areacode;
+import yibao.yiwei.service.IBaseService;
+import yibao.yiwei.utils.Utils;
+
+/**
+ * 住院信息控制器
+ * 
+ * @author Administrator
+ * 
+ */
+@SuppressWarnings("unchecked")
+@Controller
+public class HospitalizedController {
+	
+	@Autowired
+	private IBaseService baseService;
+	
+	/**
+	 * 转到住院记录
+	 * @param cusId
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("toHospitalized")
+	public String toHospitalized(String cusId, HttpServletRequest request) {
+		request.setAttribute("cusId", cusId);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Calendar cal = Calendar.getInstance();    
+		cal.add(Calendar.MONTH, 0);
+		cal.set(Calendar.DAY_OF_MONTH,1);
+		request.setAttribute("startDate", sdf.format(cal.getTime()));
+		request.setAttribute("endDate", sdf.format(Utils.getDate(1)));
+		return "/data/hospitalized";
+	}
+
+	/**
+	 * 住院记录
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 */
+	@RequestMapping("getAllHospitalized")
+	public void getAllHospitalized(HttpServletRequest request, HttpServletResponse response,String startDate,String endDate,String hospNo,String siPtsname) throws IOException,ParseException {
+		List<Hospitalized> list = new ArrayList<Hospitalized>();
+		String rows = request.getParameter("rows");// 每页显示的记录数
+		String page = request.getParameter("page");// 当前第几页
+		String cusId = request.getParameter("cusId");// 当前cusId
+		int count = 0;
+		SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		String hql = "from Hospitalized where cusId=?0 ";
+		String countSql = "select count(HOSP_ID) from tbl_Hospitalized where cus_Id=?0 ";
+		
+		if(null != hospNo && !hospNo.equals("")){
+			hospNo = hospNo.trim();
+			countSql+=" and HOSP_NO = '"+hospNo+"'";
+			hql+=" and hospNo = '"+hospNo+"'";
+		}
+		
+		if(null != siPtsname && !siPtsname.equals("")){
+			siPtsname = siPtsname.trim();
+			countSql+=" and (SI_PTSNAME like '%"+siPtsname+"%' or ICD_NAME like '%"+siPtsname+"%')";
+			hql+=" and (siPtsname like '%"+siPtsname+"%' or icdName like '%"+siPtsname+"%')";
+		}
+		
+		Date itemPicktime = null;
+		Date itemPicktime2 = null;
+		if(null != startDate && !startDate.equals("")){
+			startDate = startDate.trim() + " 00:00:00";
+		}
+		if(null != endDate && !endDate.equals("")){
+			endDate = endDate.trim() + " 23:59:59";
+		}
+		if (!startDate.equals("") && !endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			itemPicktime2 = sf.parse(endDate);
+			countSql+=" and HOSP_INTIME between ?1 and ?2";
+			hql+=" and hospIntime between ?1 and ?2 order by hospIntime desc nulls last";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime,itemPicktime2);
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime,itemPicktime2);
+		}
+		if (startDate.equals("") && endDate.equals("")) {
+			hql+=" order by hospIntime desc nulls last";
+			count = baseService.findCountSql(countSql,cusId);
+			list = baseService.findByPage(hql, rows, page,cusId);
+		}
+		if (startDate.equals("") && !endDate.equals("")) {
+			itemPicktime2 = sf.parse(endDate);
+			countSql+="and HOSP_INTIME <?1";
+			hql+="and hospIntime <?1 order by hospIntime desc nulls last";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime2);
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime2);
+		}
+		if (!startDate.equals("") && endDate.equals("")) {
+			itemPicktime = sf.parse(startDate);
+			countSql+="and HOSP_INTIME >?1";
+			hql+="and hospIntime >?1 order by hospIntime desc nulls last";
+			count = baseService.findCountSql(countSql,cusId,itemPicktime);
+			list = baseService.findByPage(hql, rows, page,cusId,itemPicktime);
+		}
+		Utils.toBeJson(list, count, response);
+	}
+
+	/**
+	 * 转到住院统计页面
+	 * @param request
+	 * @return
+	 */
+	@AuthPassport
+	@RequestMapping("/toHospital")
+	public String toHospital(HttpServletRequest request) {
+		return "/hospitalized/hospital";
+	}
+	
+	/**
+	 * 住院统计页面tree
+	 * @param request
+	 * @param id
+	 * @param type
+	 * @return
+	 */
+	@RequestMapping("/getHospital")
+	@ResponseBody
+	public List getHospital(HttpServletRequest request, String id, String type) throws UnsupportedEncodingException {
+        
+        String hql;
+		List list;
+		List<Map<String, Object>> list2;
+		Map<String, Object> map;
+		Map<String, String> map2;
+		
+        if(null == type){//地区
+        	hql = "from Areacode where acStatus=1";
+        	list = baseService.find(hql);
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Areacode areacode;
+        	for(int i = 0; i < list.size(); i++){
+    			areacode = (Areacode)list.get(i);
+    			map = new HashMap<String, Object>();
+    			map.put("id", areacode.getAcAreacode());
+    			map.put("text", areacode.getAcAreaname());
+    			map.put("state", "closed");
+    			map.put("iconCls", "icon-folder1");
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "customer");
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+    		}
+        } else if(type.equals("customer")){//医院
+        	hql = "select c.* from tbl_Customer c inner join SYS_CUSAREA_RELATE cr on c.cus_Id = cr.cus_Id where cr.ac_Areacode=?0 and c.cus_Flag='301' order by cus_name";
+        	list = baseService.findEntitySql(hql,Customer.class, id);
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Customer customer;
+        	for(int i = 0; i < list.size(); i++){
+        		customer = (Customer)list.get(i);
+        		map = new HashMap<String, Object>();
+        		map.put("id", customer.getCusId());
+    			map.put("text", customer.getCusName());
+    			map.put("state", "closed");
+    			map.put("iconCls", "icon-folder1");
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "department");
+    			map2.put("cusName", customer.getCusName());
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+        	}
+        } else if(type.equals("department")){//科室
+        	String cusName = URLDecoder.decode(request.getParameter("cusName"), "UTF-8");
+        	
+        	hql = "from Department where deptBeds!='NULL' and deptBeds!='0' and cusId=?0 order by deptName";
+        	list = baseService.find(hql,id);
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Department department;
+        	for(int i = 0; i < list.size(); i++){
+        		department = (Department)list.get(i);
+        		map = new HashMap<String, Object>();
+        		map.put("id", department.getDeptId());
+    			map.put("text", department.getDeptName());
+    			map.put("state", "closed");
+    			map.put("iconCls", "icon-folder1");
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "hospitalized");
+    			map2.put("cusId", department.getCusId());
+    			map2.put("hospDept", department.getDeptCode());
+    			map2.put("cusName", cusName);
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+        	}
+        } else if(type.equals("hospitalized")){//病人
+        	String cusId = request.getParameter("cusId");
+        	String hospDept = request.getParameter("hospDept");
+        	String cusName = URLDecoder.decode(request.getParameter("cusName"), "UTF-8");
+        	
+        	hql = "select h.* from TBL_HOSPITALIZED h left join TBL_DISCHARGED d on h.HOSP_NO=d.HOSP_NO where d.HOSP_NO is null and h.cus_Id=?0 and h.hosp_Dept=?1 order by h.si_Ptsname";
+        	list = baseService.findEntitySql(hql,Hospitalized.class, cusId, hospDept);
+        	
+        	list2 = new ArrayList<Map<String, Object>>();
+        	Hospitalized hospitalized;
+        	for(int i = 0; i < list.size(); i++){
+        		hospitalized = (Hospitalized)list.get(i);
+        		map = new HashMap<String, Object>();
+        		map.put("id", hospitalized.getHospNo());
+    			map.put("text", hospitalized.getSiPtsname());
+    			
+    			map2 = new HashMap<String, String>();
+    			map2.put("type", "next");
+    			map2.put("cusName", cusName);
+    			
+    			map.put("attributes", map2);
+    			list2.add(map);
+        	}
+        } else {
+        	list2 = null;
+        }
+        return list2;
+	}
+	
+	/**
+	 * 搜索
+	 * @param text
+	 * @return
+	 */
+	@RequestMapping("/searchHospital")
+	@ResponseBody
+	public List searchHospital(String text) throws UnsupportedEncodingException {
+		text = URLDecoder.decode(text, "UTF-8");
+		String hql = "from Customer where (cusName like '%" + text + "%' or cusDareway='" + text + "') and (cusStatus = 1 or cusStatus=2)";
+		List list = baseService.find(hql);
+    	List list2 = new ArrayList<Map<String, Object>>();
+    	Map<String, Object> map;
+    	Customer customer;
+    	for(int i = 0; i < list.size(); i++){
+    		customer = (Customer)list.get(i);
+    		map = new HashMap<String, Object>();
+    		map.put("id", customer.getCusId());
+			map.put("text", customer.getCusName());
+			map.put("iconCls", "icon-folder1");
+			list2.add(map);
+    	}
+		return list2;
+	}
+	
+	/**
+	 * 转到定点医院信息统计
+	 * @param id
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("toCustomerInfo")
+	public String toCustomerInfo(String id, HttpServletRequest request) {
+		request.setAttribute("cusId", id);
+		return "/hospitalized/customerInfo";
+	}
+	
+	/**
+	 * 转到定点医院信息统计(出院)
+	 * @param id
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("toCustomerInfo2")
+	public String toCustomerInfo2(String id, HttpServletRequest request) {
+		request.setAttribute("cusId", id);
+		return "/hospitalized/customerInfo2";
+	}
+	
+	/**
+	 * 定点医院信息统计
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping("/customerInfo")
+	public void customerInfo(HttpServletRequest request, String cusId, HttpServletResponse response)  throws IOException {
+		String rows = request.getParameter("rows");
+		String page = request.getParameter("page");
+		String sql = "select h.cus_id, h.HOSP_NO, h.SI_PTSNAME, h.HOSP_INTIME, h.hosp_Deptname, h.ICD_NAME from TBL_HOSPITALIZED h left join TBL_DISCHARGED d on h.HOSP_NO=d.HOSP_NO where d.HOSP_NO is null and h.cus_Id=?0 order by h.si_Ptsname";
+		String countSql = "select count(h.HOSP_NO) from TBL_HOSPITALIZED h left join TBL_DISCHARGED d on h.HOSP_NO=d.HOSP_NO where d.HOSP_NO is null and h.cus_Id=?0";
+		List list = baseService.findByPageSql(sql, rows, page,  cusId);
+		int count = baseService.findCountSql(countSql, cusId);
+		List list2 = new ArrayList();
+		Object[] obj;
+		Hospitalized hospitalized;
+		for(int i = 0; i <list.size(); i++){
+			obj = (Object[])list.get(i);
+			hospitalized = new Hospitalized();
+			hospitalized.setCusId(obj[0]+"");
+			hospitalized.setHospNo(obj[1]+"");
+			hospitalized.setSiPtsname(obj[2]+"");
+			hospitalized.setHospIntime((Date)obj[3]);
+			hospitalized.setHospDeptname(obj[4]+"");
+			hospitalized.setIcdName(obj[5]+"");
+			list2.add(hospitalized);
+		}
+		Utils.toBeJson(list2, count, response);
+	}
+	
+	/**
+	 * 定点医院信息统计(出院)
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping("/customerInfo2")
+	public void customerInfo2(HttpServletRequest request, String cusId, HttpServletResponse response)  throws IOException {
+		String rows = request.getParameter("rows");
+		String page = request.getParameter("page");
+		String hql = "from Discharged where dcOutdate is not null and cusId=?0 order by dcOutdate";
+		String countHql = "select count(hospNo) from Discharged where dcOutdate is not null and cusId=?0";
+		List list = baseService.findByPage(hql, rows, page,  cusId);
+		int count = baseService.findCount(countHql, cusId);
+		Utils.toBeJson(list, count, response);
+	}
+	
+	/**
+	 * 查看医嘱信息
+	 * @param cusId
+	 * @param hospNo
+	 * @return
+	 */
+	@RequestMapping("/getDoctororder")
+	@ResponseBody
+	public List getDoctororder(String cusId,String hospNo){
+		String hql = "from Doctororder where cusId=?0 and hospNo=?1";
+		List<Doctororder> list = baseService.find(hql, cusId, hospNo);
+		return list;
+	}
+	
+	/**
+	 * 转到在住院病人信息统计
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping("/toHospitalInfo")
+	public String toHospitalInfo(HttpServletRequest request, String id){
+		System.out.println("病人住院号="+id);
+		return "/hospitalized/hospitalInfo";
+	}
+
+}
